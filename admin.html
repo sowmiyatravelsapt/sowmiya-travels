@@ -906,7 +906,13 @@ async function sendWhatsApp(phone, message) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ target: phone, message }),
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e) {
+      console.error('[Admin sendWhatsApp] Non-JSON response:', text.slice(0, 200));
+      return { ok: false, error: 'API function not found – check api/send-whatsapp.js is uploaded' };
+    }
     if (!res.ok || data.status === false) {
       console.error('[Admin sendWhatsApp] Error:', data.reason || data);
       return { ok: false, error: data.reason || `HTTP ${res.status}` };
