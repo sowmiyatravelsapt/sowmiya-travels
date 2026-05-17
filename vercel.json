@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "functions": {
+    "api/send-whatsapp.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/", "destination": "/index.html" }
