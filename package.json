@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "description": "Sowmiya Travels booking site",
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   }
 }
