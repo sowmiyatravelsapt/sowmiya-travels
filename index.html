@@ -845,8 +845,24 @@ async function notifyTelegram(b) {
 
 async function sendWhatsApp(phone, message) {
   if (!CONFIG.FONNTE_TOKEN || CONFIG.FONNTE_TOKEN === 'PLACEHOLDER') return;
-  const clean = phone.replace(/[\s\-\+]/g, '');
-  try { await fetch('https://api.fonnte.com/send', { method:'POST', headers:{'Authorization':CONFIG.FONNTE_TOKEN,'Content-Type':'application/json'}, body:JSON.stringify({ target:clean, message, countryCode:'91' }) }); } catch(e) {}
+  // Normalize phone: remove spaces/dashes, ensure country code
+  let clean = phone.replace(/[\s\-\(\)]/g, '');
+  if (clean.startsWith('+')) clean = clean.slice(1);
+  if (clean.startsWith('0')) clean = '91' + clean.slice(1);
+  if (!clean.startsWith('91') && clean.length === 10) clean = '91' + clean;
+  try {
+    const form = new FormData();
+    form.append('target', clean);
+    form.append('message', message);
+    form.append('countryCode', '91');
+    const res = await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: { 'Authorization': CONFIG.FONNTE_TOKEN },
+      body: form
+    });
+    const data = await res.json();
+    console.log('Fonnte response:', data);
+  } catch(e) { console.error('WhatsApp send error:', e); }
 }
 
 // ── TRACK ──
@@ -888,12 +904,17 @@ async function sendOTP() {
   if (!phone) { showToast('Enter your WhatsApp number', 'error'); return; }
   pendingPhone = phone;
   generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-  await sendWhatsApp(phone, `🔐 Your Sowmiya Travels OTP: *${generatedOTP}*
+  showToast('Sending OTP…', 'success');
+  try {
+    await sendWhatsApp(phone, `🔐 Your Sowmiya Travels OTP: *${generatedOTP}*
 Valid for 5 minutes. Do not share.`);
-  document.getElementById('auth-phone-step').style.display = 'none';
-  document.getElementById('auth-otp-step').style.display = 'block';
-  document.getElementById('otp-phone-show').textContent = phone;
-  showToast('OTP sent to WhatsApp!', 'success');
+    document.getElementById('auth-phone-step').style.display = 'none';
+    document.getElementById('auth-otp-step').style.display = 'block';
+    document.getElementById('otp-phone-show').textContent = phone;
+    showToast('✅ OTP sent to WhatsApp! Check your messages.', 'success');
+  } catch(e) {
+    showToast('❌ Failed to send OTP. Check your number and try again.', 'error');
+  }
 }
 
 async function verifyOTP() {
