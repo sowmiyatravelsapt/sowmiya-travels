@@ -902,14 +902,24 @@ function changePassword() {
 async function sendWhatsApp(phone, message) {
   const token = CONFIG.fonnteToken;
   if (!token) return;
-  const cleanPhone = phone.replace(/[\s\-\+]/g, '');
+  // Normalize phone number
+  let clean = phone.replace(/[\s\-\(\)]/g, '');
+  if (clean.startsWith('+')) clean = clean.slice(1);
+  if (clean.startsWith('0')) clean = '91' + clean.slice(1);
+  if (!clean.startsWith('91') && clean.length === 10) clean = '91' + clean;
   try {
-    await fetch('https://api.fonnte.com/send', {
+    const form = new FormData();
+    form.append('target', clean);
+    form.append('message', message);
+    form.append('countryCode', '91');
+    const res = await fetch('https://api.fonnte.com/send', {
       method: 'POST',
-      headers: { 'Authorization': token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target: cleanPhone, message, countryCode: '91' })
+      headers: { 'Authorization': token },
+      body: form
     });
-  } catch(e) { console.log('WhatsApp send failed', e); }
+    const data = await res.json();
+    console.log('Fonnte response:', data);
+  } catch(e) { console.error('WhatsApp send failed', e); }
 }
 
 // TOAST
