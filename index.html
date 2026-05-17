@@ -847,8 +847,7 @@ async function notifyTelegram(b) {
   try { await fetch(`https://api.telegram.org/bot${CONFIG.TELEGRAM_BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ chat_id:CONFIG.TELEGRAM_CHAT_ID, text:msg, parse_mode:'Markdown' }) }); } catch(e) {}
 }
 
-// sendWhatsApp – calls our Vercel serverless proxy (/api/send-whatsapp)
-// which forwards to Fonnte server-side (no CORS issues).
+// sendWhatsApp – calls /api/send-whatsapp (Vercel serverless proxy, no CORS)
 // Returns { ok: true } on success or { ok: false, error: '...' } on failure.
 async function sendWhatsApp(phone, message) {
   try {
@@ -857,7 +856,14 @@ async function sendWhatsApp(phone, message) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ target: phone, message }),
     });
-    const data = await res.json();
+    // Safely parse — if Vercel returns an HTML error page, don't crash
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e) {
+      console.error('[sendWhatsApp] Non-JSON response (function not deployed?):', text.slice(0, 200));
+      return { ok: false, error: 'API function not found – check api/send-whatsapp.js is uploaded to GitHub' };
+    }
     if (!res.ok || data.status === false) {
       const reason = data.reason || data.error || `HTTP ${res.status}`;
       console.error('[sendWhatsApp] API error:', reason, data);
