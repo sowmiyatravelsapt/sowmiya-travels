@@ -847,33 +847,73 @@ async function notifyTelegram(b) {
   try { await fetch(`https://api.telegram.org/bot${CONFIG.TELEGRAM_BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ chat_id:CONFIG.TELEGRAM_CHAT_ID, text:msg, parse_mode:'Markdown' }) }); } catch(e) {}
 }
 
-// sendWhatsApp – calls /api/send-whatsapp (Vercel serverless proxy, no CORS)
+// sendWhatsApp – calls /api/send-whatsapp proxy, with direct Fonnte fallback
 // Returns { ok: true } on success or { ok: false, error: '...' } on failure.
+
+// FIX: Normalize phone before sending (strip everything non-digit, add 91 prefix)
+function normalizePhone(phone) {
+  let clean = String(phone).replace(/[^\d]/g, '');
+  if (clean.startsWith('0')) clean = '91' + clean.slice(1);
+  if (clean.length === 10) clean = '91' + clean;
+  return clean;
+}
+
+// FIX: Direct Fonnte call (used as fallback when proxy is not deployed)
+async function sendWhatsAppDirect(phone, message) {
+  const token = CONFIG.FONNTE_TOKEN;
+  if (!token || token === 'PLACEHOLDER') return { ok: false, error: 'Fonnte token not configured' };
+  const clean = normalizePhone(phone);
+  try {
+    const body = new URLSearchParams({ target: clean, message, countryCode: '91' });
+    const res = await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: { 'Authorization': token, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) { data = { status: false, reason: text.slice(0, 100) }; }
+    if (data.status === false || data.status === 'false') {
+      return { ok: false, error: data.reason || data.message || 'Fonnte rejected' };
+    }
+    console.log('[sendWhatsApp] Direct Fonnte success:', data);
+    return { ok: true, data };
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+}
+
 async function sendWhatsApp(phone, message) {
+  const clean = normalizePhone(phone);
+  // Try proxy first (works on Vercel with FONNTE_TOKEN env var set)
   try {
     const res = await fetch('/api/send-whatsapp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target: phone, message }),
+      // FIX: Also pass token in body as fallback if env var not set on Vercel
+      body: JSON.stringify({ target: clean, message, token: CONFIG.FONNTE_TOKEN }),
     });
-    // Safely parse — if Vercel returns an HTML error page, don't crash
     const text = await res.text();
     let data;
-    try { data = JSON.parse(text); }
-    catch(e) {
-      console.error('[sendWhatsApp] Non-JSON response (function not deployed?):', text.slice(0, 200));
-      return { ok: false, error: 'API function not found – check api/send-whatsapp.js is uploaded to GitHub' };
+    try { data = JSON.parse(text); } catch(e) { data = null; }
+
+    // If proxy returned HTML (404/error page) or explicit 404 → fall through to direct
+    if (!data || res.status === 404) {
+      console.warn('[sendWhatsApp] Proxy not available (status ' + res.status + '), trying direct Fonnte…');
+      return await sendWhatsAppDirect(phone, message);
     }
     if (!res.ok || data.status === false) {
       const reason = data.reason || data.error || `HTTP ${res.status}`;
-      console.error('[sendWhatsApp] API error:', reason, data);
-      return { ok: false, error: reason };
+      console.error('[sendWhatsApp] Proxy error:', reason);
+      // FIX: Fallback to direct on any proxy error
+      console.warn('[sendWhatsApp] Falling back to direct Fonnte…');
+      return await sendWhatsAppDirect(phone, message);
     }
-    console.log('[sendWhatsApp] Success:', data);
+    console.log('[sendWhatsApp] Proxy success:', data);
     return { ok: true, data };
   } catch (e) {
-    console.error('[sendWhatsApp] Network error:', e);
-    return { ok: false, error: e.message };
+    console.error('[sendWhatsApp] Proxy network error:', e.message, '— trying direct…');
+    return await sendWhatsAppDirect(phone, message);
   }
 }
 
