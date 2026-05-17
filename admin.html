@@ -898,30 +898,57 @@ function changePassword() {
   showToast('Password updated!', 'success');
 }
 
-// WHATSAPP – calls /api/send-whatsapp serverless proxy (no CORS issues)
+// WHATSAPP – proxy with direct Fonnte fallback
+function normalizePhone(phone) {
+  let clean = String(phone).replace(/[^\d]/g, '');
+  if (clean.startsWith('0')) clean = '91' + clean.slice(1);
+  if (clean.length === 10) clean = '91' + clean;
+  return clean;
+}
+
+async function sendWhatsAppDirect(phone, message) {
+  const token = CONFIG.fonnteToken;
+  if (!token || token === 'PLACEHOLDER') return { ok: false, error: 'Fonnte token not configured' };
+  const clean = normalizePhone(phone);
+  try {
+    const body = new URLSearchParams({ target: clean, message, countryCode: '91' });
+    const res = await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: { 'Authorization': token, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) { data = { status: false, reason: text.slice(0, 100) }; }
+    if (data.status === false || data.status === 'false') return { ok: false, error: data.reason || 'Fonnte rejected' };
+    return { ok: true, data };
+  } catch(e) { return { ok: false, error: e.message }; }
+}
+
 async function sendWhatsApp(phone, message) {
+  const clean = normalizePhone(phone);
   try {
     const res = await fetch('/api/send-whatsapp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target: phone, message }),
+      body: JSON.stringify({ target: clean, message, token: CONFIG.fonnteToken }),
     });
     const text = await res.text();
     let data;
-    try { data = JSON.parse(text); }
-    catch(e) {
-      console.error('[Admin sendWhatsApp] Non-JSON response:', text.slice(0, 200));
-      return { ok: false, error: 'API function not found – check api/send-whatsapp.js is uploaded' };
+    try { data = JSON.parse(text); } catch(e) { data = null; }
+    if (!data || res.status === 404) {
+      console.warn('[Admin WA] Proxy not available, trying direct Fonnte…');
+      return await sendWhatsAppDirect(phone, message);
     }
     if (!res.ok || data.status === false) {
-      console.error('[Admin sendWhatsApp] Error:', data.reason || data);
-      return { ok: false, error: data.reason || `HTTP ${res.status}` };
+      console.warn('[Admin WA] Proxy error, trying direct Fonnte…');
+      return await sendWhatsAppDirect(phone, message);
     }
-    console.log('[Admin sendWhatsApp] Success:', data);
+    console.log('[Admin WA] Proxy success:', data);
     return { ok: true };
   } catch(e) {
-    console.error('[Admin sendWhatsApp] Network error:', e);
-    return { ok: false, error: e.message };
+    console.error('[Admin WA] Network error:', e.message, '— trying direct…');
+    return await sendWhatsAppDirect(phone, message);
   }
 }
 
