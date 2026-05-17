@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/send-whatsapp.js": {
-      "runtime": "nodejs18.x"
+      "runtime": "nodejs24.x"
     }
   },
   "rewrites": [
