@@ -448,7 +448,8 @@
 
 <script>
 // CONFIG
-let CONFIG = JSON.parse(localStorage.getItem('st_admin_config') || '{}');
+const DEFAULTS = { sbUrl:'https://cmivqaucimkglcloyjrm.supabase.co', sbKey:'sb_publishable_VxgbMTVjkCP3JOBdj2AkIA_z5l6lWgo', fonnteToken:'2yXFqhMYBSWzfaewzTtR4rqNNCTWLfNhJacjp8e', tgToken:'8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA', tgChat:'8252090421' };
+let CONFIG = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('st_admin_config') || '{}'));
 const ADMIN_CREDS = { user: 'admin', pass: localStorage.getItem('st_admin_pass') || 'sowmiya2024' };
 
 // In-memory data (replace with Supabase calls when connected)
