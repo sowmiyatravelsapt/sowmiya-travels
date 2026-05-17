@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sowmiya Travels – Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold:#C9933A; --gold-light:#E8B96A; --navy:#1A2744; --navy-mid:#243358;
+    --teal:#1D9E75; --teal-light:#5DCAA5; --bg:#F0EDE8; --white:#FFFFFF;
+    --text:#1A1A1A; --text-muted:#666; --border:#E2DDD6;
+    --danger:#C0392B; --success:#1D9E75; --warning:#D4860A;
+    --sidebar-w:240px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{width:var(--sidebar-w);background:var(--navy);min-height:100vh;padding:1.5rem 0;position:fixed;left:0;top:0;bottom:0;display:flex;flex-direction:column;}
+  .sidebar-logo{padding:0 1.5rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.1);}
+  .sidebar-logo h2{color:var(--white);font-family:'Playfair Display',serif;font-size:1.1rem;}
+  .sidebar-logo h2 span{color:var(--gold-light);}
+  .sidebar-logo p{color:rgba(255,255,255,0.5);font-size:0.75rem;margin-top:0.25rem;}
+  .sidebar-nav{flex:1;padding:1rem 0;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:0.75rem 1.5rem;color:rgba(255,255,255,0.7);cursor:pointer;transition:all 0.2s;font-size:0.9rem;border-left:3px solid transparent;}
+  .nav-item:hover{color:var(--white);background:rgba(255,255,255,0.07);}
+  .nav-item.active{color:var(--white);background:rgba(201,147,58,0.15);border-left-color:var(--gold);}
+  .nav-item svg{width:18px;height:18px;flex-shrink:0;}
+  .sidebar-footer{padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,0.1);}
+  .admin-badge{background:var(--gold);color:var(--navy);font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:50px;}
+
+  /* MAIN */
+  .main{margin-left:var(--sidebar-w);flex:1;padding:2rem;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;}
+  .topbar h1{font-family:'Playfair Display',serif;font-size:1.7rem;color:var(--navy);}
+  .topbar-right{display:flex;gap:0.75rem;align-items:center;}
+  .btn{padding:0.55rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+  .btn-primary{background:var(--navy);color:white;}
+  .btn-primary:hover{background:var(--gold);color:var(--navy);}
+  .btn-danger{background:var(--danger);color:white;}
+  .btn-success{background:var(--success);color:white;}
+  .btn-warning{background:var(--warning);color:white;}
+  .btn-outline{background:white;color:var(--navy);border:1.5px solid var(--border);}
+  .btn-sm{padding:0.35rem 0.85rem;font-size:0.78rem;}
+
+  /* STAT CARDS */
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem;margin-bottom:2rem;}
+  .stat-card{background:var(--white);border-radius:14px;padding:1.4rem;border:1px solid var(--border);display:flex;align-items:center;gap:1rem;}
+  .stat-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;}
+  .stat-icon.gold{background:#FFF3D9;}
+  .stat-icon.teal{background:#E1F5EE;}
+  .stat-icon.navy{background:#E8EBF4;}
+  .stat-icon.red{background:#FDECEA;}
+  .stat-icon svg{width:24px;height:24px;}
+  .stat-val{font-size:1.7rem;font-weight:700;color:var(--navy);line-height:1;}
+  .stat-label{font-size:0.8rem;color:var(--text-muted);margin-top:3px;}
+
+  /* SECTIONS */
+  .section{display:none;}
+  .section.active{display:block;}
+
+  /* TABLE */
+  .table-card{background:var(--white);border-radius:14px;border:1px solid var(--border);overflow:hidden;}
+  .table-header{display:flex;justify-content:space-between;align-items:center;padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);}
+  .table-header h3{font-size:1rem;font-weight:600;color:var(--navy);}
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+  th{background:#F8F6F1;padding:0.8rem 1rem;text-align:left;font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--border);}
+  td{padding:0.9rem 1rem;border-bottom:1px solid var(--border);color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#FAFAF8;}
+
+  /* STATUS BADGES */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:600;}
+  .badge-pending{background:#FFF3CD;color:#856404;}
+  .badge-confirmed{background:#D4EDDA;color:#155724;}
+  .badge-completed{background:#D1ECF1;color:#0C5460;}
+  .badge-cancelled{background:#F8D7DA;color:#721C24;}
+  .badge-active{background:#D4EDDA;color:#155724;}
+  .badge-inactive{background:#F8D7DA;color:#721C24;}
+
+  /* MODAL */
+  .modal-bg{position:fixed;inset:0;background:rgba(26,39,68,0.7);z-index:500;display:none;align-items:center;justify-content:center;overflow-y:auto;padding:2rem;}
+  .modal-bg.active{display:flex;}
+  .modal{background:var(--white);border-radius:20px;padding:2rem;width:100%;max-width:580px;position:relative;max-height:90vh;overflow-y:auto;}
+  .modal h2{font-family:'Playfair Display',serif;color:var(--navy);margin-bottom:1.5rem;font-size:1.4rem;}
+  .modal .close{position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+  .form-group{display:flex;flex-direction:column;gap:0.4rem;}
+  .form-group.full{grid-column:1/-1;}
+  .form-group label{font-size:0.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.05em;}
+  .form-group input,.form-group select,.form-group textarea{border:1.5px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.9rem;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;transition:border-color 0.2s;}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--gold);background:var(--white);}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:2rem;right:2rem;background:var(--navy);color:var(--white);padding:1rem 1.5rem;border-radius:12px;font-size:0.9rem;z-index:9999;transform:translateY(100px);opacity:0;transition:all 0.3s;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
+  .toast.show{transform:translateY(0);opacity:1;}
+  .toast.success{border-left:4px solid var(--teal);}
+  .toast.error{border-left:4px solid var(--danger);}
+
+  /* ASSIGN DRIVER */
+  .assign-row{display:flex;gap:0.5rem;align-items:center;}
+  .assign-row select{flex:1;border:1.5px solid var(--border);border-radius:6px;padding:0.35rem 0.6rem;font-size:0.8rem;font-family:'DM Sans',sans-serif;}
+
+  /* SEARCH BAR */
+  .search-bar{padding:0.65rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'DM Sans',sans-serif;width:220px;outline:none;}
+  .search-bar:focus{border-color:var(--gold);}
+
+  /* LOGIN SCREEN */
+  #login-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:1000;}
+  .login-box{background:var(--white);border-radius:20px;padding:3rem;width:380px;text-align:center;}
+  .login-box h2{font-family:'Playfair Display',serif;color:var(--navy);margin-bottom:0.5rem;}
+  .login-box p{color:var(--text-muted);font-size:0.88rem;margin-bottom:2rem;}
+  .login-box input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:0.8rem 1rem;font-size:0.95rem;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:0.75rem;}
+  .login-box input:focus{border-color:var(--gold);}
+  .login-box .btn-primary{width:100%;padding:0.9rem;}
+
+  /* Filters */
+  .filter-row{display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;}
+  select.filter-select{border:1.5px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-size:0.85rem;font-family:'DM Sans',sans-serif;outline:none;background:white;color:var(--text);}
+
+  @media(max-width:768px){.sidebar{display:none;}.main{margin-left:0;}}
+</style>
+</head>
+<body>
+
+<!-- ADMIN LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div style="font-size:2.5rem;margin-bottom:1rem;">🚗</div>
+    <h2>Admin Login</h2>
+    <p>Sowmiya Travels Management Panel</p>
+    <input type="text" id="admin-user" placeholder="Admin Username">
+    <input type="password" id="admin-pass" placeholder="Password">
+    <button class="btn btn-primary" onclick="adminLogin()">Login to Admin Panel</button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h2>Sowmiya <span>Travels</span></h2>
+    <p>Admin Panel <span class="admin-badge">ADMIN</span></p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" onclick="showSection('dashboard')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showSection('bookings')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Bookings
+    </div>
+    <div class="nav-item" onclick="showSection('drivers')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Drivers
+    </div>
+    <div class="nav-item" onclick="showSection('cars')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-1"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+      Cars & Fleet
+    </div>
+    <div class="nav-item" onclick="showSection('owners')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Car Owners
+    </div>
+    <div class="nav-item" onclick="showSection('customers')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Customers
+    </div>
+    <div class="nav-item" onclick="showSection('reports')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </div>
+    <div class="nav-item" onclick="showSection('settings')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="btn btn-outline btn-sm" onclick="adminLogout()" style="width:100%;">Logout</button>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+  <!-- DASHBOARD -->
+  <section class="section active" id="section-dashboard">
+    <div class="topbar">
+      <h1>Dashboard</h1>
+      <div class="topbar-right">
+        <span style="color:var(--text-muted);font-size:0.85rem;" id="dashboard-date"></span>
+        <button class="btn btn-primary" onclick="loadAll()">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon gold"><svg fill="none" stroke="#C9933A" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div><div class="stat-val" id="stat-total">–</div><div class="stat-label">Total Bookings</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon teal"><svg fill="none" stroke="#1D9E75" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+        <div><div class="stat-val" id="stat-pending">–</div><div class="stat-label">Pending</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon navy"><svg fill="none" stroke="#1A2744" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <div><div class="stat-val" id="stat-drivers">–</div><div class="stat-label">Active Drivers</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red"><svg fill="none" stroke="#C0392B" stroke-width="2" viewBox="0 0 24 24"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-1"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></div>
+        <div><div class="stat-val" id="stat-cars">–</div><div class="stat-label">Fleet Cars</div></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><h3>Recent Bookings</h3></div>
+      <div class="table-wrap"><table><thead><tr><th>Booking ID</th><th>Customer</th><th>Route</th><th>Date</th><th>Vehicle</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="dashboard-bookings-table"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- BOOKINGS -->
+  <section class="section" id="section-bookings">
+    <div class="topbar">
+      <h1>All Bookings</h1>
+      <div class="topbar-right filter-row">
+        <input class="search-bar" type="text" placeholder="Search booking…" oninput="filterBookings(this.value)">
+        <select class="filter-select" onchange="filterBookingsByStatus(this.value)">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <button class="btn btn-primary" onclick="loadBookings()">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-wrap"><table><thead><tr><th>Booking ID</th><th>Customer</th><th>Phone</th><th>Route</th><th>Date & Time</th><th>Vehicle</th><th>Driver</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="bookings-table"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- DRIVERS -->
+  <section class="section" id="section-drivers">
+    <div class="topbar">
+      <h1>Drivers</h1>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="openModal('driver')">+ Add Driver</button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>License No.</th><th>Car Assigned</th><th>Owner</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="drivers-table"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- CARS -->
+  <section class="section" id="section-cars">
+    <div class="topbar">
+      <h1>Cars & Fleet</h1>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="openModal('car')">+ Add Car</button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-wrap"><table><thead><tr><th>Reg. Number</th><th>Model</th><th>Type</th><th>Seats</th><th>Owner</th><th>Driver</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="cars-table"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- OWNERS -->
+  <section class="section" id="section-owners">
+    <div class="topbar">
+      <h1>Car Owners</h1>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="openModal('owner')">+ Add Owner</button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-wrap"><table><thead><tr><th>Owner Name</th><th>Phone</th><th>Address</th><th>Cars Owned</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="owners-table"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- CUSTOMERS -->
+  <section class="section" id="section-customers">
+    <div class="topbar"><h1>Customers</h1></div>
+    <div class="table-card">
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Total Bookings</th><th>Last Booking</th></tr></thead>
+      <tbody id="customers-table"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);">Connect Supabase to view customers</td></tr></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section class="section" id="section-reports">
+    <div class="topbar"><h1>Reports</h1></div>
+    <div class="stats-grid" style="margin-bottom:1.5rem;">
+      <div class="stat-card"><div class="stat-icon gold"><svg fill="none" stroke="#C9933A" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val" id="rep-revenue">–</div><div class="stat-label">Est. Revenue (₹)</div></div></div>
+      <div class="stat-card"><div class="stat-icon teal"><svg fill="none" stroke="#1D9E75" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="stat-val" id="rep-completed">–</div><div class="stat-label">Completed Trips</div></div></div>
+      <div class="stat-card"><div class="stat-icon red"><svg fill="none" stroke="#C0392B" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div><div class="stat-val" id="rep-cancelled">–</div><div class="stat-label">Cancelled</div></div></div>
+    </div>
+    <div class="table-card"><div class="table-header"><h3>Monthly Summary</h3></div>
+    <div style="padding:2rem;text-align:center;color:var(--text-muted);">Reports generate from Supabase data. Connect your database to see charts.</div></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="section" id="section-settings">
+    <div class="topbar"><h1>Settings</h1></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px;">
+      <div class="table-card" style="padding:1.5rem;">
+        <h3 style="color:var(--navy);margin-bottom:1.25rem;font-size:1rem;">API Configuration</h3>
+        <div class="form-group" style="margin-bottom:0.75rem;"><label>Supabase URL</label><input type="text" id="cfg-sb-url" placeholder="https://xxx.supabase.co"></div>
+        <div class="form-group" style="margin-bottom:0.75rem;"><label>Supabase Anon Key</label><input type="password" id="cfg-sb-key" placeholder="eyJhbGc…"></div>
+        <div class="form-group" style="margin-bottom:0.75rem;"><label>Fonnte Token</label><input type="password" id="cfg-fonnte" placeholder="Your Fonnte API token"></div>
+        <div class="form-group" style="margin-bottom:0.75rem;"><label>Telegram Bot Token</label><input type="password" id="cfg-tg-token" placeholder="Bot token from @BotFather"></div>
+        <div class="form-group" style="margin-bottom:1rem;"><label>Telegram Chat ID</label><input type="text" id="cfg-tg-chat" placeholder="-100xxxxxxxxx"></div>
+        <button class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
+      </div>
+      <div class="table-card" style="padding:1.5rem;">
+        <h3 style="color:var(--navy);margin-bottom:1.25rem;font-size:1rem;">Admin Password</h3>
+        <div class="form-group" style="margin-bottom:0.75rem;"><label>Current Password</label><input type="password" id="old-pass" placeholder="Current password"></div>
+        <div class="form-group" style="margin-bottom:0.75rem;"><label>New Password</label><input type="password" id="new-pass" placeholder="New password"></div>
+        <div class="form-group" style="margin-bottom:1rem;"><label>Confirm New Password</label><input type="password" id="confirm-pass" placeholder="Repeat new password"></div>
+        <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+        <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+          <h3 style="color:var(--navy);margin-bottom:0.75rem;font-size:0.95rem;">Quick Links</h3>
+          <a href="index.html" target="_blank" style="color:var(--teal);font-size:0.88rem;display:block;margin-bottom:0.5rem;">→ View Customer Website</a>
+          <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--teal);font-size:0.88rem;display:block;margin-bottom:0.5rem;">→ Supabase Dashboard</a>
+          <a href="https://t.me/BotFather" target="_blank" style="color:var(--teal);font-size:0.88rem;display:block;">→ Telegram BotFather</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- DRIVER MODAL -->
+<div class="modal-bg" id="modal-driver">
+  <div class="modal">
+    <button class="close" onclick="closeModal('driver')">×</button>
+    <h2 id="driver-modal-title">Add Driver</h2>
+    <input type="hidden" id="driver-edit-id">
+    <div class="form-grid">
+      <div class="form-group"><label>Full Name</label><input type="text" id="d-name" placeholder="Driver full name"></div>
+      <div class="form-group"><label>Phone / WhatsApp</label><input type="tel" id="d-phone" placeholder="+91 9XXXXXXXX"></div>
+      <div class="form-group"><label>License Number</label><input type="text" id="d-license" placeholder="TN01 XXXXXXXXX"></div>
+      <div class="form-group"><label>License Expiry</label><input type="date" id="d-license-exp"></div>
+      <div class="form-group"><label>Address</label><input type="text" id="d-address" placeholder="City, State"></div>
+      <div class="form-group"><label>Aadhaar Number</label><input type="text" id="d-aadhaar" placeholder="XXXX XXXX XXXX"></div>
+      <div class="form-group"><label>Assign Car</label>
+        <select id="d-car"><option value="">None</option></select>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="d-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+      </div>
+      <div class="form-group full"><label>Notes</label><input type="text" id="d-notes" placeholder="Any notes…"></div>
+    </div>
+    <div style="display:flex;gap:0.75rem;margin-top:0.75rem;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveDriver()">Save Driver</button>
+      <button class="btn btn-outline" onclick="closeModal('driver')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAR MODAL -->
+<div class="modal-bg" id="modal-car">
+  <div class="modal">
+    <button class="close" onclick="closeModal('car')">×</button>
+    <h2 id="car-modal-title">Add Car</h2>
+    <input type="hidden" id="car-edit-id">
+    <div class="form-grid">
+      <div class="form-group"><label>Registration Number</label><input type="text" id="c-reg" placeholder="TN01 XX 0000"></div>
+      <div class="form-group"><label>Car Model</label><input type="text" id="c-model" placeholder="e.g. Toyota Etios"></div>
+      <div class="form-group"><label>Vehicle Type</label>
+        <select id="c-type"><option value="Sedan">Sedan</option><option value="SUV">SUV</option><option value="Tempo">Tempo Traveller</option><option value="Innova">Innova</option><option value="Bolero">Bolero</option></select>
+      </div>
+      <div class="form-group"><label>Seating Capacity</label><input type="number" id="c-seats" placeholder="4" min="2" max="20"></div>
+      <div class="form-group"><label>Year</label><input type="number" id="c-year" placeholder="2022"></div>
+      <div class="form-group"><label>Color</label><input type="text" id="c-color" placeholder="White"></div>
+      <div class="form-group"><label>Assign Owner</label>
+        <select id="c-owner"><option value="">None</option></select>
+      </div>
+      <div class="form-group"><label>Assign Driver</label>
+        <select id="c-driver"><option value="">None</option></select>
+      </div>
+      <div class="form-group"><label>Insurance Expiry</label><input type="date" id="c-insurance"></div>
+      <div class="form-group"><label>FC Expiry</label><input type="date" id="c-fc"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="c-status"><option value="active">Active</option><option value="inactive">Inactive</option><option value="maintenance">In Maintenance</option></select>
+      </div>
+      <div class="form-group"><label>AC</label>
+        <select id="c-ac"><option value="yes">Yes</option><option value="no">No</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.75rem;margin-top:0.75rem;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveCar()">Save Car</button>
+      <button class="btn btn-outline" onclick="closeModal('car')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- OWNER MODAL -->
+<div class="modal-bg" id="modal-owner">
+  <div class="modal">
+    <button class="close" onclick="closeModal('owner')">×</button>
+    <h2 id="owner-modal-title">Add Car Owner</h2>
+    <input type="hidden" id="owner-edit-id">
+    <div class="form-grid">
+      <div class="form-group"><label>Owner Name</label><input type="text" id="o-name" placeholder="Full name"></div>
+      <div class="form-group"><label>Phone / WhatsApp</label><input type="tel" id="o-phone" placeholder="+91 9XXXXXXXX"></div>
+      <div class="form-group full"><label>Address</label><input type="text" id="o-address" placeholder="Full address"></div>
+      <div class="form-group"><label>Aadhaar Number</label><input type="text" id="o-aadhaar" placeholder="XXXX XXXX XXXX"></div>
+      <div class="form-group"><label>PAN Number</label><input type="text" id="o-pan" placeholder="ABCDE1234F"></div>
+      <div class="form-group"><label>Bank Account No.</label><input type="text" id="o-bank-acc" placeholder="For payments"></div>
+      <div class="form-group"><label>IFSC Code</label><input type="text" id="o-ifsc" placeholder="SBIN0001234"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="o-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.75rem;margin-top:0.75rem;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveOwner()">Save Owner</button>
+      <button class="btn btn-outline" onclick="closeModal('owner')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ASSIGN DRIVER MODAL -->
+<div class="modal-bg" id="modal-assign">
+  <div class="modal" style="max-width:420px;">
+    <button class="close" onclick="closeModal('assign')">×</button>
+    <h2>Assign Driver</h2>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:1.5rem;">Booking: <strong id="assign-booking-id"></strong></p>
+    <div class="form-group" style="margin-bottom:1rem;"><label>Select Driver</label>
+      <select id="assign-driver-select" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;"></select>
+    </div>
+    <div class="form-group" style="margin-bottom:1rem;"><label>Update Status</label>
+      <select id="assign-status-select" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;">
+        <option value="confirmed">Confirmed</option>
+        <option value="pending">Pending</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" style="width:100%;" onclick="confirmAssign()">Assign & Notify Customer</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// CONFIG
+let CONFIG = JSON.parse(localStorage.getItem('st_admin_config') || '{}');
+const ADMIN_CREDS = { user: 'admin', pass: localStorage.getItem('st_admin_pass') || 'sowmiya2024' };
+
+// In-memory data (replace with Supabase calls when connected)
+let DATA = {
+  bookings: JSON.parse(localStorage.getItem('st_bookings') || '[]'),
+  drivers: JSON.parse(localStorage.getItem('st_drivers') || '[]'),
+  cars: JSON.parse(localStorage.getItem('st_cars') || '[]'),
+  owners: JSON.parse(localStorage.getItem('st_owners') || '[]'),
+};
+
+let supabase = null;
+let assigningBookingId = null;
+
+// Load Supabase
+const sbScript = document.createElement('script');
+sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+document.head.appendChild(sbScript);
+sbScript.onload = () => {
+  if (CONFIG.sbUrl && CONFIG.sbKey) {
+    supabase = window.supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
+    loadAll();
+  }
+};
+
+// LOGIN
+function adminLogin() {
+  const u = document.getElementById('admin-user').value;
+  const p = document.getElementById('admin-pass').value;
+  if (u === ADMIN_CREDS.user && p === ADMIN_CREDS.pass) {
+    document.getElementById('login-screen').style.display = 'none';
+    loadAll();
+    document.getElementById('dashboard-date').textContent = new Date().toLocaleDateString('en-IN', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  } else { alert('Invalid credentials'); }
+}
+
+function adminLogout() {
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+// SECTION NAV
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'bookings') loadBookings();
+  if (name === 'drivers') loadDrivers();
+  if (name === 'cars') loadCars();
+  if (name === 'owners') loadOwners();
+}
+
+async function loadAll() {
+  await loadBookings();
+  await loadDrivers();
+  await loadCars();
+  await loadOwners();
+  updateDashboard();
+}
+
+// SAVE TO LOCALSTORAGE (fallback when no Supabase)
+function persist() {
+  localStorage.setItem('st_bookings', JSON.stringify(DATA.bookings));
+  localStorage.setItem('st_drivers', JSON.stringify(DATA.drivers));
+  localStorage.setItem('st_cars', JSON.stringify(DATA.cars));
+  localStorage.setItem('st_owners', JSON.stringify(DATA.owners));
+}
+
+// DASHBOARD
+function updateDashboard() {
+  document.getElementById('stat-total').textContent = DATA.bookings.length;
+  document.getElementById('stat-pending').textContent = DATA.bookings.filter(b => b.status === 'pending').length;
+  document.getElementById('stat-drivers').textContent = DATA.drivers.filter(d => d.status === 'active').length;
+  document.getElementById('stat-cars').textContent = DATA.cars.length;
+  document.getElementById('rep-revenue').textContent = (DATA.bookings.filter(b => b.status === 'completed').length * 850).toLocaleString('en-IN');
+  document.getElementById('rep-completed').textContent = DATA.bookings.filter(b => b.status === 'completed').length;
+  document.getElementById('rep-cancelled').textContent = DATA.bookings.filter(b => b.status === 'cancelled').length;
+  renderTable('dashboard-bookings-table', DATA.bookings.slice(-10).reverse(), true);
+}
+
+// BOOKINGS
+async function loadBookings() {
+  if (supabase) {
+    const { data } = await supabase.from('bookings').select('*').order('created_at', { ascending: false });
+    if (data) DATA.bookings = data;
+  }
+  renderTable('bookings-table', DATA.bookings, false);
+  updateDashboard();
+}
+
+function filterBookings(q) {
+  const rows = document.querySelectorAll('#bookings-table tr');
+  rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none'; });
+}
+
+function filterBookingsByStatus(status) {
+  const rows = document.querySelectorAll('#bookings-table tr');
+  rows.forEach(r => { r.style.display = (!status || r.textContent.toLowerCase().includes(status)) ? '' : 'none'; });
+}
+
+function renderTable(tbodyId, bookings, compact) {
+  const tb = document.getElementById(tbodyId);
+  if (!bookings.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-muted);">No bookings yet</td></tr>'; return; }
+  tb.innerHTML = bookings.map(b => {
+    const sc = b.status === 'confirmed' ? 'confirmed' : b.status === 'completed' ? 'completed' : b.status === 'cancelled' ? 'cancelled' : 'pending';
+    const driverCell = compact ? '' : `<td>${b.driver_name ? `<span style="color:var(--teal)">${b.driver_name}</span>` : `<div class="assign-row"><button class="btn btn-warning btn-sm" onclick="openAssign('${b.booking_id}')">Assign</button></div>`}</td>`;
+    return `<tr>
+      <td><strong>${b.booking_id}</strong></td>
+      <td>${b.customer_name}</td>
+      ${compact ? '' : `<td>${b.customer_phone}</td>`}
+      <td>${b.pickup_location} → ${b.drop_location}</td>
+      <td>${b.pickup_date} ${b.pickup_time}</td>
+      <td>${b.vehicle_type || b.trip_type}</td>
+      ${driverCell}
+      <td><span class="badge badge-${sc}">${(b.status||'pending').toUpperCase()}</span></td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-success btn-sm" onclick="updateStatus('${b.booking_id}','confirmed')">✓</button>
+          <button class="btn btn-danger btn-sm" onclick="updateStatus('${b.booking_id}','cancelled')">✕</button>
+          ${!compact ? `<button class="btn btn-outline btn-sm" onclick="markCompleted('${b.booking_id}')">Done</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function updateStatus(bookingId, status) {
+  const b = DATA.bookings.find(x => x.booking_id === bookingId);
+  if (!b) return;
+  b.status = status;
+  if (supabase) await supabase.from('bookings').update({ status }).eq('booking_id', bookingId);
+  persist();
+  const msg = status === 'confirmed'
+    ? `✅ *Booking Confirmed – Sowmiya Travels*\n\n🆔 ${bookingId}\nYour ride is confirmed! Our team will be in touch shortly.\n\n_Sowmiya Travels – Your Journey, Our Joy_ 🙏`
+    : `❌ *Booking Cancelled – Sowmiya Travels*\n\n🆔 ${bookingId}\nYour booking has been cancelled. Please contact us for rescheduling.\n\n_Sowmiya Travels_`;
+  if (b.customer_phone) await sendWhatsApp(b.customer_phone, msg);
+  loadBookings();
+  showToast(`Booking ${bookingId} marked as ${status} & customer notified on WhatsApp`, 'success');
+}
+
+async function markCompleted(bookingId) {
+  await updateStatus(bookingId, 'completed');
+}
+
+// ASSIGN DRIVER
+function openAssign(bookingId) {
+  assigningBookingId = bookingId;
+  document.getElementById('assign-booking-id').textContent = bookingId;
+  const sel = document.getElementById('assign-driver-select');
+  sel.innerHTML = DATA.drivers.map(d => `<option value="${d.id || d.name}">${d.name} | ${d.phone}</option>`).join('');
+  document.getElementById('modal-assign').classList.add('active');
+}
+
+async function confirmAssign() {
+  const driverVal = document.getElementById('assign-driver-select').value;
+  const status = document.getElementById('assign-status-select').value;
+  const driver = DATA.drivers.find(d => (d.id || d.name) === driverVal) || { name: driverVal, phone: '' };
+  const b = DATA.bookings.find(x => x.booking_id === assigningBookingId);
+  if (!b) return;
+  b.driver_name = driver.name;
+  b.driver_phone = driver.phone;
+  b.status = status;
+  if (supabase) await supabase.from('bookings').update({ driver_name: driver.name, driver_phone: driver.phone, status }).eq('booking_id', assigningBookingId);
+  persist();
+  const msg = `✅ *Driver Assigned – Sowmiya Travels*\n\n🆔 ${assigningBookingId}\n🚗 Driver: *${driver.name}*\n📱 Driver Phone: ${driver.phone}\n\nYour booking is confirmed. Have a safe journey! 🙏`;
+  if (b.customer_phone) await sendWhatsApp(b.customer_phone, msg);
+  closeModal('assign');
+  loadBookings();
+  showToast(`Driver assigned & customer notified`, 'success');
+}
+
+// DRIVERS
+async function loadDrivers() {
+  if (supabase) {
+    const { data } = await supabase.from('drivers').select('*');
+    if (data) DATA.drivers = data;
+  }
+  const tb = document.getElementById('drivers-table');
+  if (!DATA.drivers.length) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">No drivers added yet</td></tr>'; return; }
+  tb.innerHTML = DATA.drivers.map((d,i) => {
+    const car = DATA.cars.find(c => (c.driver_id === d.id) || (c.driver_name === d.name)) || {};
+    const owner = DATA.owners.find(o => o.id === d.owner_id) || {};
+    return `<tr>
+      <td><strong>${d.name}</strong></td>
+      <td>${d.phone}</td>
+      <td>${d.license || '–'}</td>
+      <td>${car.reg_number || '–'} ${car.model ? `(${car.model})` : ''}</td>
+      <td>${owner.name || '–'}</td>
+      <td><span class="badge badge-${d.status === 'active' ? 'active' : 'inactive'}">${(d.status||'active').toUpperCase()}</span></td>
+      <td style="display:flex;gap:4px;">
+        <button class="btn btn-outline btn-sm" onclick="editDriver(${i})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDriver(${i})">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openModal(type) {
+  if (type === 'car') populateOwnerSelect();
+  if (type === 'driver') populateCarSelect();
+  document.getElementById('modal-' + type).classList.add('active');
+}
+
+function closeModal(type) { document.getElementById('modal-' + type).classList.remove('active'); }
+
+function editDriver(i) {
+  const d = DATA.drivers[i];
+  document.getElementById('driver-modal-title').textContent = 'Edit Driver';
+  document.getElementById('driver-edit-id').value = i;
+  ['name','phone','license','address','aadhaar','notes','status'].forEach(f => {
+    const el = document.getElementById('d-' + f); if (el) el.value = d[f] || '';
+  });
+  document.getElementById('d-license-exp').value = d.license_exp || '';
+  populateCarSelect();
+  document.getElementById('d-car').value = d.car_id || '';
+  openModal('driver');
+}
+
+async function saveDriver() {
+  const idx = document.getElementById('driver-edit-id').value;
+  const driver = {
+    name: document.getElementById('d-name').value,
+    phone: document.getElementById('d-phone').value,
+    license: document.getElementById('d-license').value,
+    license_exp: document.getElementById('d-license-exp').value,
+    address: document.getElementById('d-address').value,
+    aadhaar: document.getElementById('d-aadhaar').value,
+    car_id: document.getElementById('d-car').value,
+    status: document.getElementById('d-status').value,
+    notes: document.getElementById('d-notes').value,
+    created_at: new Date().toISOString()
+  };
+  if (!driver.name || !driver.phone) { showToast('Name and phone are required', 'error'); return; }
+  if (idx !== '') { DATA.drivers[parseInt(idx)] = { ...DATA.drivers[parseInt(idx)], ...driver }; }
+  else { DATA.drivers.push(driver); }
+  if (supabase) {
+    if (idx !== '') await supabase.from('drivers').update(driver).eq('id', DATA.drivers[parseInt(idx)].id);
+    else await supabase.from('drivers').insert([driver]);
+  }
+  persist();
+  closeModal('driver');
+  document.getElementById('driver-edit-id').value = '';
+  document.getElementById('driver-modal-title').textContent = 'Add Driver';
+  loadDrivers();
+  showToast('Driver saved successfully', 'success');
+}
+
+async function deleteDriver(i) {
+  if (!confirm('Delete this driver?')) return;
+  const d = DATA.drivers.splice(i, 1)[0];
+  if (supabase && d.id) await supabase.from('drivers').delete().eq('id', d.id);
+  persist(); loadDrivers();
+}
+
+// CARS
+async function loadCars() {
+  if (supabase) {
+    const { data } = await supabase.from('cars').select('*');
+    if (data) DATA.cars = data;
+  }
+  const tb = document.getElementById('cars-table');
+  if (!DATA.cars.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">No cars added yet</td></tr>'; return; }
+  tb.innerHTML = DATA.cars.map((c,i) => {
+    const owner = DATA.owners.find(o => o.id === c.owner_id || o.name === c.owner_name) || {};
+    const driver = DATA.drivers.find(d => d.id === c.driver_id || d.name === c.driver_name) || {};
+    return `<tr>
+      <td><strong>${c.reg_number}</strong></td>
+      <td>${c.model}</td>
+      <td>${c.type}</td>
+      <td>${c.seats}</td>
+      <td>${owner.name || c.owner_name || '–'}</td>
+      <td>${driver.name || c.driver_name || '–'}</td>
+      <td><span class="badge badge-${c.status === 'active' ? 'active' : 'inactive'}">${(c.status||'active').toUpperCase()}</span></td>
+      <td style="display:flex;gap:4px;">
+        <button class="btn btn-outline btn-sm" onclick="editCar(${i})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCar(${i})">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function populateOwnerSelect() {
+  const sel = document.getElementById('c-owner');
+  sel.innerHTML = '<option value="">None</option>' + DATA.owners.map(o => `<option value="${o.id || o.name}">${o.name}</option>`).join('');
+  const dsel = document.getElementById('c-driver');
+  dsel.innerHTML = '<option value="">None</option>' + DATA.drivers.map(d => `<option value="${d.id || d.name}">${d.name}</option>`).join('');
+}
+
+function populateCarSelect() {
+  const sel = document.getElementById('d-car');
+  sel.innerHTML = '<option value="">None</option>' + DATA.cars.map(c => `<option value="${c.id || c.reg_number}">${c.reg_number} – ${c.model}</option>`).join('');
+}
+
+function editCar(i) {
+  const c = DATA.cars[i];
+  document.getElementById('car-modal-title').textContent = 'Edit Car';
+  document.getElementById('car-edit-id').value = i;
+  ['reg','model','seats','year','color','insurance','fc'].forEach(f => {
+    const el = document.getElementById('c-' + f); if (el && c[f] !== undefined) el.value = c[f] || '';
+  });
+  document.getElementById('c-type').value = c.type || 'Sedan';
+  document.getElementById('c-status').value = c.status || 'active';
+  document.getElementById('c-ac').value = c.ac || 'yes';
+  populateOwnerSelect();
+  document.getElementById('c-owner').value = c.owner_id || c.owner_name || '';
+  document.getElementById('c-driver').value = c.driver_id || c.driver_name || '';
+  openModal('car');
+}
+
+async function saveCar() {
+  const idx = document.getElementById('car-edit-id').value;
+  const ownerSel = document.getElementById('c-owner').value;
+  const driverSel = document.getElementById('c-driver').value;
+  const owner = DATA.owners.find(o => (o.id || o.name) === ownerSel) || {};
+  const driver = DATA.drivers.find(d => (d.id || d.name) === driverSel) || {};
+  const car = {
+    reg_number: document.getElementById('c-reg').value,
+    model: document.getElementById('c-model').value,
+    type: document.getElementById('c-type').value,
+    seats: document.getElementById('c-seats').value,
+    year: document.getElementById('c-year').value,
+    color: document.getElementById('c-color').value,
+    owner_id: ownerSel, owner_name: owner.name || '',
+    driver_id: driverSel, driver_name: driver.name || '',
+    insurance_exp: document.getElementById('c-insurance').value,
+    fc_exp: document.getElementById('c-fc').value,
+    status: document.getElementById('c-status').value,
+    ac: document.getElementById('c-ac').value,
+    created_at: new Date().toISOString()
+  };
+  if (!car.reg_number || !car.model) { showToast('Reg number and model are required', 'error'); return; }
+  if (idx !== '') { DATA.cars[parseInt(idx)] = { ...DATA.cars[parseInt(idx)], ...car }; }
+  else { DATA.cars.push(car); }
+  if (supabase) {
+    if (idx !== '') await supabase.from('cars').update(car).eq('id', DATA.cars[parseInt(idx)].id);
+    else await supabase.from('cars').insert([car]);
+  }
+  persist();
+  closeModal('car');
+  document.getElementById('car-edit-id').value = '';
+  document.getElementById('car-modal-title').textContent = 'Add Car';
+  loadCars(); updateDashboard();
+  showToast('Car saved successfully', 'success');
+}
+
+async function deleteCar(i) {
+  if (!confirm('Delete this car?')) return;
+  const c = DATA.cars.splice(i, 1)[0];
+  if (supabase && c.id) await supabase.from('cars').delete().eq('id', c.id);
+  persist(); loadCars();
+}
+
+// OWNERS
+async function loadOwners() {
+  if (supabase) {
+    const { data } = await supabase.from('owners').select('*');
+    if (data) DATA.owners = data;
+  }
+  const tb = document.getElementById('owners-table');
+  if (!DATA.owners.length) { tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">No owners added yet</td></tr>'; return; }
+  tb.innerHTML = DATA.owners.map((o,i) => {
+    const carCount = DATA.cars.filter(c => c.owner_id === o.id || c.owner_name === o.name).length;
+    return `<tr>
+      <td><strong>${o.name}</strong></td>
+      <td>${o.phone}</td>
+      <td>${o.address || '–'}</td>
+      <td>${carCount} car(s)</td>
+      <td><span class="badge badge-${o.status === 'active' ? 'active' : 'inactive'}">${(o.status||'active').toUpperCase()}</span></td>
+      <td style="display:flex;gap:4px;">
+        <button class="btn btn-outline btn-sm" onclick="editOwner(${i})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteOwner(${i})">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function editOwner(i) {
+  const o = DATA.owners[i];
+  document.getElementById('owner-modal-title').textContent = 'Edit Owner';
+  document.getElementById('owner-edit-id').value = i;
+  ['name','phone','address','aadhaar','pan','bank_acc','ifsc','status'].forEach(f => {
+    const key = f.replace('_','-');
+    const el = document.getElementById('o-' + key); if (el) el.value = o[f] || '';
+  });
+  openModal('owner');
+}
+
+async function saveOwner() {
+  const idx = document.getElementById('owner-edit-id').value;
+  const owner = {
+    name: document.getElementById('o-name').value,
+    phone: document.getElementById('o-phone').value,
+    address: document.getElementById('o-address').value,
+    aadhaar: document.getElementById('o-aadhaar').value,
+    pan: document.getElementById('o-pan').value,
+    bank_acc: document.getElementById('o-bank-acc').value,
+    ifsc: document.getElementById('o-ifsc').value,
+    status: document.getElementById('o-status').value,
+    created_at: new Date().toISOString()
+  };
+  if (!owner.name || !owner.phone) { showToast('Name and phone are required', 'error'); return; }
+  if (idx !== '') { DATA.owners[parseInt(idx)] = { ...DATA.owners[parseInt(idx)], ...owner }; }
+  else { DATA.owners.push(owner); }
+  if (supabase) {
+    if (idx !== '') await supabase.from('owners').update(owner).eq('id', DATA.owners[parseInt(idx)].id);
+    else await supabase.from('owners').insert([owner]);
+  }
+  persist();
+  closeModal('owner');
+  document.getElementById('owner-edit-id').value = '';
+  document.getElementById('owner-modal-title').textContent = 'Add Car Owner';
+  loadOwners();
+  showToast('Owner saved successfully', 'success');
+}
+
+async function deleteOwner(i) {
+  if (!confirm('Delete this owner?')) return;
+  const o = DATA.owners.splice(i, 1)[0];
+  if (supabase && o.id) await supabase.from('owners').delete().eq('id', o.id);
+  persist(); loadOwners();
+}
+
+// SETTINGS
+function saveConfig() {
+  CONFIG = {
+    sbUrl: document.getElementById('cfg-sb-url').value,
+    sbKey: document.getElementById('cfg-sb-key').value,
+    fonnteToken: document.getElementById('cfg-fonnte').value,
+    tgToken: document.getElementById('cfg-tg-token').value,
+    tgChat: document.getElementById('cfg-tg-chat').value
+  };
+  localStorage.setItem('st_admin_config', JSON.stringify(CONFIG));
+  if (CONFIG.sbUrl && CONFIG.sbKey && window.supabase) {
+    supabase = window.supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
+  }
+  showToast('Configuration saved!', 'success');
+}
+
+function changePassword() {
+  const old = document.getElementById('old-pass').value;
+  const n = document.getElementById('new-pass').value;
+  const c = document.getElementById('confirm-pass').value;
+  if (old !== ADMIN_CREDS.pass) { showToast('Current password is wrong', 'error'); return; }
+  if (n !== c) { showToast('Passwords do not match', 'error'); return; }
+  localStorage.setItem('st_admin_pass', n);
+  ADMIN_CREDS.pass = n;
+  showToast('Password updated!', 'success');
+}
+
+// WHATSAPP
+async function sendWhatsApp(phone, message) {
+  const token = CONFIG.fonnteToken;
+  if (!token) return;
+  const cleanPhone = phone.replace(/[\s\-\+]/g, '');
+  try {
+    await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: cleanPhone, message, countryCode: '91' })
+    });
+  } catch(e) { console.log('WhatsApp send failed', e); }
+}
+
+// TOAST
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// Load saved config into settings
+window.addEventListener('load', () => {
+  if (CONFIG.sbUrl) document.getElementById('cfg-sb-url').value = CONFIG.sbUrl;
+  if (CONFIG.sbKey) document.getElementById('cfg-sb-key').value = CONFIG.sbKey;
+  if (CONFIG.fonnteToken) document.getElementById('cfg-fonnte').value = CONFIG.fonnteToken;
+  if (CONFIG.tgToken) document.getElementById('cfg-tg-token').value = CONFIG.tgToken;
+  if (CONFIG.tgChat) document.getElementById('cfg-tg-chat').value = CONFIG.tgChat;
+});
+</script>
+</body>
+</html>
