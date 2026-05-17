@@ -898,28 +898,25 @@ function changePassword() {
   showToast('Password updated!', 'success');
 }
 
-// WHATSAPP
+// WHATSAPP – calls /api/send-whatsapp serverless proxy (no CORS issues)
 async function sendWhatsApp(phone, message) {
-  const token = CONFIG.fonnteToken;
-  if (!token) return;
-  // Normalize phone number
-  let clean = phone.replace(/[\s\-\(\)]/g, '');
-  if (clean.startsWith('+')) clean = clean.slice(1);
-  if (clean.startsWith('0')) clean = '91' + clean.slice(1);
-  if (!clean.startsWith('91') && clean.length === 10) clean = '91' + clean;
   try {
-    const form = new FormData();
-    form.append('target', clean);
-    form.append('message', message);
-    form.append('countryCode', '91');
-    const res = await fetch('https://api.fonnte.com/send', {
+    const res = await fetch('/api/send-whatsapp', {
       method: 'POST',
-      headers: { 'Authorization': token },
-      body: form
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: phone, message }),
     });
     const data = await res.json();
-    console.log('Fonnte response:', data);
-  } catch(e) { console.error('WhatsApp send failed', e); }
+    if (!res.ok || data.status === false) {
+      console.error('[Admin sendWhatsApp] Error:', data.reason || data);
+      return { ok: false, error: data.reason || `HTTP ${res.status}` };
+    }
+    console.log('[Admin sendWhatsApp] Success:', data);
+    return { ok: true };
+  } catch(e) {
+    console.error('[Admin sendWhatsApp] Network error:', e);
+    return { ok: false, error: e.message };
+  }
 }
 
 // TOAST
