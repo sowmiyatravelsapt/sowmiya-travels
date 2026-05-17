@@ -6,6 +6,7 @@
     }
   },
   "rewrites": [
+    { "source": "/api/send-whatsapp", "destination": "/api/send-whatsapp.js" },
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/", "destination": "/index.html" }
   ]
