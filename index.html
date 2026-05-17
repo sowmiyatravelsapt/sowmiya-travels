@@ -711,11 +711,11 @@
 <script>
 // CONFIG
 const CONFIG = {
-  SUPABASE_URL: 'YOUR_SUPABASE_URL',
-  SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
-  FONNTE_TOKEN: 'YOUR_FONNTE_TOKEN',
-  TELEGRAM_BOT_TOKEN: 'YOUR_TELEGRAM_BOT_TOKEN',
-  TELEGRAM_CHAT_ID: 'YOUR_TELEGRAM_CHAT_ID',
+  SUPABASE_URL: 'https://cmivqaucimkglcloyjrm.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_VxgbMTVjkCP3JOBdj2AkIA_z5l6lWgo',
+  FONNTE_TOKEN: '2yXFqhMYBSWzfaewzTtR4rqNNCTWLfNhJacjp8e',
+  TELEGRAM_BOT_TOKEN: '8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA',
+  TELEGRAM_CHAT_ID: '8252090421',
 };
 Object.assign(CONFIG, JSON.parse(localStorage.getItem('st_admin_config') || '{}').sbUrl ? {
   SUPABASE_URL: JSON.parse(localStorage.getItem('st_admin_config')).sbUrl,
@@ -734,7 +734,7 @@ const sbScript = document.createElement('script');
 sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
 document.head.appendChild(sbScript);
 sbScript.onload = () => {
-  if (CONFIG.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+  if (CONFIG.SUPABASE_URL !== 'PLACEHOLDER') {
     supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
   }
   restoreSession();
@@ -832,7 +832,7 @@ _Your Journey, Our Joy 🙏_`);
 }
 
 async function notifyTelegram(b) {
-  if (!CONFIG.TELEGRAM_BOT_TOKEN || CONFIG.TELEGRAM_BOT_TOKEN === 'YOUR_TELEGRAM_BOT_TOKEN') return;
+  if (!CONFIG.TELEGRAM_BOT_TOKEN || CONFIG.TELEGRAM_BOT_TOKEN === 'PLACEHOLDER') return;
   const msg = `🚖 *New Booking – Sowmiya Travels*
 
 🆔 ${b.booking_id}
@@ -844,7 +844,7 @@ async function notifyTelegram(b) {
 }
 
 async function sendWhatsApp(phone, message) {
-  if (!CONFIG.FONNTE_TOKEN || CONFIG.FONNTE_TOKEN === 'YOUR_FONNTE_TOKEN') return;
+  if (!CONFIG.FONNTE_TOKEN || CONFIG.FONNTE_TOKEN === 'PLACEHOLDER') return;
   const clean = phone.replace(/[\s\-\+]/g, '');
   try { await fetch('https://api.fonnte.com/send', { method:'POST', headers:{'Authorization':CONFIG.FONNTE_TOKEN,'Content-Type':'application/json'}, body:JSON.stringify({ target:clean, message, countryCode:'91' }) }); } catch(e) {}
 }
