@@ -1,12 +1,6 @@
 {
   "version": 2,
-  "functions": {
-    "api/send-whatsapp.js": {
-      "runtime": "nodejs24.x"
-    }
-  },
   "rewrites": [
-    { "source": "/api/send-whatsapp", "destination": "/api/send-whatsapp.js" },
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/", "destination": "/index.html" }
   ]
