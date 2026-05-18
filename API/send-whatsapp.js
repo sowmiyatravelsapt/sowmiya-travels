@@ -1,106 +1,100 @@
-// api/send-whatsapp.js – Sowmiya Travels WhatsApp Proxy
-// FIX: Robust body parsing for Vercel, token fallback from body, better error messages
+// api/send-whatsapp.js – Sowmiya Travels WhatsApp Proxy via Fonnte
 const https = require('https');
 const querystring = require('querystring');
+
+// ── Fonnte token (hardcoded + env var fallback) ──────────────────────────────
+const FONNTE_TOKEN = process.env.FONNTE_TOKEN || 'QP4Hop3z3fEdzTv1sQiK';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ status: false, reason: 'Method not allowed' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ status: false, reason: 'Method not allowed' });
+  }
 
-  // FIX 1: Robust body parsing — Vercel may pass raw string, object, or nothing
+  // ── Body parsing ─────────────────────────────────────────────────────────────
   let body = req.body;
-  if (typeof body === 'string') {
-    try { body = JSON.parse(body); } catch(e) { body = {}; }
-  } else if (!body || typeof body !== 'object') {
-    // Read raw stream as fallback (Vercel Edge / misconfigured)
-    try {
-      body = await new Promise((resolve) => {
-        let raw = '';
-        req.on('data', chunk => { raw += chunk; });
-        req.on('end', () => {
-          try { resolve(JSON.parse(raw || '{}')); }
-          catch(e) { resolve({}); }
-        });
-        req.on('error', () => resolve({}));
+  if (!body || Object.keys(body || {}).length === 0) {
+    body = await new Promise((resolve) => {
+      let raw = '';
+      req.on('data', chunk => { raw += chunk.toString(); });
+      req.on('end', () => {
+        try { resolve(JSON.parse(raw || '{}')); }
+        catch (e) { resolve({}); }
       });
-    } catch(e) { body = {}; }
+      req.on('error', () => resolve({}));
+    });
+  } else if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch (e) { body = {}; }
   }
 
-  const { target, message, token: bodyToken } = body;
+  const { target, message } = body;
   if (!target || !message) {
-    return res.status(400).json({ status: false, reason: 'Missing target or message' });
-  }
-
-  // FIX 2: Accept token from env var OR from request body (fallback for when env var is not set)
-  const token = process.env.FONNTE_TOKEN || bodyToken;
-  if (!token) {
-    return res.status(500).json({
+    return res.status(400).json({
       status: false,
-      reason: 'FONNTE_TOKEN not configured. Set it in Vercel → Project → Settings → Environment Variables as FONNTE_TOKEN'
+      reason: 'Missing: ' + (!target ? 'target ' : '') + (!message ? 'message' : '')
     });
   }
 
-  // FIX 3: Normalize Indian phone number — strip ALL non-digits including +91 prefix duplicates
-  let clean = String(target).replace(/[^\d]/g, ''); // strip everything except digits
-  if (clean.startsWith('0')) clean = '91' + clean.slice(1);
-  if (clean.startsWith('91') && clean.length === 12) { /* already correct */ }
-  else if (clean.length === 10) clean = '91' + clean;
-  // If already 91XXXXXXXXXX (12 digits), leave as-is
+  // ── Normalize Indian phone number ─────────────────────────────────────────
+  let phone = String(target).replace(/[^\d]/g, '');
+  if (phone.startsWith('0'))   phone = '91' + phone.slice(1);
+  if (phone.length === 10)     phone = '91' + phone;
+  if (phone.startsWith('091')) phone = phone.slice(1);
 
-  console.log('[send-whatsapp] Sending to:', clean, '| Message length:', message.length);
+  console.log('[WA] Sending to:', phone, '| Msg:', message.slice(0, 60));
 
-  const postData = querystring.stringify({ target: clean, message, countryCode: '91' });
+  // ── Call Fonnte ───────────────────────────────────────────────────────────
+  const postData = querystring.stringify({
+    target: phone,
+    message: message,
+    countryCode: '91',
+    delay: '2',
+    schedule: '0',
+  });
 
   try {
     const result = await new Promise((resolve, reject) => {
-      const options = {
+      const req2 = https.request({
         hostname: 'api.fonnte.com',
         path: '/send',
         method: 'POST',
         headers: {
-          'Authorization': token,
+          'Authorization': FONNTE_TOKEN,
           'Content-Type': 'application/x-www-form-urlencoded',
           'Content-Length': Buffer.byteLength(postData),
         },
-      };
-      const request = https.request(options, (response) => {
+      }, (resp) => {
         let data = '';
-        response.on('data', chunk => { data += chunk; });
-        response.on('end', () => {
-          console.log('[send-whatsapp] Fonnte raw response:', data.slice(0, 300));
-          try { resolve(JSON.parse(data)); }
-          catch(e) { resolve({ status: false, reason: 'Fonnte non-JSON response: ' + data.slice(0, 100) }); }
+        resp.on('data', c => { data += c; });
+        resp.on('end', () => {
+          console.log('[WA] Fonnte response:', data.slice(0, 300));
+          try { resolve({ parsed: JSON.parse(data), raw: data }); }
+          catch (e) { resolve({ parsed: null, raw: data }); }
         });
       });
-      request.on('error', (err) => {
-        console.error('[send-whatsapp] HTTPS error:', err.message);
-        reject(err);
-      });
-      request.setTimeout(15000, () => {
-        request.destroy();
-        reject(new Error('Fonnte API timeout after 15s'));
-      });
-      request.write(postData);
-      request.end();
+      req2.setTimeout(20000, () => { req2.destroy(); reject(new Error('Fonnte timeout')); });
+      req2.on('error', reject);
+      req2.write(postData);
+      req2.end();
     });
 
-    console.log('[send-whatsapp] Fonnte result:', JSON.stringify(result));
+    const { parsed, raw } = result;
 
-    // FIX 4: Fonnte returns status as boolean false OR string "false"
-    if (result.status === false || result.status === 'false' || result.status === 0) {
-      return res.status(400).json({
-        status: false,
-        reason: result.reason || result.message || result.detail || 'Fonnte rejected the request'
-      });
+    if (!parsed) {
+      return res.status(401).json({ status: false, reason: 'Fonnte non-JSON reply (bad token?): ' + raw.slice(0, 100) });
     }
-    return res.status(200).json({ status: true, data: result });
+    if (parsed.status === false || parsed.status === 'false' || parsed.status === 0) {
+      return res.status(400).json({ status: false, reason: parsed.reason || parsed.message || 'Fonnte rejected' });
+    }
+
+    return res.status(200).json({ status: true, data: parsed });
 
   } catch (err) {
-    console.error('[send-whatsapp] Error:', err.message);
-    return res.status(500).json({ status: false, reason: 'Proxy error: ' + err.message });
+    console.error('[WA] Error:', err.message);
+    return res.status(500).json({ status: false, reason: err.message });
   }
 };
