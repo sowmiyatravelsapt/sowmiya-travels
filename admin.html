@@ -310,7 +310,7 @@
       <div class="table-card" style="padding:1.5rem;">
         <h3 style="color:var(--navy);margin-bottom:1.25rem;font-size:1rem;">API Configuration</h3>
         <div class="form-group" style="margin-bottom:0.75rem;"><label>Supabase URL</label><input type="text" id="cfg-sb-url" placeholder="https://xxx.supabase.co"></div>
-        <div class="form-group" style="margin-bottom:0.75rem;"><label>Supabase Anon Key</label><input type="password" id="cfg-sb-key" placeholder="eyJhbGc…"></div>
+        <div class="form-group" style="margin-bottom:0.75rem;"><label>Supabase Anon Key</label><input type="password" id="cfg-sb-key" placeholder="sb_publishable_…"></div>
         <div class="form-group" style="margin-bottom:0.75rem;"><label>Fonnte Token</label><input type="password" id="cfg-fonnte" placeholder="Your Fonnte API token"></div>
         <div class="form-group" style="margin-bottom:0.75rem;"><label>Telegram Bot Token</label><input type="password" id="cfg-tg-token" placeholder="Bot token from @BotFather"></div>
         <div class="form-group" style="margin-bottom:1rem;"><label>Telegram Chat ID</label><input type="text" id="cfg-tg-chat" placeholder="-100xxxxxxxxx"></div>
@@ -448,46 +448,76 @@
 
 <script>
 // CONFIG
-const DEFAULTS = { sbUrl:'https://cmivqaucimkglcloyjrm.supabase.co', sbKey:'sb_publishable_VxgbMTVjkCP3JOBdj2AkIA_z5l6lWgo', fonnteToken:'QP4Hop3z3fEdzTv1sQiK', tgToken:'8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA', tgChat:'8252090421' };
+const DEFAULTS = {
+  sbUrl: 'https://cmivqaucimkglcloyjrm.supabase.co',
+  sbKey: 'sb_publishable_VxgbMTVjkCP3JOBdj2AkIA_z5l6lWgo',
+  fonnteToken: 'QP4Hop3z3fEdzTv1sQiK',
+  tgToken: '8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA',
+  tgChat: '8252090421'
+};
 let CONFIG = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('st_admin_config') || '{}'));
 const ADMIN_CREDS = { user: 'admin', pass: localStorage.getItem('st_admin_pass') || 'sowmiya2024' };
 
 // In-memory data (replace with Supabase calls when connected)
 let DATA = {
   bookings: JSON.parse(localStorage.getItem('st_bookings') || '[]'),
-  drivers: JSON.parse(localStorage.getItem('st_drivers') || '[]'),
-  cars: JSON.parse(localStorage.getItem('st_cars') || '[]'),
-  owners: JSON.parse(localStorage.getItem('st_owners') || '[]'),
+  drivers:  JSON.parse(localStorage.getItem('st_drivers')  || '[]'),
+  cars:     JSON.parse(localStorage.getItem('st_cars')     || '[]'),
+  owners:   JSON.parse(localStorage.getItem('st_owners')   || '[]'),
 };
 
 let supabase = null;
 let assigningBookingId = null;
 
-// Load Supabase
+// ── FIX 1: Supabase init as function so it can be called after login too ──────
+function initSupabase() {
+  if (!window.supabase) return;
+  if (supabase) return;
+  if (!CONFIG.sbUrl || !CONFIG.sbKey) return;
+  try {
+    supabase = window.supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
+    console.log('[SB] Admin Supabase ready:', CONFIG.sbUrl);
+  } catch(e) { console.error('[SB] Init failed:', e.message); }
+}
+
+// Load Supabase JS — on load, restore login session if previously logged in
 const sbScript = document.createElement('script');
 sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-document.head.appendChild(sbScript);
 sbScript.onload = () => {
-  if (CONFIG.sbUrl && CONFIG.sbKey) {
-    supabase = window.supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
+  initSupabase();
+  // ── FIX 2: Restore admin login session across page refreshes ─────────────
+  if (localStorage.getItem('st_admin_logged') === '1') {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard-date').textContent =
+      new Date().toLocaleDateString('en-IN', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
     loadAll();
   }
 };
+sbScript.onerror = () => console.error('[SB] Failed to load supabase-js CDN');
+document.head.appendChild(sbScript);
 
-// LOGIN
+// ── FIX 3: LOGIN — persist session to localStorage ────────────────────────────
 function adminLogin() {
-  const u = document.getElementById('admin-user').value;
-  const p = document.getElementById('admin-pass').value;
+  const u = document.getElementById('admin-user').value.trim();
+  const p = document.getElementById('admin-pass').value.trim();
   if (u === ADMIN_CREDS.user && p === ADMIN_CREDS.pass) {
+    localStorage.setItem('st_admin_logged', '1');
     document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard-date').textContent =
+      new Date().toLocaleDateString('en-IN', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    initSupabase();
     loadAll();
-    document.getElementById('dashboard-date').textContent = new Date().toLocaleDateString('en-IN', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  } else { alert('Invalid credentials'); }
+  } else {
+    alert('Invalid credentials');
+  }
 }
 
+// ── FIX 4: LOGOUT — clear session flag ───────────────────────────────────────
 function adminLogout() {
+  localStorage.removeItem('st_admin_logged');
   document.getElementById('login-screen').style.display = 'flex';
 }
+
 
 // SECTION NAV
 function showSection(name) {
@@ -874,17 +904,26 @@ async function deleteOwner(i) {
 // SETTINGS
 function saveConfig() {
   CONFIG = {
-    sbUrl: document.getElementById('cfg-sb-url').value,
-    sbKey: document.getElementById('cfg-sb-key').value,
-    fonnteToken: document.getElementById('cfg-fonnte').value,
-    tgToken: document.getElementById('cfg-tg-token').value,
-    tgChat: document.getElementById('cfg-tg-chat').value
+    sbUrl:        document.getElementById('cfg-sb-url').value.trim(),
+    sbKey:        document.getElementById('cfg-sb-key').value.trim(),
+    fonnteToken:  document.getElementById('cfg-fonnte').value.trim(),
+    tgToken:      document.getElementById('cfg-tg-token').value.trim(),
+    tgChat:       document.getElementById('cfg-tg-chat').value.trim()
   };
   localStorage.setItem('st_admin_config', JSON.stringify(CONFIG));
+  // FIX: re-init Supabase with new keys immediately, reset old client
+  supabase = null;
   if (CONFIG.sbUrl && CONFIG.sbKey && window.supabase) {
-    supabase = window.supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
+    try {
+      supabase = window.supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
+      showToast('Configuration saved! Supabase connected ✓', 'success');
+      loadAll(); // reload data with new connection
+    } catch(e) {
+      showToast('Config saved but Supabase error: ' + e.message, 'error');
+    }
+  } else {
+    showToast('Configuration saved!', 'success');
   }
-  showToast('Configuration saved!', 'success');
 }
 
 function changePassword() {
