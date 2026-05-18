@@ -710,35 +710,34 @@
 
 <script>
 // CONFIG
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const _savedCfg = (() => { try { return JSON.parse(localStorage.getItem('st_admin_config') || '{}'); } catch(e) { return {}; } })();
 const CONFIG = {
-  SUPABASE_URL: 'https://cmivqaucimkglcloyjrm.supabase.co',
-  SUPABASE_ANON_KEY: 'sb_publishable_VxgbMTVjkCP3JOBdj2AkIA_z5l6lWgo',
-  FONNTE_TOKEN: 'QP4Hop3z3fEdzTv1sQiK',
-  TELEGRAM_BOT_TOKEN: '8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA',
-  TELEGRAM_CHAT_ID: '8252090421',
+  SUPABASE_URL:       _savedCfg.sbUrl        || 'https://cmivqaucimkglcloyjrm.supabase.co',
+  SUPABASE_ANON_KEY:  _savedCfg.sbKey        || 'sb_publishable_VxgbMTVjkCP3JOBdj2AkIA_z5l6lWgo',
+  FONNTE_TOKEN:       _savedCfg.fonnteToken  || 'QP4Hop3z3fEdzTv1sQiK',
+  TELEGRAM_BOT_TOKEN: _savedCfg.tgToken      || '8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA',
+  TELEGRAM_CHAT_ID:   _savedCfg.tgChat       || '8252090421',
 };
-Object.assign(CONFIG, JSON.parse(localStorage.getItem('st_admin_config') || '{}').sbUrl ? {
-  SUPABASE_URL: JSON.parse(localStorage.getItem('st_admin_config')).sbUrl,
-  SUPABASE_ANON_KEY: JSON.parse(localStorage.getItem('st_admin_config')).sbKey,
-  FONNTE_TOKEN: JSON.parse(localStorage.getItem('st_admin_config')).fonnteToken,
-  TELEGRAM_BOT_TOKEN: JSON.parse(localStorage.getItem('st_admin_config')).tgToken,
-  TELEGRAM_CHAT_ID: JSON.parse(localStorage.getItem('st_admin_config')).tgChat,
-} : {});
 
 let currentTab = 'oneway', selectedCar = 'Sedan';
 let currentUser = null, pendingPhone = '', generatedOTP = '';
 let supabase = null;
 
-// Load Supabase
+// ── FIX: Supabase reliable init ───────────────────────────────────────────────
+function initSupabase() {
+  if (!window.supabase) return;
+  if (supabase) return;
+  try {
+    supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    console.log('[SB] Supabase ready');
+  } catch(e) { console.error('[SB] Init failed:', e.message); }
+}
 const sbScript = document.createElement('script');
 sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+sbScript.onload = () => { initSupabase(); restoreSession(); };
+sbScript.onerror = () => console.error('[SB] CDN load failed');
 document.head.appendChild(sbScript);
-sbScript.onload = () => {
-  if (CONFIG.SUPABASE_URL !== 'PLACEHOLDER') {
-    supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-  }
-  restoreSession();
-};
 
 // ── CANVAS ROAD ANIMATION ──
 (function() {
@@ -812,7 +811,19 @@ async function submitBooking() {
   const stored = JSON.parse(localStorage.getItem('st_bookings') || '[]');
   stored.push(booking);
   localStorage.setItem('st_bookings', JSON.stringify(stored));
-  if (supabase) { try { await supabase.from('bookings').insert([booking]); } catch(e) {} }
+  // FIX: retry Supabase init if it wasn't ready yet when page loaded
+  if (!supabase) initSupabase();
+  if (supabase) {
+    const { error: sbErr } = await supabase.from('bookings').insert([booking]);
+    if (sbErr) {
+      console.error('[SB] Booking insert error:', sbErr.message, sbErr.code);
+      showToast('⚠️ Database save failed: ' + sbErr.message, 'error');
+    } else {
+      console.log('[SB] Booking saved to Supabase:', bookingId);
+    }
+  } else {
+    console.warn('[SB] Supabase not connected – booking saved to localStorage only');
+  }
   await notifyTelegram(booking);
   const waResult = await sendWhatsApp(phone, `✅ *Booking Confirmed – Sowmiya Travels*
 
