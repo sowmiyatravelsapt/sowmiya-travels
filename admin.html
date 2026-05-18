@@ -466,17 +466,19 @@ let DATA = {
   owners:   JSON.parse(localStorage.getItem('st_owners')   || '[]'),
 };
 
-let supabase = null;
+let _sbClient = null;
 let assigningBookingId = null;
 
 // ── FIX 1: Supabase init as function so it can be called after login too ──────
 function initSupabase() {
-  if (!window.supabase) return;
-  if (supabase) return;
+  if (typeof window.supabase === 'undefined') { console.warn('[SB] supabase-js not loaded'); return; }
+  if (_sbClient) return;
   if (!CONFIG.sbUrl || !CONFIG.sbKey) return;
   try {
-    supabase = window.supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
-    console.log('[SB] Admin Supabase ready:', CONFIG.sbUrl);
+    const lib = window.supabase;
+    if (typeof lib.createClient !== 'function') { console.error('[SB] createClient missing'); return; }
+    _sbClient = lib.createClient(CONFIG.sbUrl, CONFIG.sbKey);
+    console.log('[SB] ✅ Admin Supabase ready:', CONFIG.sbUrl);
   } catch(e) { console.error('[SB] Init failed:', e.message); }
 }
 
@@ -561,8 +563,8 @@ function updateDashboard() {
 
 // BOOKINGS
 async function loadBookings() {
-  if (supabase) {
-    const { data } = await supabase.from('bookings').select('*').order('created_at', { ascending: false });
+  if (_sbClient) {
+    const { data } = await _sbClient.from('bookings').select('*').order('created_at', { ascending: false });
     if (data) DATA.bookings = data;
   }
   renderTable('bookings-table', DATA.bookings, false);
@@ -609,7 +611,7 @@ async function updateStatus(bookingId, status) {
   const b = DATA.bookings.find(x => x.booking_id === bookingId);
   if (!b) return;
   b.status = status;
-  if (supabase) await supabase.from('bookings').update({ status }).eq('booking_id', bookingId);
+  if (_sbClient) await _sbClient.from('bookings').update({ status }).eq('booking_id', bookingId);
   persist();
   const msg = status === 'confirmed'
     ? `✅ *Booking Confirmed – Sowmiya Travels*\n\n🆔 ${bookingId}\nYour ride is confirmed! Our team will be in touch shortly.\n\n_Sowmiya Travels – Your Journey, Our Joy_ 🙏`
@@ -641,7 +643,7 @@ async function confirmAssign() {
   b.driver_name = driver.name;
   b.driver_phone = driver.phone;
   b.status = status;
-  if (supabase) await supabase.from('bookings').update({ driver_name: driver.name, driver_phone: driver.phone, status }).eq('booking_id', assigningBookingId);
+  if (_sbClient) await _sbClient.from('bookings').update({ driver_name: driver.name, driver_phone: driver.phone, status }).eq('booking_id', assigningBookingId);
   persist();
   const msg = `✅ *Driver Assigned – Sowmiya Travels*\n\n🆔 ${assigningBookingId}\n🚗 Driver: *${driver.name}*\n📱 Driver Phone: ${driver.phone}\n\nYour booking is confirmed. Have a safe journey! 🙏`;
   if (b.customer_phone) await sendWhatsApp(b.customer_phone, msg);
@@ -652,8 +654,8 @@ async function confirmAssign() {
 
 // DRIVERS
 async function loadDrivers() {
-  if (supabase) {
-    const { data } = await supabase.from('drivers').select('*');
+  if (_sbClient) {
+    const { data } = await _sbClient.from('drivers').select('*');
     if (data) DATA.drivers = data;
   }
   const tb = document.getElementById('drivers-table');
@@ -714,9 +716,9 @@ async function saveDriver() {
   if (!driver.name || !driver.phone) { showToast('Name and phone are required', 'error'); return; }
   if (idx !== '') { DATA.drivers[parseInt(idx)] = { ...DATA.drivers[parseInt(idx)], ...driver }; }
   else { DATA.drivers.push(driver); }
-  if (supabase) {
-    if (idx !== '') await supabase.from('drivers').update(driver).eq('id', DATA.drivers[parseInt(idx)].id);
-    else await supabase.from('drivers').insert([driver]);
+  if (_sbClient) {
+    if (idx !== '') await _sbClient.from('drivers').update(driver).eq('id', DATA.drivers[parseInt(idx)].id);
+    else await _sbClient.from('drivers').insert([driver]);
   }
   persist();
   closeModal('driver');
@@ -729,14 +731,14 @@ async function saveDriver() {
 async function deleteDriver(i) {
   if (!confirm('Delete this driver?')) return;
   const d = DATA.drivers.splice(i, 1)[0];
-  if (supabase && d.id) await supabase.from('drivers').delete().eq('id', d.id);
+  if (_sbClient && d.id) await _sbClient.from('drivers').delete().eq('id', d.id);
   persist(); loadDrivers();
 }
 
 // CARS
 async function loadCars() {
-  if (supabase) {
-    const { data } = await supabase.from('cars').select('*');
+  if (_sbClient) {
+    const { data } = await _sbClient.from('cars').select('*');
     if (data) DATA.cars = data;
   }
   const tb = document.getElementById('cars-table');
@@ -812,9 +814,9 @@ async function saveCar() {
   if (!car.reg_number || !car.model) { showToast('Reg number and model are required', 'error'); return; }
   if (idx !== '') { DATA.cars[parseInt(idx)] = { ...DATA.cars[parseInt(idx)], ...car }; }
   else { DATA.cars.push(car); }
-  if (supabase) {
-    if (idx !== '') await supabase.from('cars').update(car).eq('id', DATA.cars[parseInt(idx)].id);
-    else await supabase.from('cars').insert([car]);
+  if (_sbClient) {
+    if (idx !== '') await _sbClient.from('cars').update(car).eq('id', DATA.cars[parseInt(idx)].id);
+    else await _sbClient.from('cars').insert([car]);
   }
   persist();
   closeModal('car');
@@ -827,14 +829,14 @@ async function saveCar() {
 async function deleteCar(i) {
   if (!confirm('Delete this car?')) return;
   const c = DATA.cars.splice(i, 1)[0];
-  if (supabase && c.id) await supabase.from('cars').delete().eq('id', c.id);
+  if (_sbClient && c.id) await _sbClient.from('cars').delete().eq('id', c.id);
   persist(); loadCars();
 }
 
 // OWNERS
 async function loadOwners() {
-  if (supabase) {
-    const { data } = await supabase.from('owners').select('*');
+  if (_sbClient) {
+    const { data } = await _sbClient.from('owners').select('*');
     if (data) DATA.owners = data;
   }
   const tb = document.getElementById('owners-table');
@@ -882,9 +884,9 @@ async function saveOwner() {
   if (!owner.name || !owner.phone) { showToast('Name and phone are required', 'error'); return; }
   if (idx !== '') { DATA.owners[parseInt(idx)] = { ...DATA.owners[parseInt(idx)], ...owner }; }
   else { DATA.owners.push(owner); }
-  if (supabase) {
-    if (idx !== '') await supabase.from('owners').update(owner).eq('id', DATA.owners[parseInt(idx)].id);
-    else await supabase.from('owners').insert([owner]);
+  if (_sbClient) {
+    if (idx !== '') await _sbClient.from('owners').update(owner).eq('id', DATA.owners[parseInt(idx)].id);
+    else await _sbClient.from('owners').insert([owner]);
   }
   persist();
   closeModal('owner');
@@ -897,7 +899,7 @@ async function saveOwner() {
 async function deleteOwner(i) {
   if (!confirm('Delete this owner?')) return;
   const o = DATA.owners.splice(i, 1)[0];
-  if (supabase && o.id) await supabase.from('owners').delete().eq('id', o.id);
+  if (_sbClient && o.id) await _sbClient.from('owners').delete().eq('id', o.id);
   persist(); loadOwners();
 }
 
@@ -912,10 +914,10 @@ function saveConfig() {
   };
   localStorage.setItem('st_admin_config', JSON.stringify(CONFIG));
   // FIX: re-init Supabase with new keys immediately, reset old client
-  supabase = null;
+  _sbClient = null;
   if (CONFIG.sbUrl && CONFIG.sbKey && window.supabase) {
     try {
-      supabase = window.supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
+      _sbClient = window.supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
       showToast('Configuration saved! Supabase connected ✓', 'success');
       loadAll(); // reload data with new connection
     } catch(e) {
