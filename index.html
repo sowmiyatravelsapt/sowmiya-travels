@@ -722,15 +722,18 @@ const CONFIG = {
 
 let currentTab = 'oneway', selectedCar = 'Sedan';
 let currentUser = null, pendingPhone = '', generatedOTP = '';
-let supabase = null;
+let _sbClient = null; // renamed to avoid window.supabase namespace collision
 
 // ── FIX: Supabase reliable init ───────────────────────────────────────────────
 function initSupabase() {
-  if (!window.supabase) return;
-  if (supabase) return;
+  // Use _sbClient to avoid overwriting window.supabase (the library namespace)
+  if (typeof window.supabase === 'undefined') { console.warn('[SB] supabase-js not loaded yet'); return; }
+  if (_sbClient) return; // already initialised
   try {
-    supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-    console.log('[SB] Supabase ready');
+    const lib = window.supabase; // capture library BEFORE any variable shadowing
+    if (typeof lib.createClient !== 'function') { console.error('[SB] createClient not found on window.supabase'); return; }
+    _sbClient = lib.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    console.log('[SB] ✅ Supabase client ready:', CONFIG.SUPABASE_URL);
   } catch(e) { console.error('[SB] Init failed:', e.message); }
 }
 const sbScript = document.createElement('script');
@@ -812,9 +815,9 @@ async function submitBooking() {
   stored.push(booking);
   localStorage.setItem('st_bookings', JSON.stringify(stored));
   // FIX: retry Supabase init if it wasn't ready yet when page loaded
-  if (!supabase) initSupabase();
-  if (supabase) {
-    const { error: sbErr } = await supabase.from('bookings').insert([booking]);
+  if (!_sbClient) initSupabase();
+  if (_sbClient) {
+    const { error: sbErr } = await _sbClient.from('bookings').insert([booking]);
     if (sbErr) {
       console.error('[SB] Booking insert error:', sbErr.message, sbErr.code);
       showToast('⚠️ Database save failed: ' + sbErr.message, 'error');
@@ -935,8 +938,8 @@ async function trackBooking() {
   if (!id) { showToast('Enter a booking ID', 'error'); return; }
   el.innerHTML = '<p style="color:var(--text-muted);margin-top:1rem;font-size:0.9rem;">🔍 Searching…</p>';
   let data = null;
-  if (supabase) {
-    const res = await supabase.from('bookings').select('*').eq('booking_id', id).single();
+  if (_sbClient) {
+    const res = await _sbClient.from('bookings').select('*').eq('booking_id', id).single();
     data = res.data;
   }
   if (!data) {
@@ -995,7 +998,7 @@ async function verifyOTP() {
     const name = document.getElementById('auth-name').value.trim() || 'Customer';
     currentUser = { phone: pendingPhone, name };
     localStorage.setItem('st_user', JSON.stringify(currentUser));
-    if (supabase) { try { await supabase.from('customers').upsert([{ phone: pendingPhone, name, last_login: new Date().toISOString() }], { onConflict:'phone' }); } catch(e) {} }
+    if (_sbClient) { try { await _sbClient.from('customers').upsert([{ phone: pendingPhone, name, last_login: new Date().toISOString() }], { onConflict:'phone' }); } catch(e) {} }
     updateUIForUser();
     closeAuth();
     showToast(`Welcome, ${name}! 🎉`, 'success');
