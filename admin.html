@@ -371,7 +371,23 @@
       <div class="form-group"><label>Registration Number</label><input type="text" id="c-reg" placeholder="TN01 XX 0000"></div>
       <div class="form-group"><label>Car Model</label><input type="text" id="c-model" placeholder="e.g. Toyota Etios"></div>
       <div class="form-group"><label>Vehicle Type</label>
-        <select id="c-type"><option value="Sedan">Sedan</option><option value="SUV">SUV</option><option value="Tempo">Tempo Traveller</option><option value="Innova">Innova</option><option value="Bolero">Bolero</option></select>
+        <select id="c-type-select" onchange="onVehicleTypeChange(this)">
+          <option value="Sedan">Sedan</option>
+          <option value="SUV">SUV</option>
+          <option value="Innova">Innova Crysta</option>
+          <option value="Innova HyCross">Innova HyCross</option>
+          <option value="Tempo">Tempo Traveller</option>
+          <option value="Bolero">Bolero</option>
+          <option value="Dzire">Dzire</option>
+          <option value="Etios">Etios</option>
+          <option value="Swift">Swift</option>
+          <option value="Ertiga">Ertiga</option>
+          <option value="Scorpio">Scorpio</option>
+          <option value="Other">✏️ Type Manually…</option>
+        </select>
+        <input type="text" id="c-type-manual" placeholder="Type vehicle name e.g. Fortuner, Traveller 15-Seater…"
+          style="display:none;margin-top:6px;border:1.5px solid var(--gold);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.9rem;width:100%;box-sizing:border-box;">
+        <input type="hidden" id="c-type">
       </div>
       <div class="form-group"><label>Seating Capacity</label><input type="number" id="c-seats" placeholder="4" min="2" max="20"></div>
       <div class="form-group"><label>Year</label><input type="number" id="c-year" placeholder="2022"></div>
@@ -701,7 +717,7 @@ async function loadDrivers() {
 }
 
 function openModal(type) {
-  if (type === 'car') populateOwnerSelect();
+  if (type === 'car') { resetCarTypeField(); populateOwnerSelect(); }
   if (type === 'driver') populateCarSelect();
   document.getElementById('modal-' + type).classList.add('active');
 }
@@ -795,6 +811,33 @@ async function loadCars() {
   }).join('');
 }
 
+// Vehicle type combo handler
+function onVehicleTypeChange(sel) {
+  const manual = document.getElementById('c-type-manual');
+  const hidden = document.getElementById('c-type');
+  if (sel.value === 'Other') {
+    manual.style.display = 'block';
+    manual.focus();
+    manual.oninput = () => { hidden.value = manual.value.trim(); };
+    hidden.value = '';
+  } else {
+    manual.style.display = 'none';
+    manual.value = '';
+    hidden.value = sel.value;
+  }
+}
+
+// Init hidden value when modal opens
+function resetCarTypeField() {
+  const sel = document.getElementById('c-type-select');
+  const hidden = document.getElementById('c-type');
+  const manual = document.getElementById('c-type-manual');
+  sel.value = 'Sedan';
+  hidden.value = 'Sedan';
+  manual.style.display = 'none';
+  manual.value = '';
+}
+
 function populateOwnerSelect() {
   const sel = document.getElementById('c-owner');
   sel.innerHTML = '<option value="">None</option>' + DATA.owners.map(o => `<option value="${o.id || o.name}">${o.name}</option>`).join('');
@@ -814,7 +857,18 @@ function editCar(i) {
   ['reg','model','seats','year','color','insurance','fc'].forEach(f => {
     const el = document.getElementById('c-' + f); if (el && c[f] !== undefined) el.value = c[f] || '';
   });
-  document.getElementById('c-type').value = c.type || 'Sedan';
+  // Restore vehicle type — check if it's a known preset or custom
+  const typePresets = ['Sedan','SUV','Innova','Innova HyCross','Tempo','Bolero','Dzire','Etios','Swift','Ertiga','Scorpio'];
+  const cType = c.type || 'Sedan';
+  const sel = document.getElementById('c-type-select');
+  const manual = document.getElementById('c-type-manual');
+  const hidden = document.getElementById('c-type');
+  if (typePresets.includes(cType)) {
+    sel.value = cType; manual.style.display = 'none'; manual.value = '';
+  } else {
+    sel.value = 'Other'; manual.style.display = 'block'; manual.value = cType;
+  }
+  hidden.value = cType;
   document.getElementById('c-status').value = c.status || 'active';
   document.getElementById('c-ac').value = c.ac || 'yes';
   populateOwnerSelect();
@@ -832,7 +886,7 @@ async function saveCar() {
   const carFields = {
     reg_number: document.getElementById('c-reg').value.trim(),
     model: document.getElementById('c-model').value.trim(),
-    type: document.getElementById('c-type').value,
+    type: document.getElementById('c-type').value || document.getElementById('c-type-select').value,
     seats: parseInt(document.getElementById('c-seats').value) || 4,
     year: document.getElementById('c-year').value || null,
     color: document.getElementById('c-color').value.trim(),
