@@ -810,7 +810,7 @@ async function submitBooking() {
     showToast('⚠️ Please fill in all required fields', 'error'); return;
   }
   const bookingId = 'ST-' + Date.now().toString().slice(-6);
-  const booking = { booking_id:bookingId, customer_name:name, customer_phone:phone, pickup_location:pickup, drop_location:drop, pickup_date:date, pickup_time:time, trip_type:currentTab, vehicle_type:selectedCar, notes, status:'pending', created_at:new Date().toISOString() };
+  const booking = { booking_id:bookingId, customer_name:name, customer_phone:phone, pickup_location:pickup, drop_location:drop, pickup_date:date, pickup_time:time, trip_type:currentTab, vehicle_type:selectedCar, notes, status:'pending' };
   const stored = JSON.parse(localStorage.getItem('st_bookings') || '[]');
   stored.push(booking);
   localStorage.setItem('st_bookings', JSON.stringify(stored));
