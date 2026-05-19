@@ -531,6 +531,7 @@ function showSection(name) {
   if (name === 'drivers') loadDrivers();
   if (name === 'cars') loadCars();
   if (name === 'owners') loadOwners();
+  if (name === 'customers') loadCustomers();
 }
 
 async function loadAll() {
@@ -539,6 +540,25 @@ async function loadAll() {
   await loadCars();
   await loadOwners();
   updateDashboard();
+}
+
+// ── FIX: Load customers from Supabase ────────────────────────────────────────
+async function loadCustomers() {
+  const tb = document.getElementById('customers-table');
+  if (!_sbClient) {
+    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);">⚠️ Supabase not connected. Check Settings.</td></tr>';
+    return;
+  }
+  tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1rem;color:var(--text-muted);">Loading…</td></tr>';
+  const { data, error } = await _sbClient.from('customers').select('*').order('created_at', { ascending: false });
+  if (error) { tb.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;color:red;">Error: ${error.message}</td></tr>`; return; }
+  if (!data || !data.length) { tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);">No customers yet</td></tr>'; return; }
+  tb.innerHTML = data.map(c => `<tr>
+    <td><strong>${c.name || '–'}</strong></td>
+    <td>${c.phone}</td>
+    <td>${c.last_login ? new Date(c.last_login).toLocaleString('en-IN') : '–'}</td>
+    <td>${new Date(c.created_at).toLocaleDateString('en-IN')}</td>
+  </tr>`).join('');
 }
 
 // SAVE TO LOCALSTORAGE (fallback when no Supabase)
@@ -564,8 +584,9 @@ function updateDashboard() {
 // BOOKINGS
 async function loadBookings() {
   if (_sbClient) {
-    const { data } = await _sbClient.from('bookings').select('*').order('created_at', { ascending: false });
-    if (data) DATA.bookings = data;
+    const { data, error } = await _sbClient.from('bookings').select('*').order('created_at', { ascending: false });
+    if (error) { showToast('Bookings load error: ' + error.message, 'error'); console.error('[SB] loadBookings:', error); }
+    else if (data) DATA.bookings = data;
   }
   renderTable('bookings-table', DATA.bookings, false);
   updateDashboard();
@@ -655,8 +676,9 @@ async function confirmAssign() {
 // DRIVERS
 async function loadDrivers() {
   if (_sbClient) {
-    const { data } = await _sbClient.from('drivers').select('*');
-    if (data) DATA.drivers = data;
+    const { data, error } = await _sbClient.from('drivers').select('*');
+    if (error) { showToast('Drivers load error: ' + error.message, 'error'); console.error('[SB] loadDrivers:', error); }
+    else if (data) DATA.drivers = data;
   }
   const tb = document.getElementById('drivers-table');
   if (!DATA.drivers.length) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">No drivers added yet</td></tr>'; return; }
@@ -701,31 +723,41 @@ function editDriver(i) {
 
 async function saveDriver() {
   const idx = document.getElementById('driver-edit-id').value;
-  const driver = {
-    name: document.getElementById('d-name').value,
-    phone: document.getElementById('d-phone').value,
-    license: document.getElementById('d-license').value,
-    license_exp: document.getElementById('d-license-exp').value,
-    address: document.getElementById('d-address').value,
-    aadhaar: document.getElementById('d-aadhaar').value,
-    car_id: document.getElementById('d-car').value,
+  const driverFields = {
+    name: document.getElementById('d-name').value.trim(),
+    phone: document.getElementById('d-phone').value.trim(),
+    license: document.getElementById('d-license').value.trim(),
+    license_exp: document.getElementById('d-license-exp').value || null,
+    address: document.getElementById('d-address').value.trim(),
+    aadhaar: document.getElementById('d-aadhaar').value.trim(),
+    car_id: document.getElementById('d-car').value || null,
     status: document.getElementById('d-status').value,
-    notes: document.getElementById('d-notes').value,
-    created_at: new Date().toISOString()
+    notes: document.getElementById('d-notes').value.trim(),
   };
-  if (!driver.name || !driver.phone) { showToast('Name and phone are required', 'error'); return; }
-  if (idx !== '') { DATA.drivers[parseInt(idx)] = { ...DATA.drivers[parseInt(idx)], ...driver }; }
-  else { DATA.drivers.push(driver); }
+  if (!driverFields.name || !driverFields.phone) { showToast('Name and phone are required', 'error'); return; }
   if (_sbClient) {
-    if (idx !== '') await _sbClient.from('drivers').update(driver).eq('id', DATA.drivers[parseInt(idx)].id);
-    else await _sbClient.from('drivers').insert([driver]);
+    if (idx !== '') {
+      // UPDATE: use existing row id, don't send created_at
+      const existingId = DATA.drivers[parseInt(idx)].id;
+      const { error } = await _sbClient.from('drivers').update(driverFields).eq('id', existingId);
+      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
+      DATA.drivers[parseInt(idx)] = { ...DATA.drivers[parseInt(idx)], ...driverFields };
+    } else {
+      // INSERT: let Supabase generate id and created_at
+      const { data, error } = await _sbClient.from('drivers').insert([driverFields]).select().single();
+      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
+      DATA.drivers.push(data || driverFields);
+    }
+  } else {
+    if (idx !== '') { DATA.drivers[parseInt(idx)] = { ...DATA.drivers[parseInt(idx)], ...driverFields }; }
+    else { DATA.drivers.push(driverFields); }
   }
   persist();
   closeModal('driver');
   document.getElementById('driver-edit-id').value = '';
   document.getElementById('driver-modal-title').textContent = 'Add Driver';
   loadDrivers();
-  showToast('Driver saved successfully', 'success');
+  showToast('Driver saved successfully ✓', 'success');
 }
 
 async function deleteDriver(i) {
@@ -738,8 +770,9 @@ async function deleteDriver(i) {
 // CARS
 async function loadCars() {
   if (_sbClient) {
-    const { data } = await _sbClient.from('cars').select('*');
-    if (data) DATA.cars = data;
+    const { data, error } = await _sbClient.from('cars').select('*');
+    if (error) { showToast('Cars load error: ' + error.message, 'error'); console.error('[SB] loadCars:', error); }
+    else if (data) DATA.cars = data;
   }
   const tb = document.getElementById('cars-table');
   if (!DATA.cars.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">No cars added yet</td></tr>'; return; }
@@ -796,34 +829,44 @@ async function saveCar() {
   const driverSel = document.getElementById('c-driver').value;
   const owner = DATA.owners.find(o => (o.id || o.name) === ownerSel) || {};
   const driver = DATA.drivers.find(d => (d.id || d.name) === driverSel) || {};
-  const car = {
-    reg_number: document.getElementById('c-reg').value,
-    model: document.getElementById('c-model').value,
+  const carFields = {
+    reg_number: document.getElementById('c-reg').value.trim(),
+    model: document.getElementById('c-model').value.trim(),
     type: document.getElementById('c-type').value,
-    seats: document.getElementById('c-seats').value,
-    year: document.getElementById('c-year').value,
-    color: document.getElementById('c-color').value,
-    owner_id: ownerSel, owner_name: owner.name || '',
-    driver_id: driverSel, driver_name: driver.name || '',
-    insurance_exp: document.getElementById('c-insurance').value,
-    fc_exp: document.getElementById('c-fc').value,
+    seats: parseInt(document.getElementById('c-seats').value) || 4,
+    year: document.getElementById('c-year').value || null,
+    color: document.getElementById('c-color').value.trim(),
+    owner_id: ownerSel || null,
+    owner_name: owner.name || '',
+    driver_id: driverSel || null,
+    driver_name: driver.name || '',
+    insurance_exp: document.getElementById('c-insurance').value || null,
+    fc_exp: document.getElementById('c-fc').value || null,
     status: document.getElementById('c-status').value,
     ac: document.getElementById('c-ac').value,
-    created_at: new Date().toISOString()
   };
-  if (!car.reg_number || !car.model) { showToast('Reg number and model are required', 'error'); return; }
-  if (idx !== '') { DATA.cars[parseInt(idx)] = { ...DATA.cars[parseInt(idx)], ...car }; }
-  else { DATA.cars.push(car); }
+  if (!carFields.reg_number || !carFields.model) { showToast('Reg number and model are required', 'error'); return; }
   if (_sbClient) {
-    if (idx !== '') await _sbClient.from('cars').update(car).eq('id', DATA.cars[parseInt(idx)].id);
-    else await _sbClient.from('cars').insert([car]);
+    if (idx !== '') {
+      const existingId = DATA.cars[parseInt(idx)].id;
+      const { error } = await _sbClient.from('cars').update(carFields).eq('id', existingId);
+      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
+      DATA.cars[parseInt(idx)] = { ...DATA.cars[parseInt(idx)], ...carFields };
+    } else {
+      const { data, error } = await _sbClient.from('cars').insert([carFields]).select().single();
+      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
+      DATA.cars.push(data || carFields);
+    }
+  } else {
+    if (idx !== '') { DATA.cars[parseInt(idx)] = { ...DATA.cars[parseInt(idx)], ...carFields }; }
+    else { DATA.cars.push(carFields); }
   }
   persist();
   closeModal('car');
   document.getElementById('car-edit-id').value = '';
   document.getElementById('car-modal-title').textContent = 'Add Car';
   loadCars(); updateDashboard();
-  showToast('Car saved successfully', 'success');
+  showToast('Car saved successfully ✓', 'success');
 }
 
 async function deleteCar(i) {
@@ -836,8 +879,9 @@ async function deleteCar(i) {
 // OWNERS
 async function loadOwners() {
   if (_sbClient) {
-    const { data } = await _sbClient.from('owners').select('*');
-    if (data) DATA.owners = data;
+    const { data, error } = await _sbClient.from('owners').select('*');
+    if (error) { showToast('Owners load error: ' + error.message, 'error'); console.error('[SB] loadOwners:', error); }
+    else if (data) DATA.owners = data;
   }
   const tb = document.getElementById('owners-table');
   if (!DATA.owners.length) { tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">No owners added yet</td></tr>'; return; }
@@ -870,30 +914,38 @@ function editOwner(i) {
 
 async function saveOwner() {
   const idx = document.getElementById('owner-edit-id').value;
-  const owner = {
-    name: document.getElementById('o-name').value,
-    phone: document.getElementById('o-phone').value,
-    address: document.getElementById('o-address').value,
-    aadhaar: document.getElementById('o-aadhaar').value,
-    pan: document.getElementById('o-pan').value,
-    bank_acc: document.getElementById('o-bank-acc').value,
-    ifsc: document.getElementById('o-ifsc').value,
+  const ownerFields = {
+    name: document.getElementById('o-name').value.trim(),
+    phone: document.getElementById('o-phone').value.trim(),
+    address: document.getElementById('o-address').value.trim(),
+    aadhaar: document.getElementById('o-aadhaar').value.trim(),
+    pan: document.getElementById('o-pan').value.trim(),
+    bank_acc: document.getElementById('o-bank-acc').value.trim(),
+    ifsc: document.getElementById('o-ifsc').value.trim(),
     status: document.getElementById('o-status').value,
-    created_at: new Date().toISOString()
   };
-  if (!owner.name || !owner.phone) { showToast('Name and phone are required', 'error'); return; }
-  if (idx !== '') { DATA.owners[parseInt(idx)] = { ...DATA.owners[parseInt(idx)], ...owner }; }
-  else { DATA.owners.push(owner); }
+  if (!ownerFields.name || !ownerFields.phone) { showToast('Name and phone are required', 'error'); return; }
   if (_sbClient) {
-    if (idx !== '') await _sbClient.from('owners').update(owner).eq('id', DATA.owners[parseInt(idx)].id);
-    else await _sbClient.from('owners').insert([owner]);
+    if (idx !== '') {
+      const existingId = DATA.owners[parseInt(idx)].id;
+      const { error } = await _sbClient.from('owners').update(ownerFields).eq('id', existingId);
+      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
+      DATA.owners[parseInt(idx)] = { ...DATA.owners[parseInt(idx)], ...ownerFields };
+    } else {
+      const { data, error } = await _sbClient.from('owners').insert([ownerFields]).select().single();
+      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
+      DATA.owners.push(data || ownerFields);
+    }
+  } else {
+    if (idx !== '') { DATA.owners[parseInt(idx)] = { ...DATA.owners[parseInt(idx)], ...ownerFields }; }
+    else { DATA.owners.push(ownerFields); }
   }
   persist();
   closeModal('owner');
   document.getElementById('owner-edit-id').value = '';
   document.getElementById('owner-modal-title').textContent = 'Add Car Owner';
   loadOwners();
-  showToast('Owner saved successfully', 'success');
+  showToast('Owner saved successfully ✓', 'success');
 }
 
 async function deleteOwner(i) {
