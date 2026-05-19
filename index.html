@@ -607,7 +607,7 @@
       <div id="return-row" style="display:none;margin-bottom:1rem;">
         <div class="form-group"><label>Return Date</label><input type="date" id="return-date"></div>
       </div>
-      <button class="btn-book" onclick="submitBooking()">
+      <button class="btn-book" id="btn-book" onclick="submitBooking()">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.22z"/></svg>
         Confirm Booking
       </button>
@@ -798,7 +798,11 @@ function selectCar(el, type) {
 }
 
 // ── SUBMIT BOOKING ──
+let _bookingInProgress = false; // prevent double-submit
 async function submitBooking() {
+  // FIX: block if already submitting (prevents double-click duplicate bookings)
+  if (_bookingInProgress) return;
+  const btn = document.getElementById('btn-book');
   const pickup = document.getElementById('pickup').value.trim();
   const drop = document.getElementById('drop').value.trim();
   const date = document.getElementById('pickup-date').value;
@@ -809,6 +813,9 @@ async function submitBooking() {
   if (!pickup || !drop || !date || !time || !name || !phone) {
     showToast('⚠️ Please fill in all required fields', 'error'); return;
   }
+  // Lock button immediately
+  _bookingInProgress = true;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.style.cursor = 'not-allowed'; btn.innerHTML = '⏳ Submitting…'; }
   const bookingId = 'ST-' + Date.now().toString().slice(-6);
   const booking = { booking_id:bookingId, customer_name:name, customer_phone:phone, pickup_location:pickup, drop_location:drop, pickup_date:date, pickup_time:time, trip_type:currentTab, vehicle_type:selectedCar, notes, status:'pending' };
   const stored = JSON.parse(localStorage.getItem('st_bookings') || '[]');
@@ -845,8 +852,15 @@ _Your Journey, Our Joy 🙏_`);
   } else {
     showToast(`✅ Booking ${bookingId} submitted! (WhatsApp notification failed – we'll call you)`, 'success');
   }
-  document.querySelector('.btn-book').textContent = '✓ Booking Submitted!';
-  setTimeout(() => { document.querySelector('.btn-book').innerHTML = '🚗 Confirm Booking'; }, 3000);
+  // Unlock button after done
+  _bookingInProgress = false;
+  if (btn) {
+    btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = '';
+    btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.22z"/></svg> ✓ Booking Submitted!';
+    setTimeout(() => {
+      btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.22z"/></svg> Confirm Booking';
+    }, 3000);
+  }
 }
 
 async function notifyTelegram(b) {
