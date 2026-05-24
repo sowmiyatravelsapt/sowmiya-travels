@@ -1652,12 +1652,18 @@ function initSupabase() {
   try {
     const lib = window.supabase; // capture library BEFORE any variable shadowing
     if (typeof lib.createClient !== 'function') { console.error('[SB] createClient not found on window.supabase'); return; }
-    _sbClient = lib.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    // sb_publishable_ keys are supported from supabase-js v2.49+
+    _sbClient = lib.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    });
     console.log('[SB] ✅ Supabase client ready:', CONFIG.SUPABASE_URL);
+    // Quick connectivity test
+    _sbClient.from('bookings').select('booking_id', { count:'exact', head:true })
+      .then(function(r){ if(r.error) console.error('[SB] Connection test failed:', r.error.message); else console.log('[SB] ✅ DB reachable'); });
   } catch(e) { console.error('[SB] Init failed:', e.message); }
 }
 const sbScript = document.createElement('script');
-sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js';
 sbScript.onload = () => { initSupabase(); restoreSession(); loadVehicles(); };
 sbScript.onerror = () => console.error('[SB] CDN load failed');
 document.head.appendChild(sbScript);
