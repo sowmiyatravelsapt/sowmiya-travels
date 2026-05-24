@@ -1041,9 +1041,15 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- BOOKING -->
 <section class="booking-section" id="booking">
   <span class="section-label">✦ Reserve Your Seat</span>
-  <h2 class="section-title">Book Your Ride</h2>
+  <h2 class="section-title">Book a Taxi</h2>
 
   <div class="booking-card" id="booking-card">
+    <div class="booking-tabs">
+      <div class="booking-tab active" onclick="switchTab('oneway',this)">One Way</div>
+      <div class="booking-tab" onclick="switchTab('roundtrip',this)">Round Trip</div>
+      <div class="booking-tab" onclick="switchTab('rental',this)">Rental</div>
+      <div class="booking-tab" onclick="switchTab('airport',this)">Airport</div>
+    </div>
     <div class="booking-body">
       <div style="margin-bottom:1.2rem;">
         <label style="font-size:0.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:0.6rem;">Select Vehicle</label>
@@ -1122,8 +1128,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- FARE RULE SELECTOR -->
       <div class="form-group" id="fare-rule-group" style="margin-bottom:1rem;background:#F8F6F1;border-radius:12px;padding:1rem;border:1.5px solid var(--border);">
-        <label style="font-size:0.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.05em;">💰 Select Fare Type <span style="color:var(--danger);font-size:0.85rem;">*</span></label>
-        <select id="fare-rule-select" onchange="onFareRuleChange()" required style="border:1.5px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;font-size:0.92rem;font-family:'Outfit',sans-serif;outline:none;width:100%;margin-top:0.5rem;background:white;color:var(--text);">
+        <label style="font-size:0.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.05em;">💰 Select Fare Type <span style="color:var(--danger);font-size:0.85rem;" title="Required">*</span></label>
+        <select id="fare-rule-select" onchange="onFareRuleChange()" style="border:1.5px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;font-size:0.92rem;font-family:'Outfit',sans-serif;outline:none;width:100%;margin-top:0.5rem;background:white;color:var(--text);">
           <option value="">Loading fare options…</option>
         </select>
         <div id="fare-rule-detail" style="margin-top:0.75rem;padding:0.75rem;background:white;border-radius:8px;border:1px solid var(--border);font-size:0.85rem;color:var(--text-muted);display:none;"></div>
@@ -1258,76 +1264,35 @@ document.addEventListener('DOMContentLoaded', function() {
       <p style="font-size:0.78rem;color:#888;margin-bottom:0.75rem;text-align:center;text-transform:uppercase;letter-spacing:0.08em;">Select Payment App</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
         <!-- PhonePe -->
-        <button onclick="choosePayment('phonepe')" style="background:#5f259f;color:white;border:none;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;box-shadow:0 3px 10px rgba(95,37,159,0.35);" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-          <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="10" fill="#fff" fill-opacity="0.15"/>
-            <path d="M20 6C12.268 6 6 12.268 6 20C6 27.732 12.268 34 20 34C27.732 34 34 27.732 34 20C34 12.268 27.732 6 20 6Z" fill="white"/>
-            <path d="M22.5 13H17.5C16.12 13 15 14.12 15 15.5V24.5C15 25.88 16.12 27 17.5 27H22.5C23.88 27 25 25.88 25 24.5V15.5C25 14.12 23.88 13 22.5 13Z" fill="#5f259f"/>
-            <path d="M20 16C18.34 16 17 17.34 17 19C17 20.66 18.34 22 20 22C21.66 22 23 20.66 23 19C23 17.34 21.66 16 20 16Z" fill="white"/>
-            <circle cx="20" cy="19" r="2" fill="#5f259f"/>
-          </svg>
+        <button onclick="choosePayment('phonepe')" style="background:#5f259f;color:white;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.5rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="18" fill="#fff"/><path d="M9 18C9 13.03 13.03 9 18 9c2.7 0 5.13 1.1 6.89 2.87L22.5 14.25C21.28 13.04 19.73 12.3 18 12.3c-3.15 0-5.7 2.55-5.7 5.7s2.55 5.7 5.7 5.7c2.4 0 4.46-1.49 5.32-3.6H18v-3.3h8.73c.18.7.27 1.43.27 2.2C27 22.97 22.97 27 18 27S9 22.97 9 18z" fill="#5f259f"/></svg>
           PhonePe
         </button>
         <!-- Google Pay -->
-        <button onclick="choosePayment('gpay')" style="background:#fff;color:#1a73e8;border:1.5px solid #e0e0e0;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;box-shadow:0 3px 10px rgba(0,0,0,0.08);" onmouseover="this.style.boxShadow='0 4px 16px rgba(26,115,232,0.25)'" onmouseout="this.style.boxShadow='0 3px 10px rgba(0,0,0,0.08)'">
-          <svg width="36" height="36" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="10" fill="#F8F9FA"/>
-            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="9" font-weight="800" font-family="Arial,sans-serif">
-              <tspan fill="#4285F4">G</tspan><tspan fill="#EA4335">o</tspan><tspan fill="#FBBC05">o</tspan><tspan fill="#4285F4">g</tspan><tspan fill="#34A853">l</tspan><tspan fill="#EA4335">e</tspan>
-            </text>
-            <text x="50%" y="76%" dominant-baseline="middle" text-anchor="middle" font-size="8.5" font-weight="700" font-family="Arial,sans-serif" fill="#1a73e8">Pay</text>
-          </svg>
+        <button onclick="choosePayment('gpay')" style="background:#fff;color:#1a1a1a;border:2px solid #E2DDD6;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.5rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="18" fill="#fff"/><text x="18" y="23" font-size="16" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700"><tspan fill="#4285F4">G</tspan><tspan fill="#EA4335">o</tspan><tspan fill="#FBBC05">o</tspan><tspan fill="#4285F4">g</tspan><tspan fill="#34A853">l</tspan><tspan fill="#EA4335">e</tspan></text></svg>
           Google Pay
         </button>
         <!-- Paytm -->
-        <button onclick="choosePayment('paytm')" style="background:#00b9f5;color:white;border:none;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;box-shadow:0 3px 10px rgba(0,185,245,0.35);" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-          <svg width="36" height="36" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="10" fill="#fff" fill-opacity="0.2"/>
-            <rect x="7" y="12" width="26" height="16" rx="4" fill="white"/>
-            <text x="50%" y="62%" dominant-baseline="middle" text-anchor="middle" font-size="8.5" font-weight="900" font-family="Arial,sans-serif" fill="#00b9f5">Paytm</text>
-          </svg>
+        <button onclick="choosePayment('paytm')" style="background:#00BAF2;color:white;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.5rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="18" fill="#fff"/><path d="M8 14h6v8H8zM15 14h5c2.76 0 5 2.24 5 5s-2.24 5-5 5h-5V14zm2 2v6h3c1.66 0 3-1.34 3-3s-1.34-3-3-3h-3z" fill="#00BAF2"/></svg>
           Paytm
         </button>
-        <!-- UPI QR -->
-        <button onclick="choosePayment('upi')" style="background:linear-gradient(135deg,#F8A500,#e09000);color:white;border:none;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;box-shadow:0 3px 10px rgba(248,165,0,0.35);" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-          <svg width="36" height="36" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="10" fill="#fff" fill-opacity="0.2"/>
-            <rect x="8" y="8" width="10" height="10" rx="2" fill="white"/>
-            <rect x="9" y="9" width="8" height="8" rx="1" fill="#F8A500"/>
-            <rect x="11" y="11" width="4" height="4" fill="white"/>
-            <rect x="22" y="8" width="10" height="10" rx="2" fill="white"/>
-            <rect x="23" y="9" width="8" height="8" rx="1" fill="#F8A500"/>
-            <rect x="25" y="11" width="4" height="4" fill="white"/>
-            <rect x="8" y="22" width="10" height="10" rx="2" fill="white"/>
-            <rect x="9" y="23" width="8" height="8" rx="1" fill="#F8A500"/>
-            <rect x="11" y="25" width="4" height="4" fill="white"/>
-            <rect x="22" y="22" width="4" height="4" rx="1" fill="white"/>
-            <rect x="28" y="22" width="4" height="4" rx="1" fill="white"/>
-            <rect x="22" y="28" width="4" height="4" rx="1" fill="white"/>
-            <rect x="28" y="28" width="4" height="4" rx="1" fill="white"/>
-            <rect x="25" y="25" width="4" height="4" rx="1" fill="white"/>
-          </svg>
+        <!-- UPI -->
+        <button onclick="choosePayment('upi')" style="background:#F8A500;color:#1A2744;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.5rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="18" fill="#fff"/><path d="M14 10l-4 16M18 10l4 8-8 8" stroke="#F8A500" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="23" y="14" width="4" height="4" rx="1" fill="#007935"/></svg>
           UPI / QR Code
         </button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
         <!-- Razorpay -->
-        <button onclick="choosePayment('razorpay')" style="background:#2D6FE3;color:white;border:none;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;box-shadow:0 3px 10px rgba(45,111,227,0.35);" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-          <svg width="36" height="36" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="10" fill="#fff" fill-opacity="0.15"/>
-            <path d="M13 28L20 12L27 28H22L20 23L18 28H13Z" fill="white"/>
-            <path d="M20 12L24 20H16L20 12Z" fill="rgba(255,255,255,0.6)"/>
-          </svg>
+        <button onclick="choosePayment('razorpay')" style="background:#2D6FE3;color:white;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.5rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="18" fill="#fff"/><path d="M10 24l5-14 4 8 3-4 4 10" stroke="#2D6FE3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
           Razorpay
         </button>
         <!-- Cash -->
-        <button onclick="choosePayment('cash')" style="background:#F0EDE8;color:#1A2744;border:1.5px solid #E2DDD6;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;" onmouseover="this.style.background='#e8e4dc'" onmouseout="this.style.background='#F0EDE8'">
-          <svg width="36" height="36" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="10" fill="#1A2744" fill-opacity="0.08"/>
-            <rect x="7" y="13" width="26" height="14" rx="3" fill="#1A2744" fill-opacity="0.15" stroke="#1A2744" stroke-width="1.5"/>
-            <circle cx="20" cy="20" r="4" fill="none" stroke="#1A2744" stroke-width="1.5"/>
-            <path d="M20 17v6M17 20h6" stroke="#1A2744" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
+        <button onclick="choosePayment('cash')" style="background:#F0EDE8;color:#1A2744;border:1.5px solid #E2DDD6;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.5rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="18" fill="#F0EDE8"/><rect x="7" y="13" width="22" height="10" rx="2" fill="#1A2744"/><rect x="9" y="15" width="18" height="6" rx="1" fill="#F0EDE8"/><circle cx="18" cy="18" r="2.5" fill="#C9933A"/><rect x="7" y="16" width="3" height="4" rx="0.5" fill="#1A2744"/><rect x="26" y="16" width="3" height="4" rx="0.5" fill="#1A2744"/></svg>
           Cash at Trip End
         </button>
       </div>
@@ -1764,7 +1729,14 @@ function selectCarByIndex(el, idx) {
   window._lastFareEstimate = null;
   window._selectedFareRule = null;
   window._selectedFareTotal = 0;
-  loadFareRuleDropdown();
+  // Refresh fare rule dropdown for newly selected vehicle
+  var rules = JSON.parse(localStorage.getItem('st_fare_rules')||'[]');
+  if(rules.length) _populateFareSelect(rules);
+  // Reset fare rule detail/total display
+  var detail = document.getElementById('fare-rule-detail');
+  var totalEl = document.getElementById('fare-rule-total');
+  if(detail) detail.style.display='none';
+  if(totalEl) totalEl.style.display='none';
   updateDistanceBadge();
 }
 
@@ -1773,13 +1745,7 @@ function selectCarByIndex(el, idx) {
 let _pendingBookingData = null;
 function submitBooking() {
   // Require login
-  if (!currentUser) {
-    // Save intent so we auto-trigger after login
-    window._pendingSubmitAfterLogin = true;
-    openAuth();
-    showToast('Please login with WhatsApp OTP first to confirm booking', 'error');
-    return;
-  }
+  if (!currentUser) { openAuth(); showToast('Please login with WhatsApp OTP first', 'error'); return; }
   const pickup = document.getElementById('pickup').value.trim();
   const drop   = document.getElementById('drop').value.trim();
   const date   = document.getElementById('pickup-date').value;
@@ -1788,16 +1754,13 @@ function submitBooking() {
   const phone  = document.getElementById('cust-phone').value.trim();
   const notes  = document.getElementById('notes').value.trim();
   if (!pickup||!drop||!date||!time||!name||!phone) { showToast('⚠️ Please fill in all required fields','error'); return; }
-  const fareRuleSel = document.getElementById('fare-rule-select');
-  if (!fareRuleSel || !fareRuleSel.value) {
-    showToast('⚠️ Please select a Fare Type to continue','error');
-    const fareGroup = document.getElementById('fare-rule-group');
-    if (fareGroup) {
-      fareGroup.scrollIntoView({ behavior:'smooth', block:'center' });
-      fareGroup.style.border = '2px solid var(--danger)';
-      fareGroup.style.boxShadow = '0 0 0 3px rgba(192,57,43,0.15)';
-      setTimeout(() => { fareGroup.style.border = '1.5px solid var(--border)'; fareGroup.style.boxShadow = ''; }, 3000);
-    }
+  // Require fare type selection
+  var fareRulesAvailable = JSON.parse(localStorage.getItem('st_fare_rules')||'[]');
+  if(fareRulesAvailable.length && !window._selectedFareRule) {
+    showToast('⚠️ Please select a fare type before booking','error');
+    document.getElementById('fare-rule-select').style.borderColor='var(--danger)';
+    document.getElementById('fare-rule-select').focus();
+    setTimeout(function(){ document.getElementById('fare-rule-select').style.borderColor='var(--border)'; }, 2500);
     return;
   }
   // Store pending data
@@ -2035,8 +1998,6 @@ let _bookingInProgress = false;
 async function confirmPayment(method){
   if(_bookingInProgress) return;
   _bookingInProgress=true;
-  // Safety reset after 30s in case anything goes wrong
-  setTimeout(function(){ _bookingInProgress=false; }, 30000);
   const d=_pendingBookingData;
   const btn=document.getElementById('btn-book');
 
@@ -2046,13 +2007,9 @@ async function confirmPayment(method){
   });
 
   if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.innerHTML='⏳ Confirming…';}
-  // Show spinner in modal — dedicated loading div so we don't destroy the success section content
+  // Show spinner in modal too
   var confirmSec = document.getElementById('payment-confirmed-section');
-  if(confirmSec){
-    confirmSec.style.display='block';
-    confirmSec.innerHTML='<div id="booking-processing-spinner" style="text-align:center;padding:2rem"><div style="font-size:2.5rem;animation:spin 1s linear infinite;display:inline-block">⏳</div><p style="margin-top:1rem;color:#666;font-size:0.95rem;">Processing your booking…</p><p style="color:#aaa;font-size:0.8rem;margin-top:0.4rem;">Please wait, do not close this window</p></div>';
-  }
-  try {
+  if(confirmSec){ confirmSec.style.display='block'; confirmSec.innerHTML='<div style="text-align:center;padding:2rem"><div style="font-size:2rem;animation:spin 1s linear infinite;display:inline-block">⏳</div><p style="margin-top:1rem;color:#666;">Processing…</p></div>'; }
 
   const payLabel={
     upi:'💳 UPI / App Payment',
@@ -2085,11 +2042,11 @@ async function confirmPayment(method){
   const stored=JSON.parse(localStorage.getItem('st_bookings')||'[]');
   stored.push(booking); localStorage.setItem('st_bookings',JSON.stringify(stored));
 
-  // ── SUPABASE SYNC with auto-retry queue ──────────────────────────────────
-  const sbSynced = await _syncBookingToSupabase(booking);
-  if(!sbSynced){
-    // Queue for later retry
-    _queuePendingSync(booking);
+  if(!_sbClient) initSupabase();
+  if(_sbClient){
+    const{error:sbErr}=await _sbClient.from('bookings').insert([booking]);
+    if(sbErr){console.error('[SB] insert:',sbErr.message);}
+    else console.log('[SB] ✅ Booking saved');
   }
 
   await notifyTelegram(booking);
@@ -2120,178 +2077,19 @@ _Your Journey, Our Joy 🙏_`);
     _markBookingPlaced(d.bookingId,'cash');
   }
 
-  // Show success screen inside modal — rebuild innerHTML since spinner replaced it
+  // Show success screen inside modal
   var confirmSection=document.getElementById('payment-confirmed-section');
   if(confirmSection){
     confirmSection.style.display='block';
-    confirmSection.innerHTML=`
-      <div style="font-size:3.5rem;margin-bottom:0.75rem;animation:heroLogoIn 0.5s ease forwards;">🎉</div>
-      <h3 style="color:#1D9E75;font-family:Cinzel,serif;margin-bottom:0.5rem;">Booking Confirmed!</h3>
-      <p style="font-size:0.92rem;color:#333;font-weight:600;margin-bottom:0.4rem;">${d.bookingId}</p>
-      <p style="font-size:0.85rem;color:#555;margin-bottom:0.3rem;">${payLabel}</p>
-      <p style="font-size:0.82rem;color:#888;margin-bottom:1rem;">${waResult.ok?'✅ WhatsApp confirmation sent':'⚠️ WhatsApp notification skipped'} · Our team will contact you shortly</p>
-      ${!waResult.ok&&d.estTotal>0?'<p style="font-size:0.78rem;color:#D4860A;background:#FFF3D9;border-radius:8px;padding:0.5rem 0.75rem;margin-bottom:0.75rem;">ℹ️ Booking saved locally. Admin notified via Telegram.</p>':''}
-      <button onclick="closePaymentModal()" style="background:#1A2744;color:white;border:none;border-radius:10px;padding:0.85rem 2rem;font-size:0.95rem;font-weight:600;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#C9933A'" onmouseout="this.style.background='#1A2744'">Close</button>
-    `;
+    var confirmId=document.getElementById('payment-confirmed-id');
+    if(confirmId) confirmId.textContent='Booking ID: '+d.bookingId+' | '+payLabel;
   }
-  showToast('✅ Booking '+d.bookingId+' confirmed!'+(waResult.ok?' WhatsApp sent.':' (WA pending)'), 'success');
+  showToast('✅ Booking '+d.bookingId+' confirmed!'+(waResult.ok?' WhatsApp sent.':' (WA failed)'), 'success');
   _pendingBookingData=null;
 
   // Show My Bookings after short delay
   setTimeout(function(){ showMyBookings(); }, 2200);
-  } catch(e) {
-    console.error('[Booking] Error:', e);
-    _bookingInProgress = false;
-    if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML='<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.22z"/></svg> Confirm Booking';}
-    showToast('❌ Booking failed. Please try again.', 'error');
-  }
 }
-
-// ══════════════════════════════════════════════════════════════════════════════
-// SUPABASE SYNC ENGINE — handles "Host not in allowlist" + RLS + network errors
-// ══════════════════════════════════════════════════════════════════════════════
-
-async function _syncBookingToSupabase(booking) {
-  if(!_sbClient) initSupabase();
-
-  // Method 1: Supabase JS client
-  if(_sbClient){
-    try{
-      const {error} = await _sbClient.from('bookings').upsert([booking], {onConflict:'booking_id'});
-      if(!error){
-        console.log('[SB] ✅ Synced via JS client:', booking.booking_id);
-        _removePendingSync(booking.booking_id);
-        return true;
-      }
-      console.warn('[SB] JS client error:', error.message);
-    } catch(e){ console.warn('[SB] JS client exception:', e.message); }
-  }
-
-  // Method 2: Direct REST API fetch (bypasses JS client restrictions)
-  try{
-    const key = CONFIG.SUPABASE_ANON_KEY;
-    const res = await fetch(CONFIG.SUPABASE_URL + '/rest/v1/bookings', {
-      method: 'POST',
-      headers: {
-        'apikey': key,
-        'Authorization': 'Bearer ' + key,
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates,return=minimal'
-      },
-      body: JSON.stringify(booking)
-    });
-    const txt = await res.text();
-    if(res.ok || res.status===201){
-      console.log('[SB] ✅ Synced via direct REST:', booking.booking_id);
-      _removePendingSync(booking.booking_id);
-      return true;
-    }
-    let errMsg = txt;
-    try{ const j=JSON.parse(txt); errMsg=j.message||j.hint||j.details||txt; }catch(e){}
-    console.error('[SB] REST error:', res.status, errMsg);
-    if(txt.includes('allowlist')||txt.includes('not allowed')||res.status===403){
-      _showSyncBanner('🔒 Supabase is blocking this domain. Fix: Go to <b>Supabase → Settings → API → Allowed Hostnames</b> and add <b>sowmiya-travels.vercel.app</b>. Or paste your <b>anon JWT key</b> (starts with eyJ) below.');
-    } else if(res.status===401){
-      _showSyncBanner('🔑 Supabase key is invalid. Get your <b>anon public key</b> (eyJ…) from <b>Supabase → Settings → API</b> and paste it below.');
-    } else if(res.status===404){
-      _showSyncBanner('📋 The <b>bookings</b> table does not exist in Supabase. Please create it first.');
-    } else if(txt.includes('row-level')||txt.includes('RLS')||res.status===42501){
-      _showSyncBanner('🛡️ RLS is blocking inserts. In Supabase → Table Editor → bookings → RLS Policies, add: <b>INSERT for anon WITH CHECK (true)</b>');
-    } else {
-      _showSyncBanner('❌ Sync failed ('+res.status+'): ' + errMsg.slice(0,100));
-    }
-  } catch(netErr){
-    console.error('[SB] Network error:', netErr.message);
-    _showSyncBanner('🌐 Cannot reach Supabase. Booking saved locally and will retry automatically.');
-  }
-  return false;
-}
-
-var _syncBannerShown = false;
-function _showSyncBanner(html){
-  showToast('⚠️ Supabase sync failed – booking saved locally', 'error');
-  if(_syncBannerShown) return;
-  _syncBannerShown = true;
-  var old = document.getElementById('sb-sync-banner');
-  if(old) old.remove();
-  var b = document.createElement('div');
-  b.id = 'sb-sync-banner';
-  b.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:9998;background:#1A2744;color:#fff;padding:1rem 1.2rem;font-family:Outfit,sans-serif;font-size:0.85rem;border-top:3px solid #C9933A;box-shadow:0 -6px 24px rgba(0,0,0,0.35);animation:fadeUp 0.4s ease;';
-  var pending = JSON.parse(localStorage.getItem('st_pending_sync')||'[]').length;
-  b.innerHTML=`<div style="max-width:820px;margin:0 auto;display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
-    <div style="flex:1;min-width:220px;">
-      <div style="font-weight:700;color:#E8B96A;margin-bottom:0.25rem;">⚠️ Supabase Sync Failed</div>
-      <div style="color:rgba(255,255,255,0.78);font-size:0.8rem;line-height:1.5;">${html}</div>
-      <div id="sb-pending-info" style="margin-top:0.35rem;font-size:0.75rem;color:rgba(255,255,255,0.45);">${pending?pending+' booking(s) pending sync':''}</div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:0.4rem;min-width:250px;">
-      <input id="sb-new-key" placeholder="Paste anon key here (eyJ…)" style="border:1px solid rgba(201,147,58,0.45);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.78rem;background:rgba(255,255,255,0.07);color:#fff;font-family:Outfit,sans-serif;width:100%;outline:none;"/>
-      <div style="display:flex;gap:0.4rem;">
-        <button onclick="_applySbKey()" style="flex:1;background:#C9933A;color:#1A2744;border:none;border-radius:8px;padding:0.5rem;font-size:0.78rem;font-weight:700;cursor:pointer;">Save Key & Retry</button>
-        <button onclick="_retrySyncAll()" style="flex:1;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.5rem;font-size:0.78rem;font-weight:600;cursor:pointer;">🔄 Retry Now</button>
-        <button onclick="document.getElementById('sb-sync-banner').remove();_syncBannerShown=false;" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);border:none;border-radius:8px;padding:0.5rem 0.6rem;font-size:0.9rem;cursor:pointer;">✕</button>
-      </div>
-    </div>
-  </div>`;
-  document.body.appendChild(b);
-}
-
-function _applySbKey(){
-  var key=(document.getElementById('sb-new-key')||{}).value||'';
-  key=key.trim();
-  if(!key.startsWith('eyJ')&&!key.startsWith('sb_')){
-    showToast('Invalid key — should start with eyJ or sb_','error'); return;
-  }
-  var cfg=JSON.parse(localStorage.getItem('st_admin_config')||'{}');
-  cfg.sbKey=key; localStorage.setItem('st_admin_config',JSON.stringify(cfg));
-  CONFIG.SUPABASE_ANON_KEY=key; _sbClient=null; initSupabase();
-  showToast('🔑 Key saved! Retrying…','success');
-  setTimeout(_retrySyncAll,1000);
-}
-
-function _queuePendingSync(booking){
-  var q=JSON.parse(localStorage.getItem('st_pending_sync')||'[]');
-  if(!q.find(function(b){return b.booking_id===booking.booking_id;})){
-    q.push(booking); localStorage.setItem('st_pending_sync',JSON.stringify(q));
-  }
-  var el=document.getElementById('sb-pending-info');
-  if(el) el.textContent=q.length+' booking(s) pending sync';
-}
-
-function _removePendingSync(bookingId){
-  var q=JSON.parse(localStorage.getItem('st_pending_sync')||'[]').filter(function(b){return b.booking_id!==bookingId;});
-  localStorage.setItem('st_pending_sync',JSON.stringify(q));
-}
-
-async function _retrySyncAll(){
-  var q=JSON.parse(localStorage.getItem('st_pending_sync')||'[]');
-  if(!q.length){showToast('✅ No pending bookings','success');return;}
-  _syncBannerShown=false; // allow new banner if still failing
-  showToast('🔄 Retrying '+q.length+' booking(s)…','success');
-  for(var i=0;i<q.length;i++) await _syncBookingToSupabase(q[i]);
-  var left=JSON.parse(localStorage.getItem('st_pending_sync')||'[]');
-  if(!left.length){
-    var ban=document.getElementById('sb-sync-banner'); if(ban) ban.remove();
-    showToast('✅ All bookings synced to Supabase!','success');
-  } else {
-    showToast('⚠️ '+left.length+' still pending. Check key/allowlist.','error');
-  }
-}
-
-// Auto-retry pending syncs 4s after page load
-document.addEventListener('DOMContentLoaded',function(){
-  setTimeout(async function(){
-    var q=JSON.parse(localStorage.getItem('st_pending_sync')||'[]');
-    if(!q.length) return;
-    console.log('[SB] Auto-retrying',q.length,'pending sync(s) on load');
-    _syncBannerShown=true; // suppress banner during auto-retry
-    for(var i=0;i<q.length;i++) await _syncBookingToSupabase(q[i]);
-    _syncBannerShown=false;
-    var left=JSON.parse(localStorage.getItem('st_pending_sync')||'[]');
-    if(!left.length) console.log('[SB] ✅ All auto-synced');
-    else{ console.warn('[SB]',left.length,'still pending'); _showSyncBanner('🔄 '+left.length+' booking(s) still not synced. Check Supabase key or domain allowlist.'); }
-  },4000);
-});
 
 // ── PAYMENT POLLING: checks every 4s if admin marked paid ────────────────────
 var _payPollTimer = null;
@@ -2403,34 +2201,15 @@ function selectVehicleCard(el,type){
 }
 
 async function notifyTelegram(b) {
-  if (!CONFIG.TELEGRAM_BOT_TOKEN || CONFIG.TELEGRAM_BOT_TOKEN === 'PLACEHOLDER') {
-    console.warn('[TG] No bot token configured');
-    return;
-  }
-  // Escape special Markdown chars to avoid parse errors
-  const esc = s => String(s||'').replace(/[_*[\]()~`>#+=|{}.!-]/g,'\\$&');
-  const msg = `🚖 *New Booking – Sowmiya Travels*\n\n🆔 ${esc(b.booking_id)}\n👤 ${esc(b.customer_name)} \\| 📱 ${esc(b.customer_phone)}\n📍 ${esc(b.pickup_location)} → ${esc(b.drop_location)}\n📅 ${esc(b.pickup_date)} ${esc(b.pickup_time)}\n🚗 ${esc(b.vehicle_type)} \\| ${esc(b.trip_type)}\n💰 ${esc(b.payment_method)} \\| ₹${esc(b.estimated_fare)}\n📋 Status: *${esc(b.status)}*`;
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${CONFIG.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ chat_id: CONFIG.TELEGRAM_CHAT_ID, text: msg, parse_mode: 'MarkdownV2' })
-    });
-    const data = await res.json();
-    if (!data.ok) {
-      console.error('[TG] Error:', data.description);
-      // Fallback: retry without markdown
-      await fetch(`https://api.telegram.org/bot${CONFIG.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ chat_id: CONFIG.TELEGRAM_CHAT_ID, text: `🚖 New Booking: ${b.booking_id}\n👤 ${b.customer_name} | ${b.customer_phone}\n📍 ${b.pickup_location} → ${b.drop_location}\n📅 ${b.pickup_date} ${b.pickup_time}\n🚗 ${b.vehicle_type} | ₹${b.estimated_fare}` })
-      });
-    } else {
-      console.log('[TG] ✅ Telegram notified');
-    }
-  } catch(e) {
-    console.error('[TG] Exception:', e.message);
-  }
+  if (!CONFIG.TELEGRAM_BOT_TOKEN || CONFIG.TELEGRAM_BOT_TOKEN === 'PLACEHOLDER') return;
+  const msg = `🚖 *New Booking – Sowmiya Travels*
+
+🆔 ${b.booking_id}
+👤 ${b.customer_name} | 📱 ${b.customer_phone}
+📍 ${b.pickup_location} → ${b.drop_location}
+📅 ${b.pickup_date} ${b.pickup_time}
+🚗 ${b.vehicle_type} | ${b.trip_type}`;
+  try { await fetch(`https://api.telegram.org/bot${CONFIG.TELEGRAM_BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ chat_id:CONFIG.TELEGRAM_CHAT_ID, text:msg, parse_mode:'Markdown' }) }); } catch(e) {}
 }
 
 // sendWhatsApp – calls /api/send-whatsapp proxy, with direct Fonnte fallback
@@ -2460,78 +2239,40 @@ function loadFareRuleDropdown(){
 function _populateFareSelect(rules){
   var sel = document.getElementById('fare-rule-select');
   if(!sel) return;
-  // Show: rules for this vehicle + rules marked All/blank (apply to all)
+  // Show rules specific to selected vehicle PLUS "All" rules; clearly labelled
   var vehicleRules = rules.filter(function(r){
     return r.vehicleType && r.vehicleType!=='' && r.vehicleType!=='All' && r.vehicleType===selectedCar;
   });
-  var globalRules = rules.filter(function(r){
+  var allRules = rules.filter(function(r){
     return !r.vehicleType || r.vehicleType==='' || r.vehicleType==='All';
   });
-  // Prefer vehicle-specific rules; fall back to global if none exist for this vehicle
-  var filtered = vehicleRules.length ? vehicleRules.concat(globalRules) : globalRules.length ? globalRules : rules;
-  sel.innerHTML = '<option value="">-- Select a fare type --</option>';
-  // Group heading if we have both types
-  if(vehicleRules.length && globalRules.length){
-    var optg1 = document.createElement('optgroup');
-    optg1.label = selectedCar ? selectedCar + ' Fares' : 'Vehicle Fares';
-    vehicleRules.forEach(function(r,i){
+  // Combine: vehicle-specific first, then "All" rules
+  var filtered = vehicleRules.concat(allRules);
+  // If no specific rules for selected vehicle, show all rules so user is never stuck
+  if(!filtered.length) filtered = rules;
+  sel.innerHTML = '<option value="">-- Select a fare type --</option>' +
+    filtered.map(function(r,i){
       var label = (r.description||r.ruleType) + ' – ₹' + (r.amount||0);
-      var opt = document.createElement('option');
-      opt.value = 'v'+i; opt.textContent = label;
-      opt.dataset.ruleIndex = i; opt.dataset.ruleGroup = 'vehicle';
-      optg1.appendChild(opt);
-    });
-    sel.appendChild(optg1);
-    var optg2 = document.createElement('optgroup');
-    optg2.label = 'General Fares (All Vehicles)';
-    globalRules.forEach(function(r,i){
-      var label = (r.description||r.ruleType) + ' – ₹' + (r.amount||0);
-      var opt = document.createElement('option');
-      opt.value = 'g'+i; opt.textContent = label;
-      opt.dataset.ruleIndex = i; opt.dataset.ruleGroup = 'global';
-      optg2.appendChild(opt);
-    });
-    sel.appendChild(optg2);
-    sel._vehicleRules = vehicleRules;
-    sel._globalRules = globalRules;
-  } else {
-    filtered.forEach(function(r,i){
-      var label = (r.description||r.ruleType) + ' – ₹' + (r.amount||0);
-      if(r.vehicleType && r.vehicleType!=='All') label += ' ('+r.vehicleType+')';
-      var opt = document.createElement('option');
-      opt.value = 'f'+i; opt.textContent = label;
-      opt.dataset.ruleIndex = i; opt.dataset.ruleGroup = 'flat';
-      sel.appendChild(opt);
-    });
-    sel._vehicleRules = null;
-    sel._globalRules = null;
-  }
-  sel._allRules = { vehicle: vehicleRules, global: globalRules, flat: filtered };
-  // Reset detail panel
-  var detail = document.getElementById('fare-rule-detail');
-  var totalEl = document.getElementById('fare-rule-total');
-  if(detail) detail.style.display='none';
-  if(totalEl) totalEl.style.display='none';
+      if(r.vehicleType && r.vehicleType!=='All' && r.vehicleType!=='') {
+        label += ' (' + r.vehicleType + ')';
+      }
+      return '<option value="'+i+'" data-amount="'+r.amount+'" data-type="'+r.ruleType+'">'+label+'</option>';
+    }).join('');
+  sel._rules = filtered;
   var grp = document.getElementById('fare-rule-group');
   if(grp) grp.style.display = filtered.length ? 'block' : 'none';
+  // Reset selection state when dropdown refreshes
+  window._selectedFareRule = null;
+  window._selectedFareTotal = 0;
 }
 
 function onFareRuleChange(){
   var sel = document.getElementById('fare-rule-select');
   var detail = document.getElementById('fare-rule-detail');
   var totalEl = document.getElementById('fare-rule-total');
-  var val = sel.value;
-  if(!val){ if(detail) detail.style.display='none'; if(totalEl) totalEl.style.display='none'; window._selectedFareRule=null; window._selectedFareTotal=0; return; }
-  // Resolve rule from new grouped structure
-  var opt = sel.options[sel.selectedIndex];
-  var grp = opt ? opt.dataset.ruleGroup : '';
-  var rIdx = opt ? parseInt(opt.dataset.ruleIndex) : -1;
-  var r = null;
-  if(sel._allRules){
-    if(grp==='vehicle') r = sel._allRules.vehicle[rIdx];
-    else if(grp==='global') r = sel._allRules.global[rIdx];
-    else r = sel._allRules.flat[rIdx];
-  }
+  var idx = sel.value;
+  if(idx==='' || !sel._rules){ if(detail) detail.style.display='none'; if(totalEl) totalEl.style.display='none'; return; }
+  var r = sel._rules[parseInt(idx)];
   if(!r) return;
   var typeLabels = {per_km:'Per Kilometre – charged based on distance',per_trip:'Fixed per trip – flat rate',per_hour:'Per Hour – rental by the hour',per_day:'Per Day – full day rental',waiting:'Waiting charge – driver wait time',night_surcharge:'Night surcharge – after 10 PM',airport_pickup:'Airport pickup – fixed fee',extra_km:'Extra KM beyond package',manual:'Custom rate – as quoted'};
   if(detail){ detail.style.display='block'; detail.innerHTML='<strong>'+(r.description||r.ruleType)+'</strong><br><span style="color:#888;font-size:0.82rem;">'+(typeLabels[r.ruleType]||r.ruleType)+'</span>'; }
@@ -2572,20 +2313,26 @@ async function showMyBookings(){
   }
   var statusColor={pending:'#D4860A',confirmed:'#1D9E75',completed:'#1A2744',cancelled:'#C0392B'};
   var statusBg={pending:'#FFF3D9',confirmed:'#E1F5EE',completed:'#E8EBF4',cancelled:'#FDECEA'};
+  var statusIcon={pending:'⏳',confirmed:'✅',completed:'🏁',cancelled:'❌'};
+  var statusDesc={pending:'Awaiting confirmation from driver',confirmed:'Booking confirmed – driver will contact you',completed:'Trip completed successfully',cancelled:'Booking cancelled'};
   var payColor={paid:'#1D9E75',cash_on_delivery:'#1A2744',pending_verification:'#D4860A',pending:'#666'};
   var payLabel={paid:'✅ Paid',cash_on_delivery:'💵 Cash on delivery',pending_verification:'⏳ Verifying payment…',pending:'⏳ Pending'};
   list.innerHTML = bookings.map(function(b){
     var st=b.status||'pending';
     var ps=b.payment_status||'pending';
-    var extra = b.extra_total ? '<div style="color:#C0392B;font-size:0.82rem;margin-top:2px;">⚠️ Extra charges: ₹'+b.extra_total+'</div>' : '';
+    var extra = b.extra_total ? '<div style="color:#C0392B;font-size:0.82rem;margin-top:4px;">⚠️ Extra charges: ₹'+b.extra_total+'</div>' : '';
     var driver = b.driver_name ? '<div style="font-size:0.83rem;color:#1D9E75;margin-top:4px;">🧑 Driver: '+b.driver_name+(b.driver_phone?' · '+b.driver_phone:'')+'</div>' : '';
-    return '<div style="background:#fff;border-radius:14px;border:1.5px solid #E2DDD6;padding:1.25rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.05);">'
-      +'<div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;">'
-      +'<div><span style="font-weight:700;color:#1A2744;font-size:0.95rem;">'+b.booking_id+'</span>'
-      +'<span style="margin-left:0.75rem;background:'+(statusBg[st]||'#F0F0F0')+';color:'+(statusColor[st]||'#333')+';font-size:0.75rem;font-weight:700;padding:3px 10px;border-radius:50px;">'+st.toUpperCase()+'</span></div>'
+    return '<div style="background:#fff;border-radius:16px;border:2px solid '+(statusColor[st]||'#E2DDD6')+';padding:1.25rem;margin-bottom:1.2rem;box-shadow:0 2px 12px rgba(0,0,0,0.07);">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.85rem;">'
+      +'<span style="font-weight:700;color:#1A2744;font-size:0.95rem;">'+b.booking_id+'</span>'
       +'<span style="color:'+(payColor[ps]||'#666')+';font-size:0.82rem;font-weight:600;">'+(payLabel[ps]||ps)+'</span>'
       +'</div>'
-      +'<div style="font-size:0.88rem;color:#444;line-height:1.8;">'
+      +'<div style="background:'+(statusBg[st]||'#F0F0F0')+';border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.85rem;display:flex;align-items:center;gap:0.75rem;">'
+      +'<span style="font-size:1.7rem;">'+(statusIcon[st]||'📋')+'</span>'
+      +'<div><div style="font-weight:700;color:'+(statusColor[st]||'#333')+';font-size:0.95rem;">'+st.charAt(0).toUpperCase()+st.slice(1)+'</div>'
+      +'<div style="font-size:0.78rem;color:#666;margin-top:1px;">'+(statusDesc[st]||'')+'</div></div>'
+      +'</div>'
+      +'<div style="font-size:0.88rem;color:#444;line-height:1.9;">'
       +'📍 <strong>'+b.pickup_location+'</strong> → <strong>'+b.drop_location+'</strong><br>'
       +'📅 '+b.pickup_date+' '+(b.pickup_time||'')+'&nbsp;&nbsp;🚗 '+(b.vehicle_type||'–')+'<br>'
       +(b.fare_rule_label?'💰 '+b.fare_rule_label+'<br>':'')
@@ -2764,11 +2511,6 @@ async function verifyOTP() {
     updateUIForUser();
     closeAuth();
     showToast(`Welcome, ${name}! 🎉`, 'success');
-    // Auto-trigger booking if user clicked Book before logging in
-    if (window._pendingSubmitAfterLogin) {
-      window._pendingSubmitAfterLogin = false;
-      setTimeout(function(){ submitBooking(); }, 400);
-    }
   } else { showToast('Invalid OTP. Try again.', 'error'); }
 }
 
