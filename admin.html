@@ -6,175 +6,130 @@
 <title>Sowmiya Travels – Admin Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --gold:#C9933A; --gold-light:#E8B96A; --navy:#1A2744; --navy-mid:#243358;
-    --teal:#1D9E75; --teal-light:#5DCAA5; --bg:#F0EDE8; --white:#FFFFFF;
-    --text:#1A1A1A; --text-muted:#666; --border:#E2DDD6;
-    --danger:#C0392B; --success:#1D9E75; --warning:#D4860A;
-    --sidebar-w:240px;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;}
-
-  /* SIDEBAR */
-  .sidebar{width:var(--sidebar-w);background:var(--navy);min-height:100vh;padding:1.5rem 0;position:fixed;left:0;top:0;bottom:0;display:flex;flex-direction:column;}
-  .sidebar-logo{padding:0 1.5rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.1);}
-  .sidebar-logo h2{color:var(--white);font-family:'Playfair Display',serif;font-size:1.1rem;}
-  .sidebar-logo h2 span{color:var(--gold-light);}
-  .sidebar-logo p{color:rgba(255,255,255,0.5);font-size:0.75rem;margin-top:0.25rem;}
-  .sidebar-nav{flex:1;padding:1rem 0;}
-  .nav-item{display:flex;align-items:center;gap:10px;padding:0.75rem 1.5rem;color:rgba(255,255,255,0.7);cursor:pointer;transition:all 0.2s;font-size:0.9rem;border-left:3px solid transparent;}
-  .nav-item:hover{color:var(--white);background:rgba(255,255,255,0.07);}
-  .nav-item.active{color:var(--white);background:rgba(201,147,58,0.15);border-left-color:var(--gold);}
-  .nav-item svg{width:18px;height:18px;flex-shrink:0;}
-  .sidebar-footer{padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,0.1);}
-  .admin-badge{background:var(--gold);color:var(--navy);font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:50px;}
-
-  /* MAIN */
-  .main{margin-left:var(--sidebar-w);flex:1;padding:2rem;}
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;}
-  .topbar h1{font-family:'Playfair Display',serif;font-size:1.7rem;color:var(--navy);}
-  .topbar-right{display:flex;gap:0.75rem;align-items:center;}
-  .btn{padding:0.55rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
-  .btn-primary{background:var(--navy);color:white;}
-  .btn-primary:hover{background:var(--gold);color:var(--navy);}
-  .btn-danger{background:var(--danger);color:white;}
-  .btn-success{background:var(--success);color:white;}
-  .btn-warning{background:var(--warning);color:white;}
-  .btn-outline{background:white;color:var(--navy);border:1.5px solid var(--border);}
-  .btn-sm{padding:0.35rem 0.85rem;font-size:0.78rem;}
-
-  /* STAT CARDS */
-  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem;margin-bottom:2rem;}
-  .stat-card{background:var(--white);border-radius:14px;padding:1.4rem;border:1px solid var(--border);display:flex;align-items:center;gap:1rem;}
-  .stat-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;}
-  .stat-icon.gold{background:#FFF3D9;}
-  .stat-icon.teal{background:#E1F5EE;}
-  .stat-icon.navy{background:#E8EBF4;}
-  .stat-icon.red{background:#FDECEA;}
-  .stat-icon svg{width:24px;height:24px;}
-  .stat-val{font-size:1.7rem;font-weight:700;color:var(--navy);line-height:1;}
-  .stat-label{font-size:0.8rem;color:var(--text-muted);margin-top:3px;}
-
-  /* SECTIONS */
-  .section{display:none;}
-  .section.active{display:block;}
-
-  /* TABLE */
-  .table-card{background:var(--white);border-radius:14px;border:1px solid var(--border);overflow:hidden;}
-  .table-header{display:flex;justify-content:space-between;align-items:center;padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);}
-  .table-header h3{font-size:1rem;font-weight:600;color:var(--navy);}
-  .table-wrap{overflow-x:auto;}
-  table{width:100%;border-collapse:collapse;font-size:0.85rem;}
-  th{background:#F8F6F1;padding:0.8rem 1rem;text-align:left;font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--border);}
-  td{padding:0.9rem 1rem;border-bottom:1px solid var(--border);color:var(--text);}
-  tr:last-child td{border-bottom:none;}
-  tr:hover td{background:#FAFAF8;}
-
-  /* STATUS BADGES */
-  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:600;}
-  .badge-pending{background:#FFF3CD;color:#856404;}
-  .badge-confirmed{background:#D4EDDA;color:#155724;}
-  .badge-completed{background:#D1ECF1;color:#0C5460;}
-  .badge-cancelled{background:#F8D7DA;color:#721C24;}
-  .badge-active{background:#D4EDDA;color:#155724;}
-  .badge-inactive{background:#F8D7DA;color:#721C24;}
-
-  /* MODAL */
-  .modal-bg{position:fixed;inset:0;background:rgba(26,39,68,0.7);z-index:500;display:none;align-items:center;justify-content:center;overflow-y:auto;padding:2rem;}
-  .modal-bg.active{display:flex;}
-  .modal{background:var(--white);border-radius:20px;padding:2rem;width:100%;max-width:580px;position:relative;max-height:90vh;overflow-y:auto;}
-  .modal h2{font-family:'Playfair Display',serif;color:var(--navy);margin-bottom:1.5rem;font-size:1.4rem;}
-  .modal .close{position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);}
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
-  .form-group{display:flex;flex-direction:column;gap:0.4rem;}
-  .form-group.full{grid-column:1/-1;}
-  .form-group label{font-size:0.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.05em;}
-  .form-group input,.form-group select,.form-group textarea{border:1.5px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.9rem;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;transition:border-color 0.2s;}
-  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--gold);background:var(--white);}
-
-  /* TOAST */
-  .toast{position:fixed;bottom:2rem;right:2rem;background:var(--navy);color:var(--white);padding:1rem 1.5rem;border-radius:12px;font-size:0.9rem;z-index:9999;transform:translateY(100px);opacity:0;transition:all 0.3s;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
-  .toast.show{transform:translateY(0);opacity:1;}
-  .toast.success{border-left:4px solid var(--teal);}
-  .toast.error{border-left:4px solid var(--danger);}
-
-  /* ASSIGN DRIVER */
-  .assign-row{display:flex;gap:0.5rem;align-items:center;}
-  .assign-row select{flex:1;border:1.5px solid var(--border);border-radius:6px;padding:0.35rem 0.6rem;font-size:0.8rem;font-family:'DM Sans',sans-serif;}
-
-  /* SEARCH BAR */
-  .search-bar{padding:0.65rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.88rem;font-family:'DM Sans',sans-serif;width:220px;outline:none;}
-  .search-bar:focus{border-color:var(--gold);}
-
-  /* LOGIN SCREEN */
-  #login-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:1000;}
-  .login-box{background:var(--white);border-radius:20px;padding:3rem;width:380px;text-align:center;}
-  .login-box h2{font-family:'Playfair Display',serif;color:var(--navy);margin-bottom:0.5rem;}
-  .login-box p{color:var(--text-muted);font-size:0.88rem;margin-bottom:2rem;}
-  .login-box input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:0.8rem 1rem;font-size:0.95rem;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:0.75rem;}
-  .login-box input:focus{border-color:var(--gold);}
-  .login-box .btn-primary{width:100%;padding:0.9rem;}
-
-  /* Filters */
-  .filter-row{display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;}
-  select.filter-select{border:1.5px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;font-size:0.85rem;font-family:'DM Sans',sans-serif;outline:none;background:white;color:var(--text);}
-
-  @media(max-width:768px){.sidebar{display:none;}.main{margin-left:0;}}
+:root{--gold:#C9933A;--gold-light:#E8B96A;--navy:#1A2744;--navy-mid:#243358;--teal:#1D9E75;--bg:#F0EDE8;--white:#FFF;--text:#1A1A1A;--text-muted:#666;--border:#E2DDD6;--danger:#C0392B;--success:#1D9E75;--warning:#D4860A;--sidebar-w:240px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;}
+.sidebar{width:var(--sidebar-w);background:var(--navy);min-height:100vh;padding:1.5rem 0;position:fixed;left:0;top:0;bottom:0;display:flex;flex-direction:column;z-index:100;}
+.sidebar-logo{padding:0 1.5rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sidebar-logo h2{color:var(--white);font-family:'Playfair Display',serif;font-size:1.1rem;}
+.sidebar-logo h2 span{color:var(--gold-light);}
+.sidebar-logo p{color:rgba(255,255,255,0.5);font-size:0.75rem;margin-top:0.25rem;}
+.sidebar-nav{flex:1;padding:1rem 0;overflow-y:auto;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:0.75rem 1.5rem;color:rgba(255,255,255,0.7);cursor:pointer;transition:all 0.2s;font-size:0.88rem;border-left:3px solid transparent;}
+.nav-item:hover{color:var(--white);background:rgba(255,255,255,0.07);}
+.nav-item.active{color:var(--white);background:rgba(201,147,58,0.15);border-left-color:var(--gold);}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+.sidebar-footer{padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,0.1);}
+.main{margin-left:var(--sidebar-w);flex:1;padding:2rem;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;}
+.topbar h1{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--navy);}
+.topbar-right{display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;}
+.btn{padding:0.55rem 1.2rem;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.btn-primary{background:var(--navy);color:white;}.btn-primary:hover{background:var(--gold);color:var(--navy);}
+.btn-danger{background:var(--danger);color:white;}.btn-success{background:var(--success);color:white;}
+.btn-warning{background:var(--warning);color:white;}.btn-outline{background:white;color:var(--navy);border:1.5px solid var(--border);}
+.btn-sm{padding:0.35rem 0.85rem;font-size:0.78rem;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1.25rem;margin-bottom:2rem;}
+.stat-card{background:var(--white);border-radius:14px;padding:1.3rem;border:1px solid var(--border);display:flex;align-items:center;gap:1rem;}
+.stat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.stat-icon.gold{background:#FFF3D9;}.stat-icon.teal{background:#E1F5EE;}.stat-icon.navy{background:#E8EBF4;}.stat-icon.red{background:#FDECEA;}
+.stat-val{font-size:1.6rem;font-weight:700;color:var(--navy);line-height:1;}.stat-label{font-size:0.78rem;color:var(--text-muted);margin-top:3px;}
+.section{display:none;}.section.active{display:block;}
+.table-card{background:var(--white);border-radius:14px;border:1px solid var(--border);overflow:hidden;margin-bottom:1.5rem;}
+.table-header{padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.table-header h3{font-size:1rem;color:var(--navy);}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{background:#F8F6F3;padding:0.75rem 1rem;text-align:left;font-size:0.78rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;}
+td{padding:0.85rem 1rem;border-top:1px solid var(--border);font-size:0.875rem;vertical-align:middle;}
+tr:hover td{background:#FAFAF8;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:50px;font-size:0.75rem;font-weight:600;}
+.badge-pending{background:#FFF3D9;color:#B8860B;}.badge-confirmed{background:#E1F5EE;color:#1D9E75;}
+.badge-completed{background:#E8EBF4;color:#1A2744;}.badge-cancelled{background:#FDECEA;color:#C0392B;}
+.badge-active{background:#E1F5EE;color:#1D9E75;}.badge-inactive{background:#FDECEA;color:#C0392B;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem;}
+.modal-bg.active{display:flex;}
+.modal{background:var(--white);border-radius:16px;padding:2rem;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;position:relative;}
+.modal h2{color:var(--navy);font-family:'Playfair Display',serif;margin-bottom:1.5rem;font-size:1.3rem;}
+.close{position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-muted);line-height:1;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.form-group{display:flex;flex-direction:column;gap:0.4rem;}
+.form-group.full{grid-column:1/-1;}
+.form-group label{font-size:0.78rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;}
+.form-group input,.form-group select,.form-group textarea{border:1.5px solid var(--border);border-radius:8px;padding:0.6rem 0.9rem;font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;transition:border 0.2s;background:var(--white);color:var(--text);width:100%;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--gold);}
+.search-bar{border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 1rem;font-size:0.88rem;font-family:'DM Sans',sans-serif;outline:none;min-width:220px;}
+.filter-select{border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.85rem;font-size:0.85rem;font-family:'DM Sans',sans-serif;outline:none;}
+#login-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.login-box{background:var(--white);border-radius:20px;padding:2.5rem;width:100%;max-width:380px;text-align:center;}
+.login-box h2{font-family:'Playfair Display',serif;color:var(--navy);margin-bottom:0.5rem;}
+.login-box p{color:var(--text-muted);font-size:0.88rem;margin-bottom:1.5rem;}
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--navy);color:white;padding:1rem 1.5rem;border-radius:12px;font-size:0.88rem;z-index:9999;transform:translateY(100px);opacity:0;transition:all 0.35s;max-width:360px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{background:var(--success);}.toast.error{background:var(--danger);}
+/* Fare rules */
+.fare-rule-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:0.75rem;align-items:end;margin-bottom:0.75rem;background:#F8F6F3;padding:0.75rem;border-radius:10px;}
+/* Vehicle card in fleet section */
+.fleet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;}
+.fleet-card{background:var(--white);border-radius:14px;border:1px solid var(--border);overflow:hidden;}
+.fleet-card img{width:100%;height:160px;object-fit:cover;background:#F0EDE8;}
+.fleet-card-body{padding:1rem;}
+.fleet-card-body h4{font-size:0.95rem;font-weight:600;color:var(--navy);margin-bottom:0.25rem;}
+.fleet-card-meta{font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;}
+/* Extra charge modal */
+.extra-row{display:grid;grid-template-columns:1fr auto;gap:0.5rem;align-items:center;margin-bottom:0.5rem;}
 </style>
 </head>
 <body>
 
-<!-- ADMIN LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <div style="font-size:2.5rem;margin-bottom:1rem;">🚗</div>
-    <h2>Admin Login</h2>
-    <p>Sowmiya Travels Management Panel</p>
-    <input type="text" id="admin-user" placeholder="Admin Username">
-    <input type="password" id="admin-pass" placeholder="Password">
-    <button class="btn btn-primary" onclick="adminLogin()">Login to Admin Panel</button>
+    <h2>Sowmiya <span style="color:var(--gold);">Travels</span></h2>
+    <p>Admin Panel Login</p>
+    <div class="form-group" style="margin-bottom:0.75rem;text-align:left;">
+      <label>Username</label>
+      <input type="text" id="admin-user" placeholder="admin" onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <div class="form-group" style="margin-bottom:1.25rem;text-align:left;">
+      <label>Password</label>
+      <input type="password" id="admin-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <button class="btn btn-primary" style="width:100%;" onclick="adminLogin()">Login to Admin Panel</button>
   </div>
 </div>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <h2>Sowmiya <span>Travels</span></h2>
-    <p>Admin Panel <span class="admin-badge">ADMIN</span></p>
+    <p>Admin Panel <span style="background:var(--gold);color:var(--navy);font-size:0.7rem;font-weight:700;padding:1px 7px;border-radius:50px;">ADMIN</span></p>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-item active" onclick="showSection('dashboard')">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Dashboard
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard
     </div>
     <div class="nav-item" onclick="showSection('bookings')">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      Bookings
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Bookings
+    </div>
+    <div class="nav-item" onclick="showSection('fleet')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-1"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>Fleet / Vehicles
+    </div>
+    <div class="nav-item" onclick="showSection('farerules')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Fare Rules
     </div>
     <div class="nav-item" onclick="showSection('drivers')">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Drivers
-    </div>
-    <div class="nav-item" onclick="showSection('cars')">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-1"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
-      Cars & Fleet
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Drivers
     </div>
     <div class="nav-item" onclick="showSection('owners')">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Car Owners
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Car Owners
     </div>
     <div class="nav-item" onclick="showSection('customers')">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-      Customers
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Customers
     </div>
-    <div class="nav-item" onclick="showSection('reports')">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      Reports
+    <div class="nav-item" onclick="showSection('terms')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Terms & Conditions
     </div>
     <div class="nav-item" onclick="showSection('settings')">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      Settings
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
     </div>
   </nav>
   <div class="sidebar-footer">
@@ -182,156 +137,196 @@
   </div>
 </aside>
 
-<!-- MAIN CONTENT -->
 <main class="main">
-  <!-- DASHBOARD -->
-  <section class="section active" id="section-dashboard">
-    <div class="topbar">
-      <h1>Dashboard</h1>
-      <div class="topbar-right">
-        <span style="color:var(--text-muted);font-size:0.85rem;" id="dashboard-date"></span>
-        <button class="btn btn-primary" onclick="loadAll()">↻ Refresh</button>
-      </div>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon gold"><svg fill="none" stroke="#C9933A" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-        <div><div class="stat-val" id="stat-total">–</div><div class="stat-label">Total Bookings</div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon teal"><svg fill="none" stroke="#1D9E75" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-        <div><div class="stat-val" id="stat-pending">–</div><div class="stat-label">Pending</div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon navy"><svg fill="none" stroke="#1A2744" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-        <div><div class="stat-val" id="stat-drivers">–</div><div class="stat-label">Active Drivers</div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon red"><svg fill="none" stroke="#C0392B" stroke-width="2" viewBox="0 0 24 24"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-1"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></div>
-        <div><div class="stat-val" id="stat-cars">–</div><div class="stat-label">Fleet Cars</div></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-header"><h3>Recent Bookings</h3></div>
-      <div class="table-wrap"><table><thead><tr><th>Booking ID</th><th>Customer</th><th>Route</th><th>Date</th><th>Vehicle</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody id="dashboard-bookings-table"></tbody></table></div>
-    </div>
-  </section>
 
-  <!-- BOOKINGS -->
-  <section class="section" id="section-bookings">
-    <div class="topbar">
-      <h1>All Bookings</h1>
-      <div class="topbar-right filter-row">
-        <input class="search-bar" type="text" placeholder="Search booking…" oninput="filterBookings(this.value)">
-        <select class="filter-select" onchange="filterBookingsByStatus(this.value)">
-          <option value="">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-        <button class="btn btn-primary" onclick="loadBookings()">↻ Refresh</button>
-      </div>
+<!-- DASHBOARD -->
+<section class="section active" id="section-dashboard">
+  <div class="topbar">
+    <h1>Dashboard</h1>
+    <div class="topbar-right">
+      <span style="color:var(--text-muted);font-size:0.85rem;" id="dashboard-date"></span>
+      <button class="btn btn-primary" onclick="loadAll()">↻ Refresh</button>
     </div>
-    <div class="table-card">
-      <div class="table-wrap"><table><thead><tr><th>Booking ID</th><th>Customer</th><th>Phone</th><th>Route</th><th>Date & Time</th><th>Vehicle</th><th>Driver</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody id="bookings-table"></tbody></table></div>
-    </div>
-  </section>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon gold"><svg fill="none" stroke="#C9933A" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div><div><div class="stat-val" id="stat-total">–</div><div class="stat-label">Total Bookings</div></div></div>
+    <div class="stat-card"><div class="stat-icon teal"><svg fill="none" stroke="#1D9E75" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><div><div class="stat-val" id="stat-pending">–</div><div class="stat-label">Pending</div></div></div>
+    <div class="stat-card"><div class="stat-icon navy"><svg fill="none" stroke="#1A2744" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div><div class="stat-val" id="stat-drivers">–</div><div class="stat-label">Active Drivers</div></div></div>
+    <div class="stat-card"><div class="stat-icon red"><svg fill="none" stroke="#C0392B" stroke-width="2" viewBox="0 0 24 24"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-1"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></div><div><div class="stat-val" id="stat-cars">–</div><div class="stat-label">Fleet Vehicles</div></div></div>
+  </div>
+  <div class="table-card">
+    <div class="table-header"><h3>Recent Bookings</h3></div>
+    <div class="table-wrap"><table><thead><tr><th>Booking ID</th><th>Customer</th><th>Route</th><th>Date</th><th>Vehicle</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody id="dashboard-bookings-table"></tbody></table></div>
+  </div>
+</section>
 
-  <!-- DRIVERS -->
-  <section class="section" id="section-drivers">
-    <div class="topbar">
-      <h1>Drivers</h1>
-      <div class="topbar-right">
-        <button class="btn btn-primary" onclick="openModal('driver')">+ Add Driver</button>
-      </div>
+<!-- BOOKINGS -->
+<section class="section" id="section-bookings">
+  <div class="topbar">
+    <h1>All Bookings</h1>
+    <div class="topbar-right">
+      <input class="search-bar" type="text" placeholder="Search booking…" oninput="filterBookings(this.value)">
+      <select class="filter-select" onchange="filterBookingsByStatus(this.value)">
+        <option value="">All Status</option><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
+      </select>
+      <button class="btn btn-primary" onclick="loadBookings()">↻ Refresh</button>
     </div>
-    <div class="table-card">
-      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>License No.</th><th>Car Assigned</th><th>Owner</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody id="drivers-table"></tbody></table></div>
-    </div>
-  </section>
+  </div>
+  <div class="table-card">
+    <div class="table-wrap"><table><thead><tr><th>Booking ID</th><th>Customer</th><th>Phone</th><th>Route</th><th>Date & Time</th><th>Vehicle</th><th>Driver</th><th>Fare</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody id="bookings-table"></tbody></table></div>
+  </div>
+</section>
 
-  <!-- CARS -->
-  <section class="section" id="section-cars">
-    <div class="topbar">
-      <h1>Cars & Fleet</h1>
-      <div class="topbar-right">
-        <button class="btn btn-primary" onclick="openModal('car')">+ Add Car</button>
-      </div>
+<!-- FLEET / VEHICLES (customer-visible, admin-controlled) -->
+<section class="section" id="section-fleet">
+  <div class="topbar">
+    <h1>Fleet & Vehicles</h1>
+    <div class="topbar-right">
+      <button class="btn btn-primary" onclick="openModal('vehicle')">+ Add Vehicle</button>
     </div>
-    <div class="table-card">
-      <div class="table-wrap"><table><thead><tr><th>Reg. Number</th><th>Model</th><th>Type</th><th>Seats</th><th>Owner</th><th>Driver</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody id="cars-table"></tbody></table></div>
-    </div>
-  </section>
+  </div>
+  <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.5rem;">These vehicles appear on the customer booking page. Add image, specs, model, colour, seats etc.</p>
+  <div class="fleet-grid" id="fleet-grid"><p style="color:var(--text-muted);padding:2rem;">Loading vehicles…</p></div>
+</section>
 
-  <!-- OWNERS -->
-  <section class="section" id="section-owners">
-    <div class="topbar">
-      <h1>Car Owners</h1>
-      <div class="topbar-right">
-        <button class="btn btn-primary" onclick="openModal('owner')">+ Add Owner</button>
-      </div>
+<!-- FARE RULES -->
+<section class="section" id="section-farerules">
+  <div class="topbar">
+    <h1>Fare Rules</h1>
+    <div class="topbar-right">
+      <button class="btn btn-primary" onclick="addFareRule()">+ Add Rule</button>
+      <button class="btn btn-success" onclick="saveFareRules()">💾 Save All Rules</button>
     </div>
-    <div class="table-card">
-      <div class="table-wrap"><table><thead><tr><th>Owner Name</th><th>Phone</th><th>Address</th><th>Cars Owned</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody id="owners-table"></tbody></table></div>
+  </div>
+  <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.5rem;">Set fare rules per vehicle type. These auto-calculate booking costs on the customer page.</p>
+  <div class="table-card" style="padding:1.5rem;">
+    <div id="fare-rules-container"></div>
+    <button class="btn btn-outline btn-sm" onclick="addFareRule()" style="margin-top:0.75rem;">+ Add Another Rule</button>
+  </div>
+  <div class="table-card" style="padding:1.5rem;margin-top:1.5rem;">
+    <h3 style="color:var(--navy);margin-bottom:1rem;font-size:1rem;">Fare Rule Types Available</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;font-size:0.85rem;color:var(--text-muted);">
+      <div>📏 <strong>Per KM</strong> – Rate per kilometre</div>
+      <div>🚗 <strong>Per Trip</strong> – Fixed fare for trip</div>
+      <div>⏱️ <strong>Per Hour</strong> – Hourly rental rate</div>
+      <div>📅 <strong>Per Day</strong> – Daily rental rate</div>
+      <div>⏳ <strong>Waiting Charge</strong> – Per hour waiting</div>
+      <div>🌙 <strong>Night Surcharge</strong> – Extra after 10pm</div>
+      <div>✈️ <strong>Airport Pickup</strong> – Fixed airport fee</div>
+      <div>➕ <strong>Extra KM</strong> – Beyond package km</div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- CUSTOMERS -->
-  <section class="section" id="section-customers">
-    <div class="topbar"><h1>Customers</h1></div>
-    <div class="table-card">
-      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Total Bookings</th><th>Last Booking</th></tr></thead>
-      <tbody id="customers-table"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);">Connect Supabase to view customers</td></tr></tbody></table></div>
-    </div>
-  </section>
+<!-- DRIVERS -->
+<section class="section" id="section-drivers">
+  <div class="topbar">
+    <h1>Drivers</h1>
+    <div class="topbar-right"><button class="btn btn-primary" onclick="openModal('driver')">+ Add Driver</button></div>
+  </div>
+  <div class="table-card">
+    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>License</th><th>Car Assigned</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody id="drivers-table"></tbody></table></div>
+  </div>
+</section>
 
-  <!-- REPORTS -->
-  <section class="section" id="section-reports">
-    <div class="topbar"><h1>Reports</h1></div>
-    <div class="stats-grid" style="margin-bottom:1.5rem;">
-      <div class="stat-card"><div class="stat-icon gold"><svg fill="none" stroke="#C9933A" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val" id="rep-revenue">–</div><div class="stat-label">Est. Revenue (₹)</div></div></div>
-      <div class="stat-card"><div class="stat-icon teal"><svg fill="none" stroke="#1D9E75" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="stat-val" id="rep-completed">–</div><div class="stat-label">Completed Trips</div></div></div>
-      <div class="stat-card"><div class="stat-icon red"><svg fill="none" stroke="#C0392B" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div><div class="stat-val" id="rep-cancelled">–</div><div class="stat-label">Cancelled</div></div></div>
-    </div>
-    <div class="table-card"><div class="table-header"><h3>Monthly Summary</h3></div>
-    <div style="padding:2rem;text-align:center;color:var(--text-muted);">Reports generate from Supabase data. Connect your database to see charts.</div></div>
-  </section>
+<!-- OWNERS -->
+<section class="section" id="section-owners">
+  <div class="topbar">
+    <h1>Car Owners</h1>
+    <div class="topbar-right"><button class="btn btn-primary" onclick="openModal('owner')">+ Add Owner</button></div>
+  </div>
+  <div class="table-card">
+    <div class="table-wrap"><table><thead><tr><th>Owner Name</th><th>Phone</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody id="owners-table"></tbody></table></div>
+  </div>
+</section>
 
-  <!-- SETTINGS -->
-  <section class="section" id="section-settings">
-    <div class="topbar"><h1>Settings</h1></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px;">
-      <div class="table-card" style="padding:1.5rem;">
-        <h3 style="color:var(--navy);margin-bottom:1.25rem;font-size:1rem;">API Configuration</h3>
-        <div class="form-group" style="margin-bottom:0.75rem;"><label>Supabase URL</label><input type="text" id="cfg-sb-url" placeholder="https://xxx.supabase.co"></div>
-        <div class="form-group" style="margin-bottom:0.75rem;"><label>Supabase Anon Key</label><input type="password" id="cfg-sb-key" placeholder="sb_publishable_…"></div>
-        <div class="form-group" style="margin-bottom:0.75rem;"><label>Fonnte Token</label><input type="password" id="cfg-fonnte" placeholder="Your Fonnte API token"></div>
-        <div class="form-group" style="margin-bottom:0.75rem;"><label>Telegram Bot Token</label><input type="password" id="cfg-tg-token" placeholder="Bot token from @BotFather"></div>
-        <div class="form-group" style="margin-bottom:1rem;"><label>Telegram Chat ID</label><input type="text" id="cfg-tg-chat" placeholder="-100xxxxxxxxx"></div>
-        <button class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
-      </div>
-      <div class="table-card" style="padding:1.5rem;">
-        <h3 style="color:var(--navy);margin-bottom:1.25rem;font-size:1rem;">Admin Password</h3>
-        <div class="form-group" style="margin-bottom:0.75rem;"><label>Current Password</label><input type="password" id="old-pass" placeholder="Current password"></div>
-        <div class="form-group" style="margin-bottom:0.75rem;"><label>New Password</label><input type="password" id="new-pass" placeholder="New password"></div>
-        <div class="form-group" style="margin-bottom:1rem;"><label>Confirm New Password</label><input type="password" id="confirm-pass" placeholder="Repeat new password"></div>
-        <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
-        <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);">
-          <h3 style="color:var(--navy);margin-bottom:0.75rem;font-size:0.95rem;">Quick Links</h3>
-          <a href="index.html" target="_blank" style="color:var(--teal);font-size:0.88rem;display:block;margin-bottom:0.5rem;">→ View Customer Website</a>
-          <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--teal);font-size:0.88rem;display:block;margin-bottom:0.5rem;">→ Supabase Dashboard</a>
-          <a href="https://t.me/BotFather" target="_blank" style="color:var(--teal);font-size:0.88rem;display:block;">→ Telegram BotFather</a>
-        </div>
-      </div>
+<!-- CUSTOMERS -->
+<section class="section" id="section-customers">
+  <div class="topbar"><h1>Customers</h1><div class="topbar-right"><button class="btn btn-primary" onclick="loadCustomers()">↻ Refresh</button></div></div>
+  <div class="table-card">
+    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Bookings</th><th>Last Login</th><th>Joined</th></tr></thead>
+    <tbody id="customers-table"><tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted);">Loading…</td></tr></tbody></table></div>
+  </div>
+</section>
+
+<!-- TERMS & CONDITIONS -->
+<section class="section" id="section-terms">
+  <div class="topbar">
+    <h1>Terms & Conditions</h1>
+    <div class="topbar-right"><button class="btn btn-primary" onclick="saveTerms()">💾 Save Terms</button></div>
+  </div>
+  <div class="table-card" style="padding:1.5rem;">
+    <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem;">These terms are shown to customers on the booking page before they confirm. Use plain text or basic HTML.</p>
+    <textarea id="terms-content" style="width:100%;min-height:400px;border:1.5px solid var(--border);border-radius:10px;padding:1rem;font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;resize:vertical;"></textarea>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section class="section" id="section-settings">
+  <div class="topbar"><h1>Settings</h1></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px;">
+    <div class="table-card" style="padding:1.5rem;">
+      <h3 style="color:var(--navy);margin-bottom:1.25rem;font-size:1rem;">API Configuration</h3>
+      <div class="form-group" style="margin-bottom:0.75rem;"><label>Supabase URL</label><input type="text" id="cfg-sb-url" placeholder="https://xxx.supabase.co"></div>
+      <div class="form-group" style="margin-bottom:0.75rem;"><label>Supabase Anon Key</label><input type="password" id="cfg-sb-key" placeholder="sb_publishable_…"></div>
+      <div class="form-group" style="margin-bottom:0.75rem;"><label>Fonnte Token</label><input type="password" id="cfg-fonnte"></div>
+      <div class="form-group" style="margin-bottom:0.75rem;"><label>Telegram Bot Token</label><input type="password" id="cfg-tg-token"></div>
+      <div class="form-group" style="margin-bottom:0.75rem;"><label>Telegram Chat ID</label><input type="text" id="cfg-tg-chat"></div>
+      <div class="form-group" style="margin-bottom:1rem;"><label>UPI ID</label><input type="text" id="cfg-upi" placeholder="6382986186@ybl"></div>
+      <button class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
     </div>
-  </section>
+    <div class="table-card" style="padding:1.5rem;">
+      <h3 style="color:var(--navy);margin-bottom:1.25rem;font-size:1rem;">Admin Password</h3>
+      <div class="form-group" style="margin-bottom:0.75rem;"><label>Current Password</label><input type="password" id="old-pass"></div>
+      <div class="form-group" style="margin-bottom:0.75rem;"><label>New Password</label><input type="password" id="new-pass"></div>
+      <div class="form-group" style="margin-bottom:1rem;"><label>Confirm New Password</label><input type="password" id="confirm-pass"></div>
+      <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+      <hr style="margin:1.5rem 0;border:none;border-top:1px solid var(--border);">
+      <h3 style="color:var(--navy);margin-bottom:0.75rem;font-size:0.95rem;">Quick Links</h3>
+      <a href="index.html" target="_blank" style="color:var(--teal);font-size:0.88rem;display:block;margin-bottom:0.5rem;">→ View Customer Website</a>
+      <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--teal);font-size:0.88rem;display:block;">→ Supabase Dashboard</a>
+    </div>
+  </div>
+</section>
+
 </main>
+
+<!-- VEHICLE MODAL (Fleet) -->
+<div class="modal-bg" id="modal-vehicle">
+  <div class="modal" style="max-width:720px;">
+    <button class="close" onclick="closeModal('vehicle')">×</button>
+    <h2 id="vehicle-modal-title">Add Vehicle</h2>
+    <input type="hidden" id="vehicle-edit-id">
+    <div class="form-grid">
+      <div class="form-group"><label>Vehicle Name / Model</label><input type="text" id="v-model" placeholder="e.g. Toyota Innova Crysta"></div>
+      <div class="form-group"><label>Vehicle Type</label>
+        <select id="v-type-select" onchange="onVehicleTypeChange(this,'v-type-manual','v-type')">
+          <option value="Sedan">Sedan</option><option value="SUV">SUV</option><option value="Innova">Innova Crysta</option><option value="Innova HyCross">Innova HyCross</option><option value="Tempo">Tempo Traveller</option><option value="Bolero">Bolero</option><option value="Dzire">Dzire</option><option value="Etios">Etios</option><option value="Swift">Swift</option><option value="Ertiga">Ertiga</option><option value="Scorpio">Scorpio</option><option value="Fortuner">Fortuner</option><option value="Other">✏️ Type Manually…</option>
+        </select>
+        <input type="text" id="v-type-manual" placeholder="Enter vehicle type…" style="display:none;margin-top:6px;border:1.5px solid var(--gold);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.9rem;width:100%;">
+        <input type="hidden" id="v-type" value="Sedan">
+      </div>
+      <div class="form-group"><label>Colour</label><input type="text" id="v-color" placeholder="White / Black / Silver"></div>
+      <div class="form-group"><label>Seating Capacity</label><input type="number" id="v-seats" placeholder="4" min="1" max="50"></div>
+      <div class="form-group"><label>Registration Number</label><input type="text" id="v-reg" placeholder="TN01 XX 0000"></div>
+      <div class="form-group"><label>Year</label><input type="number" id="v-year" placeholder="2023"></div>
+      <div class="form-group"><label>AC</label><select id="v-ac"><option value="yes">Yes – AC</option><option value="no">No – Non AC</option></select></div>
+      <div class="form-group"><label>Status (Visible to customers?)</label><select id="v-status"><option value="active">✅ Active – Visible</option><option value="inactive">❌ Hidden</option><option value="maintenance">🔧 Maintenance</option></select></div>
+      <div class="form-group full"><label>Vehicle Image URL</label><input type="url" id="v-image" placeholder="https://… (paste image link or upload to imgur.com)"></div>
+      <div class="form-group full"><label>Image Preview</label><img id="v-image-preview" src="" alt="" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;display:none;margin-top:0.5rem;border:1px solid var(--border);"></div>
+      <div class="form-group full"><label>Features / Specs (shown on booking page)</label><textarea id="v-features" placeholder="e.g. Music system, GPS, Child seat available, Extra luggage space…" style="min-height:70px;resize:vertical;"></textarea></div>
+      <div class="form-group full"><label>Assign Driver</label><select id="v-driver"><option value="">None</option></select></div>
+    </div>
+    <div style="display:flex;gap:0.75rem;margin-top:1rem;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveVehicle()">Save Vehicle</button>
+      <button class="btn btn-outline" onclick="closeModal('vehicle')">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <!-- DRIVER MODAL -->
 <div class="modal-bg" id="modal-driver">
@@ -346,70 +341,12 @@
       <div class="form-group"><label>License Expiry</label><input type="date" id="d-license-exp"></div>
       <div class="form-group"><label>Address</label><input type="text" id="d-address" placeholder="City, State"></div>
       <div class="form-group"><label>Aadhaar Number</label><input type="text" id="d-aadhaar" placeholder="XXXX XXXX XXXX"></div>
-      <div class="form-group"><label>Assign Car</label>
-        <select id="d-car"><option value="">None</option></select>
-      </div>
-      <div class="form-group"><label>Status</label>
-        <select id="d-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>
-      </div>
+      <div class="form-group"><label>Status</label><select id="d-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
       <div class="form-group full"><label>Notes</label><input type="text" id="d-notes" placeholder="Any notes…"></div>
     </div>
     <div style="display:flex;gap:0.75rem;margin-top:0.75rem;">
       <button class="btn btn-primary" style="flex:1;" onclick="saveDriver()">Save Driver</button>
       <button class="btn btn-outline" onclick="closeModal('driver')">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- CAR MODAL -->
-<div class="modal-bg" id="modal-car">
-  <div class="modal">
-    <button class="close" onclick="closeModal('car')">×</button>
-    <h2 id="car-modal-title">Add Car</h2>
-    <input type="hidden" id="car-edit-id">
-    <div class="form-grid">
-      <div class="form-group"><label>Registration Number</label><input type="text" id="c-reg" placeholder="TN01 XX 0000"></div>
-      <div class="form-group"><label>Car Model</label><input type="text" id="c-model" placeholder="e.g. Toyota Etios"></div>
-      <div class="form-group"><label>Vehicle Type</label>
-        <select id="c-type-select" onchange="onVehicleTypeChange(this)">
-          <option value="Sedan">Sedan</option>
-          <option value="SUV">SUV</option>
-          <option value="Innova">Innova Crysta</option>
-          <option value="Innova HyCross">Innova HyCross</option>
-          <option value="Tempo">Tempo Traveller</option>
-          <option value="Bolero">Bolero</option>
-          <option value="Dzire">Dzire</option>
-          <option value="Etios">Etios</option>
-          <option value="Swift">Swift</option>
-          <option value="Ertiga">Ertiga</option>
-          <option value="Scorpio">Scorpio</option>
-          <option value="Other">✏️ Type Manually…</option>
-        </select>
-        <input type="text" id="c-type-manual" placeholder="Type vehicle name e.g. Fortuner, Traveller 15-Seater…"
-          style="display:none;margin-top:6px;border:1.5px solid var(--gold);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.9rem;width:100%;box-sizing:border-box;">
-        <input type="hidden" id="c-type">
-      </div>
-      <div class="form-group"><label>Seating Capacity</label><input type="number" id="c-seats" placeholder="4" min="2" max="20"></div>
-      <div class="form-group"><label>Year</label><input type="number" id="c-year" placeholder="2022"></div>
-      <div class="form-group"><label>Color</label><input type="text" id="c-color" placeholder="White"></div>
-      <div class="form-group"><label>Assign Owner</label>
-        <select id="c-owner"><option value="">None</option></select>
-      </div>
-      <div class="form-group"><label>Assign Driver</label>
-        <select id="c-driver"><option value="">None</option></select>
-      </div>
-      <div class="form-group"><label>Insurance Expiry</label><input type="date" id="c-insurance"></div>
-      <div class="form-group"><label>FC Expiry</label><input type="date" id="c-fc"></div>
-      <div class="form-group"><label>Status</label>
-        <select id="c-status"><option value="active">Active</option><option value="inactive">Inactive</option><option value="maintenance">In Maintenance</option></select>
-      </div>
-      <div class="form-group"><label>AC</label>
-        <select id="c-ac"><option value="yes">Yes</option><option value="no">No</option></select>
-      </div>
-    </div>
-    <div style="display:flex;gap:0.75rem;margin-top:0.75rem;">
-      <button class="btn btn-primary" style="flex:1;" onclick="saveCar()">Save Car</button>
-      <button class="btn btn-outline" onclick="closeModal('car')">Cancel</button>
     </div>
   </div>
 </div>
@@ -424,13 +361,11 @@
       <div class="form-group"><label>Owner Name</label><input type="text" id="o-name" placeholder="Full name"></div>
       <div class="form-group"><label>Phone / WhatsApp</label><input type="tel" id="o-phone" placeholder="+91 9XXXXXXXX"></div>
       <div class="form-group full"><label>Address</label><input type="text" id="o-address" placeholder="Full address"></div>
-      <div class="form-group"><label>Aadhaar Number</label><input type="text" id="o-aadhaar" placeholder="XXXX XXXX XXXX"></div>
+      <div class="form-group"><label>Aadhaar Number</label><input type="text" id="o-aadhaar"></div>
       <div class="form-group"><label>PAN Number</label><input type="text" id="o-pan" placeholder="ABCDE1234F"></div>
-      <div class="form-group"><label>Bank Account No.</label><input type="text" id="o-bank-acc" placeholder="For payments"></div>
+      <div class="form-group"><label>Bank Account No.</label><input type="text" id="o-bank-acc"></div>
       <div class="form-group"><label>IFSC Code</label><input type="text" id="o-ifsc" placeholder="SBIN0001234"></div>
-      <div class="form-group"><label>Status</label>
-        <select id="o-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>
-      </div>
+      <div class="form-group"><label>Status</label><select id="o-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
     </div>
     <div style="display:flex;gap:0.75rem;margin-top:0.75rem;">
       <button class="btn btn-primary" style="flex:1;" onclick="saveOwner()">Save Owner</button>
@@ -441,680 +376,822 @@
 
 <!-- ASSIGN DRIVER MODAL -->
 <div class="modal-bg" id="modal-assign">
-  <div class="modal" style="max-width:420px;">
+  <div class="modal" style="max-width:440px;">
     <button class="close" onclick="closeModal('assign')">×</button>
     <h2>Assign Driver</h2>
     <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:1.5rem;">Booking: <strong id="assign-booking-id"></strong></p>
     <div class="form-group" style="margin-bottom:1rem;"><label>Select Driver</label>
       <select id="assign-driver-select" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;"></select>
     </div>
-    <div class="form-group" style="margin-bottom:1rem;"><label>Update Status</label>
-      <select id="assign-status-select" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.9rem;font-family:'DM Sans',sans-serif;outline:none;">
-        <option value="confirmed">Confirmed</option>
-        <option value="pending">Pending</option>
-        <option value="completed">Completed</option>
-        <option value="cancelled">Cancelled</option>
-      </select>
+    <div style="display:flex;gap:0.75rem;">
+      <button class="btn btn-success" style="flex:1;" onclick="confirmAssign()">Assign & Notify Customer</button>
+      <button class="btn btn-outline" onclick="closeModal('assign')">Cancel</button>
     </div>
-    <button class="btn btn-primary" style="width:100%;" onclick="confirmAssign()">Assign & Notify Customer</button>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- EXTRA CHARGES MODAL -->
+<div class="modal-bg" id="modal-extra">
+  <div class="modal" style="max-width:500px;">
+    <button class="close" onclick="closeModal('extra')">×</button>
+    <h2>Extra Charges</h2>
+    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:1rem;">Booking: <strong id="extra-booking-id"></strong></p>
+    <div style="background:#FFF3D9;border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:0.85rem;color:#8a6000;">
+      ⏱️ Trip extended? Add extra km, waiting time, or manual charges below.
+    </div>
+    <div id="extra-charges-rows"></div>
+    <button class="btn btn-outline btn-sm" onclick="addExtraRow()" style="margin-bottom:1rem;">+ Add Charge</button>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label>Total Extra Amount (₹) – auto-calculated or manual override</label>
+      <input type="number" id="extra-total" placeholder="0" min="0">
+    </div>
+    <div style="display:flex;gap:0.75rem;">
+      <button class="btn btn-warning" style="flex:1;" onclick="saveExtraCharges()">Save & Notify Customer</button>
+      <button class="btn btn-outline" onclick="closeModal('extra')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
 
 <script>
-// CONFIG
 const DEFAULTS = {
-  sbUrl: 'https://cmivqaucimkglcloyjrm.supabase.co',
-  sbKey: 'sb_publishable_VxgbMTVjkCP3JOBdj2AkIA_z5l6lWgo',
-  fonnteToken: 'QP4Hop3z3fEdzTv1sQiK',
-  tgToken: '8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA',
-  tgChat: '8252090421'
+  sbUrl:'https://cmivqaucimkglcloyjrm.supabase.co',
+  sbKey:'sb_publishable_VxgbMTVjkCP3JOBdj2AkIA_z5l6lWgo',
+  fonnteToken:'QP4Hop3z3fEdzTv1sQiK',
+  tgToken:'8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA',
+  tgChat:'8252090421',
+  upiId:'6382986186@ybl'
 };
-let CONFIG = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('st_admin_config') || '{}'));
-const ADMIN_CREDS = { user: 'admin', pass: localStorage.getItem('st_admin_pass') || 'sowmiya2024' };
+let CONFIG = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('st_admin_config')||'{}'));
+const ADMIN_CREDS = { user:'admin', pass: localStorage.getItem('st_admin_pass')||'sowmiya2024' };
 
-// In-memory data (replace with Supabase calls when connected)
 let DATA = {
-  bookings: JSON.parse(localStorage.getItem('st_bookings') || '[]'),
-  drivers:  JSON.parse(localStorage.getItem('st_drivers')  || '[]'),
-  cars:     JSON.parse(localStorage.getItem('st_cars')     || '[]'),
-  owners:   JSON.parse(localStorage.getItem('st_owners')   || '[]'),
+  bookings: JSON.parse(localStorage.getItem('st_bookings')||'[]'),
+  drivers:  JSON.parse(localStorage.getItem('st_drivers')||'[]'),
+  vehicles: JSON.parse(localStorage.getItem('st_vehicles')||'[]'),
+  owners:   JSON.parse(localStorage.getItem('st_owners')||'[]'),
+  fareRules:JSON.parse(localStorage.getItem('st_fare_rules')||'[]'),
 };
-
 let _sbClient = null;
-let assigningBookingId = null;
+let assigningBookingId = null, extraBookingId = null;
 
-// ── FIX 1: Supabase init as function so it can be called after login too ──────
+// ── SUPABASE INIT ────────────────────────────────────────────────────────────
 function initSupabase() {
-  if (typeof window.supabase === 'undefined') { console.warn('[SB] supabase-js not loaded'); return; }
-  if (_sbClient) return;
-  if (!CONFIG.sbUrl || !CONFIG.sbKey) return;
+  if(typeof window.supabase==='undefined'){console.warn('[SB] not loaded');return;}
+  if(_sbClient) return;
+  if(!CONFIG.sbUrl||!CONFIG.sbKey) return;
   try {
-    const lib = window.supabase;
-    if (typeof lib.createClient !== 'function') { console.error('[SB] createClient missing'); return; }
-    _sbClient = lib.createClient(CONFIG.sbUrl, CONFIG.sbKey);
-    console.log('[SB] ✅ Admin Supabase ready:', CONFIG.sbUrl);
-  } catch(e) { console.error('[SB] Init failed:', e.message); }
+    const lib=window.supabase;
+    if(typeof lib.createClient!=='function'){console.error('[SB] createClient missing');return;}
+    _sbClient=lib.createClient(CONFIG.sbUrl,CONFIG.sbKey);
+    console.log('[SB] ✅ Admin ready');
+  } catch(e){console.error('[SB]',e.message);}
 }
-
-// Load Supabase JS — on load, restore login session if previously logged in
-const sbScript = document.createElement('script');
-sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-sbScript.onload = () => {
+const sbScript=document.createElement('script');
+sbScript.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+sbScript.onload=()=>{
   initSupabase();
-  // ── FIX 2: Restore admin login session across page refreshes ─────────────
-  if (localStorage.getItem('st_admin_logged') === '1') {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard-date').textContent =
-      new Date().toLocaleDateString('en-IN', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  if(localStorage.getItem('st_admin_logged')==='1'){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('dashboard-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
     loadAll();
   }
 };
-sbScript.onerror = () => console.error('[SB] Failed to load supabase-js CDN');
+sbScript.onerror=()=>console.error('[SB] CDN load failed');
 document.head.appendChild(sbScript);
 
-// ── FIX 3: LOGIN — persist session to localStorage ────────────────────────────
-function adminLogin() {
-  const u = document.getElementById('admin-user').value.trim();
-  const p = document.getElementById('admin-pass').value.trim();
-  if (u === ADMIN_CREDS.user && p === ADMIN_CREDS.pass) {
-    localStorage.setItem('st_admin_logged', '1');
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard-date').textContent =
-      new Date().toLocaleDateString('en-IN', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+function adminLogin(){
+  const u=document.getElementById('admin-user').value.trim();
+  const p=document.getElementById('admin-pass').value.trim();
+  if(u===ADMIN_CREDS.user&&p===ADMIN_CREDS.pass){
+    localStorage.setItem('st_admin_logged','1');
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('dashboard-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
     initSupabase();
     loadAll();
-  } else {
-    alert('Invalid credentials');
-  }
+  } else { alert('Invalid credentials'); }
 }
-
-// ── FIX 4: LOGOUT — clear session flag ───────────────────────────────────────
-function adminLogout() {
+function adminLogout(){
   localStorage.removeItem('st_admin_logged');
-  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-screen').style.display='flex';
 }
 
-
-// SECTION NAV
-function showSection(name) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('section-' + name).classList.add('active');
+// ── NAV ──────────────────────────────────────────────────────────────────────
+function showSection(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('section-'+name).classList.add('active');
   event.currentTarget.classList.add('active');
-  if (name === 'bookings') loadBookings();
-  if (name === 'drivers') loadDrivers();
-  if (name === 'cars') loadCars();
-  if (name === 'owners') loadOwners();
-  if (name === 'customers') loadCustomers();
+  if(name==='bookings') loadBookings();
+  else if(name==='fleet') loadFleet();
+  else if(name==='farerules') loadFareRulesUI();
+  else if(name==='drivers') loadDrivers();
+  else if(name==='owners') loadOwners();
+  else if(name==='customers') loadCustomers();
+  else if(name==='terms') loadTermsUI();
+  else if(name==='settings') loadSettings();
 }
 
-async function loadAll() {
+async function loadAll(){
   await loadBookings();
   await loadDrivers();
-  await loadCars();
+  await loadVehiclesFromDB();
   await loadOwners();
   updateDashboard();
 }
 
-// ── FIX: Load customers from Supabase ────────────────────────────────────────
-async function loadCustomers() {
-  const tb = document.getElementById('customers-table');
-  if (!_sbClient) {
-    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);">⚠️ Supabase not connected. Check Settings.</td></tr>';
-    return;
-  }
-  tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1rem;color:var(--text-muted);">Loading…</td></tr>';
-  const { data, error } = await _sbClient.from('customers').select('*').order('created_at', { ascending: false });
-  if (error) { tb.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;color:red;">Error: ${error.message}</td></tr>`; return; }
-  if (!data || !data.length) { tb.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);">No customers yet</td></tr>'; return; }
-  tb.innerHTML = data.map(c => `<tr>
-    <td><strong>${c.name || '–'}</strong></td>
-    <td>${c.phone}</td>
-    <td>${c.last_login ? new Date(c.last_login).toLocaleString('en-IN') : '–'}</td>
-    <td>${new Date(c.created_at).toLocaleDateString('en-IN')}</td>
-  </tr>`).join('');
-}
-
-// SAVE TO LOCALSTORAGE (fallback when no Supabase)
-function persist() {
+// ── PERSIST ──────────────────────────────────────────────────────────────────
+function persist(){
   localStorage.setItem('st_bookings', JSON.stringify(DATA.bookings));
-  localStorage.setItem('st_drivers', JSON.stringify(DATA.drivers));
-  localStorage.setItem('st_cars', JSON.stringify(DATA.cars));
-  localStorage.setItem('st_owners', JSON.stringify(DATA.owners));
+  localStorage.setItem('st_drivers',  JSON.stringify(DATA.drivers));
+  localStorage.setItem('st_vehicles', JSON.stringify(DATA.vehicles));
+  localStorage.setItem('st_owners',   JSON.stringify(DATA.owners));
+  localStorage.setItem('st_fare_rules',JSON.stringify(DATA.fareRules));
 }
 
-// DASHBOARD
-function updateDashboard() {
-  document.getElementById('stat-total').textContent = DATA.bookings.length;
-  document.getElementById('stat-pending').textContent = DATA.bookings.filter(b => b.status === 'pending').length;
-  document.getElementById('stat-drivers').textContent = DATA.drivers.filter(d => d.status === 'active').length;
-  document.getElementById('stat-cars').textContent = DATA.cars.length;
-  document.getElementById('rep-revenue').textContent = (DATA.bookings.filter(b => b.status === 'completed').length * 850).toLocaleString('en-IN');
-  document.getElementById('rep-completed').textContent = DATA.bookings.filter(b => b.status === 'completed').length;
-  document.getElementById('rep-cancelled').textContent = DATA.bookings.filter(b => b.status === 'cancelled').length;
-  renderTable('dashboard-bookings-table', DATA.bookings.slice(-10).reverse(), true);
+// ── TOAST ────────────────────────────────────────────────────────────────────
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3500);
 }
 
-// BOOKINGS
-async function loadBookings() {
-  if (_sbClient) {
-    const { data, error } = await _sbClient.from('bookings').select('*').order('created_at', { ascending: false });
-    if (error) { showToast('Bookings load error: ' + error.message, 'error'); console.error('[SB] loadBookings:', error); }
-    else if (data) DATA.bookings = data;
+// ── DASHBOARD ────────────────────────────────────────────────────────────────
+function updateDashboard(){
+  document.getElementById('stat-total').textContent=DATA.bookings.length;
+  document.getElementById('stat-pending').textContent=DATA.bookings.filter(b=>b.status==='pending').length;
+  document.getElementById('stat-drivers').textContent=DATA.drivers.filter(d=>d.status==='active').length;
+  document.getElementById('stat-cars').textContent=DATA.vehicles.filter(v=>v.status==='active').length;
+  const tb=document.getElementById('dashboard-bookings-table');
+  const recent=[...DATA.bookings].slice(0,8);
+  tb.innerHTML=recent.length ? recent.map(b=>`<tr>
+    <td><strong>${b.booking_id}</strong></td>
+    <td>${b.customer_name}</td>
+    <td>${b.pickup_location}→${b.drop_location}</td>
+    <td>${b.pickup_date}</td>
+    <td>${b.vehicle_type||''}</td>
+    <td><span class="badge badge-${b.status}">${b.status}</span></td>
+    <td><button class="btn btn-sm btn-primary" onclick="openAssign('${b.booking_id}')">Assign</button></td>
+  </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">No bookings yet</td></tr>';
+}
+
+// ── BOOKINGS ─────────────────────────────────────────────────────────────────
+async function loadBookings(){
+  if(_sbClient){
+    const{data,error}=await _sbClient.from('bookings').select('*').order('created_at',{ascending:false});
+    if(error){showToast('Bookings error: '+error.message,'error');}
+    else if(data) DATA.bookings=data;
   }
-  renderTable('bookings-table', DATA.bookings, false);
+  renderBookings(DATA.bookings);
   updateDashboard();
 }
 
-function filterBookings(q) {
-  const rows = document.querySelectorAll('#bookings-table tr');
-  rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none'; });
+function renderBookings(list){
+  const tb=document.getElementById('bookings-table');
+  if(!tb) return;
+  tb.innerHTML=list.length ? list.map((b,i)=>`<tr>
+    <td><strong>${b.booking_id}</strong></td>
+    <td>${b.customer_name}</td>
+    <td>${b.customer_phone}</td>
+    <td>${b.pickup_location} → ${b.drop_location}</td>
+    <td>${b.pickup_date} ${b.pickup_time||''}</td>
+    <td>${b.vehicle_type||'–'}</td>
+    <td>${b.driver_name||'<span style="color:var(--text-muted)">Unassigned</span>'}</td>
+    <td>₹${b.total_fare||'–'}</td>
+    <td><span class="badge badge-${b.status}">${b.status}</span></td>
+    <td style="white-space:nowrap;">
+      <button class="btn btn-sm btn-success" onclick="updateStatus('${b.booking_id}','confirmed')">✓</button>
+      <button class="btn btn-sm btn-primary" onclick="openAssign('${b.booking_id}')">Driver</button>
+      <button class="btn btn-sm btn-warning" onclick="openExtraCharges('${b.booking_id}')">Extra+</button>
+      <button class="btn btn-sm btn-danger" onclick="updateStatus('${b.booking_id}','cancelled')">✗</button>
+    </td>
+  </tr>`).join('') : '<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-muted);">No bookings yet</td></tr>';
 }
 
-function filterBookingsByStatus(status) {
-  const rows = document.querySelectorAll('#bookings-table tr');
-  rows.forEach(r => { r.style.display = (!status || r.textContent.toLowerCase().includes(status)) ? '' : 'none'; });
+function filterBookings(q){
+  const f=DATA.bookings.filter(b=>JSON.stringify(b).toLowerCase().includes(q.toLowerCase()));
+  renderBookings(f);
+}
+function filterBookingsByStatus(s){
+  renderBookings(s?DATA.bookings.filter(b=>b.status===s):DATA.bookings);
 }
 
-function renderTable(tbodyId, bookings, compact) {
-  const tb = document.getElementById(tbodyId);
-  if (!bookings.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-muted);">No bookings yet</td></tr>'; return; }
-  tb.innerHTML = bookings.map(b => {
-    const sc = b.status === 'confirmed' ? 'confirmed' : b.status === 'completed' ? 'completed' : b.status === 'cancelled' ? 'cancelled' : 'pending';
-    const driverCell = compact ? '' : `<td>${b.driver_name ? `<span style="color:var(--teal)">${b.driver_name}</span>` : `<div class="assign-row"><button class="btn btn-warning btn-sm" onclick="openAssign('${b.booking_id}')">Assign</button></div>`}</td>`;
-    return `<tr>
-      <td><strong>${b.booking_id}</strong></td>
-      <td>${b.customer_name}</td>
-      ${compact ? '' : `<td>${b.customer_phone}</td>`}
-      <td>${b.pickup_location} → ${b.drop_location}</td>
-      <td>${b.pickup_date} ${b.pickup_time}</td>
-      <td>${b.vehicle_type || b.trip_type}</td>
-      ${driverCell}
-      <td><span class="badge badge-${sc}">${(b.status||'pending').toUpperCase()}</span></td>
-      <td>
-        <div style="display:flex;gap:4px;">
-          <button class="btn btn-success btn-sm" onclick="updateStatus('${b.booking_id}','confirmed')">✓</button>
-          <button class="btn btn-danger btn-sm" onclick="updateStatus('${b.booking_id}','cancelled')">✕</button>
-          ${!compact ? `<button class="btn btn-outline btn-sm" onclick="markCompleted('${b.booking_id}')">Done</button>` : ''}
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
+async function updateStatus(id,status){
+  if(!confirm('Set booking '+id+' to '+status+'?')) return;
+  const idx=DATA.bookings.findIndex(b=>b.booking_id===id);
+  if(idx>-1) DATA.bookings[idx].status=status;
+  if(_sbClient){
+    const{error}=await _sbClient.from('bookings').update({status}).eq('booking_id',id);
+    if(error){showToast('Update error: '+error.message,'error');return;}
+  }
+  persist(); loadBookings();
+  showToast('Booking '+id+' marked '+status,'success');
 }
 
-async function updateStatus(bookingId, status) {
-  const b = DATA.bookings.find(x => x.booking_id === bookingId);
-  if (!b) return;
-  b.status = status;
-  if (_sbClient) await _sbClient.from('bookings').update({ status }).eq('booking_id', bookingId);
-  persist();
-  const msg = status === 'confirmed'
-    ? `✅ *Booking Confirmed – Sowmiya Travels*\n\n🆔 ${bookingId}\nYour ride is confirmed! Our team will be in touch shortly.\n\n_Sowmiya Travels – Your Journey, Our Joy_ 🙏`
-    : `❌ *Booking Cancelled – Sowmiya Travels*\n\n🆔 ${bookingId}\nYour booking has been cancelled. Please contact us for rescheduling.\n\n_Sowmiya Travels_`;
-  if (b.customer_phone) await sendWhatsApp(b.customer_phone, msg);
-  loadBookings();
-  showToast(`Booking ${bookingId} marked as ${status} & customer notified on WhatsApp`, 'success');
-}
-
-async function markCompleted(bookingId) {
-  await updateStatus(bookingId, 'completed');
-}
-
-// ASSIGN DRIVER
-function openAssign(bookingId) {
-  assigningBookingId = bookingId;
-  document.getElementById('assign-booking-id').textContent = bookingId;
-  const sel = document.getElementById('assign-driver-select');
-  sel.innerHTML = DATA.drivers.map(d => `<option value="${d.id || d.name}">${d.name} | ${d.phone}</option>`).join('');
+// ── ASSIGN DRIVER ─────────────────────────────────────────────────────────────
+function openAssign(bookingId){
+  assigningBookingId=bookingId;
+  document.getElementById('assign-booking-id').textContent=bookingId;
+  const sel=document.getElementById('assign-driver-select');
+  sel.innerHTML=DATA.drivers.filter(d=>d.status==='active').map(d=>`<option value="${d.id||d.name}">${d.name} – ${d.phone}</option>`).join('');
   document.getElementById('modal-assign').classList.add('active');
 }
-
-async function confirmAssign() {
-  const driverVal = document.getElementById('assign-driver-select').value;
-  const status = document.getElementById('assign-status-select').value;
-  const driver = DATA.drivers.find(d => (d.id || d.name) === driverVal) || { name: driverVal, phone: '' };
-  const b = DATA.bookings.find(x => x.booking_id === assigningBookingId);
-  if (!b) return;
-  b.driver_name = driver.name;
-  b.driver_phone = driver.phone;
-  b.status = status;
-  if (_sbClient) await _sbClient.from('bookings').update({ driver_name: driver.name, driver_phone: driver.phone, status }).eq('booking_id', assigningBookingId);
-  persist();
-  const msg = `✅ *Driver Assigned – Sowmiya Travels*\n\n🆔 ${assigningBookingId}\n🚗 Driver: *${driver.name}*\n📱 Driver Phone: ${driver.phone}\n\nYour booking is confirmed. Have a safe journey! 🙏`;
-  if (b.customer_phone) await sendWhatsApp(b.customer_phone, msg);
-  closeModal('assign');
-  loadBookings();
-  showToast(`Driver assigned & customer notified`, 'success');
-}
-
-// DRIVERS
-async function loadDrivers() {
-  if (_sbClient) {
-    const { data, error } = await _sbClient.from('drivers').select('*');
-    if (error) { showToast('Drivers load error: ' + error.message, 'error'); console.error('[SB] loadDrivers:', error); }
-    else if (data) DATA.drivers = data;
+async function confirmAssign(){
+  const driverId=document.getElementById('assign-driver-select').value;
+  const driver=DATA.drivers.find(d=>(d.id||d.name)===driverId)||{};
+  const idx=DATA.bookings.findIndex(b=>b.booking_id===assigningBookingId);
+  if(idx>-1){DATA.bookings[idx].driver_name=driver.name;DATA.bookings[idx].driver_phone=driver.phone;DATA.bookings[idx].status='confirmed';}
+  if(_sbClient){
+    const{error}=await _sbClient.from('bookings').update({driver_name:driver.name,driver_phone:driver.phone,status:'confirmed'}).eq('booking_id',assigningBookingId);
+    if(error){showToast('Assign error: '+error.message,'error');return;}
   }
-  const tb = document.getElementById('drivers-table');
-  if (!DATA.drivers.length) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">No drivers added yet</td></tr>'; return; }
-  tb.innerHTML = DATA.drivers.map((d,i) => {
-    const car = DATA.cars.find(c => (c.driver_id === d.id) || (c.driver_name === d.name)) || {};
-    const owner = DATA.owners.find(o => o.id === d.owner_id) || {};
-    return `<tr>
-      <td><strong>${d.name}</strong></td>
-      <td>${d.phone}</td>
-      <td>${d.license || '–'}</td>
-      <td>${car.reg_number || '–'} ${car.model ? `(${car.model})` : ''}</td>
-      <td>${owner.name || '–'}</td>
-      <td><span class="badge badge-${d.status === 'active' ? 'active' : 'inactive'}">${(d.status||'active').toUpperCase()}</span></td>
-      <td style="display:flex;gap:4px;">
-        <button class="btn btn-outline btn-sm" onclick="editDriver(${i})">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteDriver(${i})">Del</button>
-      </td>
-    </tr>`;
-  }).join('');
+  persist();
+  if(DATA.bookings[idx]){
+    const b=DATA.bookings[idx];
+    await sendWhatsApp(b.customer_phone,`✅ *Booking Confirmed – Sowmiya Travels*\n\n🆔 ${assigningBookingId}\n🚗 Driver: *${driver.name}*\n📱 Driver Phone: ${driver.phone}\n\nYour driver will contact you shortly. Have a safe journey! 🙏`);
+  }
+  closeModal('assign'); loadBookings();
+  showToast('Driver assigned & customer notified ✓','success');
 }
 
-function openModal(type) {
-  if (type === 'car') { resetCarTypeField(); populateOwnerSelect(); }
-  if (type === 'driver') populateCarSelect();
-  document.getElementById('modal-' + type).classList.add('active');
+// ── EXTRA CHARGES ─────────────────────────────────────────────────────────────
+let extraRows=[];
+function openExtraCharges(bookingId){
+  extraBookingId=bookingId;
+  document.getElementById('extra-booking-id').textContent=bookingId;
+  extraRows=[];
+  document.getElementById('extra-charges-rows').innerHTML='';
+  document.getElementById('extra-total').value='';
+  addExtraRow();
+  document.getElementById('modal-extra').classList.add('active');
 }
-
-function closeModal(type) { document.getElementById('modal-' + type).classList.remove('active'); }
-
-function editDriver(i) {
-  const d = DATA.drivers[i];
-  document.getElementById('driver-modal-title').textContent = 'Edit Driver';
-  document.getElementById('driver-edit-id').value = i;
-  ['name','phone','license','address','aadhaar','notes','status'].forEach(f => {
-    const el = document.getElementById('d-' + f); if (el) el.value = d[f] || '';
+function addExtraRow(){
+  const id=Date.now();
+  extraRows.push(id);
+  const div=document.createElement('div');
+  div.className='extra-row'; div.id='extra-row-'+id;
+  div.innerHTML=`
+    <select id="extra-type-${id}" onchange="calcExtraTotal()" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.85rem;font-family:'DM Sans',sans-serif;">
+      <option value="extra_km">Extra KM</option>
+      <option value="waiting">Waiting Charge (hrs)</option>
+      <option value="night">Night Surcharge</option>
+      <option value="toll">Toll / Parking</option>
+      <option value="manual">Manual Charge</option>
+    </select>
+    <input type="number" id="extra-qty-${id}" placeholder="Qty/Hrs/KM" min="0" oninput="calcExtraTotal()" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.85rem;width:90px;">
+    <input type="number" id="extra-rate-${id}" placeholder="Rate ₹" min="0" oninput="calcExtraTotal()" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.85rem;width:90px;">
+    <input type="text" id="extra-note-${id}" placeholder="Note" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem;font-size:0.85rem;">
+    <button onclick="removeExtraRow(${id})" style="background:var(--danger);color:white;border:none;border-radius:6px;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.85rem;">✕</button>
+  `;
+  document.getElementById('extra-charges-rows').appendChild(div);
+}
+function removeExtraRow(id){
+  document.getElementById('extra-row-'+id)?.remove();
+  extraRows=extraRows.filter(r=>r!==id);
+  calcExtraTotal();
+}
+function calcExtraTotal(){
+  let total=0;
+  extraRows.forEach(id=>{
+    const qty=parseFloat(document.getElementById('extra-qty-'+id)?.value||0);
+    const rate=parseFloat(document.getElementById('extra-rate-'+id)?.value||0);
+    if(qty&&rate) total+=qty*rate;
   });
-  document.getElementById('d-license-exp').value = d.license_exp || '';
-  populateCarSelect();
-  document.getElementById('d-car').value = d.car_id || '';
-  openModal('driver');
+  if(total>0) document.getElementById('extra-total').value=total;
 }
-
-async function saveDriver() {
-  const idx = document.getElementById('driver-edit-id').value;
-  const driverFields = {
-    name: document.getElementById('d-name').value.trim(),
-    phone: document.getElementById('d-phone').value.trim(),
-    license: document.getElementById('d-license').value.trim(),
-    license_exp: document.getElementById('d-license-exp').value || null,
-    address: document.getElementById('d-address').value.trim(),
-    aadhaar: document.getElementById('d-aadhaar').value.trim(),
-    car_id: document.getElementById('d-car').value || null,
-    status: document.getElementById('d-status').value,
-    notes: document.getElementById('d-notes').value.trim(),
-  };
-  if (!driverFields.name || !driverFields.phone) { showToast('Name and phone are required', 'error'); return; }
-  if (_sbClient) {
-    if (idx !== '') {
-      // UPDATE: use existing row id, don't send created_at
-      const existingId = DATA.drivers[parseInt(idx)].id;
-      const { error } = await _sbClient.from('drivers').update(driverFields).eq('id', existingId);
-      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
-      DATA.drivers[parseInt(idx)] = { ...DATA.drivers[parseInt(idx)], ...driverFields };
-    } else {
-      // INSERT: let Supabase generate id and created_at
-      const { data, error } = await _sbClient.from('drivers').insert([driverFields]).select().single();
-      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
-      DATA.drivers.push(data || driverFields);
-    }
-  } else {
-    if (idx !== '') { DATA.drivers[parseInt(idx)] = { ...DATA.drivers[parseInt(idx)], ...driverFields }; }
-    else { DATA.drivers.push(driverFields); }
+async function saveExtraCharges(){
+  const total=parseFloat(document.getElementById('extra-total').value)||0;
+  const charges=extraRows.map(id=>({
+    type:document.getElementById('extra-type-'+id)?.value,
+    qty:document.getElementById('extra-qty-'+id)?.value,
+    rate:document.getElementById('extra-rate-'+id)?.value,
+    note:document.getElementById('extra-note-'+id)?.value,
+  }));
+  const idx=DATA.bookings.findIndex(b=>b.booking_id===extraBookingId);
+  if(idx>-1){DATA.bookings[idx].extra_charges=charges;DATA.bookings[idx].extra_total=total;}
+  if(_sbClient){
+    await _sbClient.from('bookings').update({extra_charges:charges,extra_total:total}).eq('booking_id',extraBookingId);
   }
   persist();
-  closeModal('driver');
-  document.getElementById('driver-edit-id').value = '';
-  document.getElementById('driver-modal-title').textContent = 'Add Driver';
-  loadDrivers();
-  showToast('Driver saved successfully ✓', 'success');
-}
-
-async function deleteDriver(i) {
-  if (!confirm('Delete this driver?')) return;
-  const d = DATA.drivers.splice(i, 1)[0];
-  if (_sbClient && d.id) await _sbClient.from('drivers').delete().eq('id', d.id);
-  persist(); loadDrivers();
-}
-
-// CARS
-async function loadCars() {
-  if (_sbClient) {
-    const { data, error } = await _sbClient.from('cars').select('*');
-    if (error) { showToast('Cars load error: ' + error.message, 'error'); console.error('[SB] loadCars:', error); }
-    else if (data) DATA.cars = data;
+  const b=DATA.bookings[idx];
+  if(b){
+    await sendWhatsApp(b.customer_phone,`⚠️ *Extra Charges – Sowmiya Travels*\n\n🆔 Booking: ${extraBookingId}\n\nAdditional charges applied:\n${charges.map(c=>c.type+': '+c.qty+' × ₹'+c.rate+(c.note?' ('+c.note+')':'')).join('\n')}\n\n💰 *Total Extra: ₹${total}*\n\nPlease settle at the end of your trip. Thank you! 🙏`);
   }
-  const tb = document.getElementById('cars-table');
-  if (!DATA.cars.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">No cars added yet</td></tr>'; return; }
-  tb.innerHTML = DATA.cars.map((c,i) => {
-    const owner = DATA.owners.find(o => o.id === c.owner_id || o.name === c.owner_name) || {};
-    const driver = DATA.drivers.find(d => d.id === c.driver_id || d.name === c.driver_name) || {};
-    return `<tr>
-      <td><strong>${c.reg_number}</strong></td>
-      <td>${c.model}</td>
-      <td>${c.type}</td>
-      <td>${c.seats}</td>
-      <td>${owner.name || c.owner_name || '–'}</td>
-      <td>${driver.name || c.driver_name || '–'}</td>
-      <td><span class="badge badge-${c.status === 'active' ? 'active' : 'inactive'}">${(c.status||'active').toUpperCase()}</span></td>
-      <td style="display:flex;gap:4px;">
-        <button class="btn btn-outline btn-sm" onclick="editCar(${i})">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteCar(${i})">Del</button>
-      </td>
-    </tr>`;
-  }).join('');
+  closeModal('extra'); loadBookings();
+  showToast('Extra charges saved & customer notified ✓','success');
 }
 
-// Vehicle type combo handler
-function onVehicleTypeChange(sel) {
-  const manual = document.getElementById('c-type-manual');
-  const hidden = document.getElementById('c-type');
-  if (sel.value === 'Other') {
-    manual.style.display = 'block';
-    manual.focus();
-    manual.oninput = () => { hidden.value = manual.value.trim(); };
-    hidden.value = '';
-  } else {
-    manual.style.display = 'none';
-    manual.value = '';
-    hidden.value = sel.value;
-  }
-}
-
-// Init hidden value when modal opens
-function resetCarTypeField() {
-  const sel = document.getElementById('c-type-select');
-  const hidden = document.getElementById('c-type');
-  const manual = document.getElementById('c-type-manual');
-  sel.value = 'Sedan';
-  hidden.value = 'Sedan';
-  manual.style.display = 'none';
-  manual.value = '';
-}
-
-function populateOwnerSelect() {
-  const sel = document.getElementById('c-owner');
-  sel.innerHTML = '<option value="">None</option>' + DATA.owners.map(o => `<option value="${o.id || o.name}">${o.name}</option>`).join('');
-  const dsel = document.getElementById('c-driver');
-  dsel.innerHTML = '<option value="">None</option>' + DATA.drivers.map(d => `<option value="${d.id || d.name}">${d.name}</option>`).join('');
-}
-
-function populateCarSelect() {
-  const sel = document.getElementById('d-car');
-  sel.innerHTML = '<option value="">None</option>' + DATA.cars.map(c => `<option value="${c.id || c.reg_number}">${c.reg_number} – ${c.model}</option>`).join('');
-}
-
-function editCar(i) {
-  const c = DATA.cars[i];
-  document.getElementById('car-modal-title').textContent = 'Edit Car';
-  document.getElementById('car-edit-id').value = i;
-  ['reg','model','seats','year','color','insurance','fc'].forEach(f => {
-    const el = document.getElementById('c-' + f); if (el && c[f] !== undefined) el.value = c[f] || '';
-  });
-  // Restore vehicle type — check if it's a known preset or custom
-  const typePresets = ['Sedan','SUV','Innova','Innova HyCross','Tempo','Bolero','Dzire','Etios','Swift','Ertiga','Scorpio'];
-  const cType = c.type || 'Sedan';
-  const sel = document.getElementById('c-type-select');
-  const manual = document.getElementById('c-type-manual');
-  const hidden = document.getElementById('c-type');
-  if (typePresets.includes(cType)) {
-    sel.value = cType; manual.style.display = 'none'; manual.value = '';
-  } else {
-    sel.value = 'Other'; manual.style.display = 'block'; manual.value = cType;
-  }
-  hidden.value = cType;
-  document.getElementById('c-status').value = c.status || 'active';
-  document.getElementById('c-ac').value = c.ac || 'yes';
-  populateOwnerSelect();
-  document.getElementById('c-owner').value = c.owner_id || c.owner_name || '';
-  document.getElementById('c-driver').value = c.driver_id || c.driver_name || '';
-  openModal('car');
-}
-
-async function saveCar() {
-  const idx = document.getElementById('car-edit-id').value;
-  const ownerSel = document.getElementById('c-owner').value;
-  const driverSel = document.getElementById('c-driver').value;
-  const owner = DATA.owners.find(o => (o.id || o.name) === ownerSel) || {};
-  const driver = DATA.drivers.find(d => (d.id || d.name) === driverSel) || {};
-  const carFields = {
-    reg_number: document.getElementById('c-reg').value.trim(),
-    model: document.getElementById('c-model').value.trim(),
-    type: document.getElementById('c-type').value || document.getElementById('c-type-select').value,
-    seats: parseInt(document.getElementById('c-seats').value) || 4,
-    year: document.getElementById('c-year').value || null,
-    color: document.getElementById('c-color').value.trim(),
-    owner_id: ownerSel || null,
-    owner_name: owner.name || '',
-    driver_id: driverSel || null,
-    driver_name: driver.name || '',
-    insurance_exp: document.getElementById('c-insurance').value || null,
-    fc_exp: document.getElementById('c-fc').value || null,
-    status: document.getElementById('c-status').value,
-    ac: document.getElementById('c-ac').value,
-  };
-  if (!carFields.reg_number || !carFields.model) { showToast('Reg number and model are required', 'error'); return; }
-  if (_sbClient) {
-    if (idx !== '') {
-      const existingId = DATA.cars[parseInt(idx)].id;
-      const { error } = await _sbClient.from('cars').update(carFields).eq('id', existingId);
-      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
-      DATA.cars[parseInt(idx)] = { ...DATA.cars[parseInt(idx)], ...carFields };
-    } else {
-      const { data, error } = await _sbClient.from('cars').insert([carFields]).select().single();
-      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
-      DATA.cars.push(data || carFields);
-    }
-  } else {
-    if (idx !== '') { DATA.cars[parseInt(idx)] = { ...DATA.cars[parseInt(idx)], ...carFields }; }
-    else { DATA.cars.push(carFields); }
+// ── FLEET / VEHICLES ──────────────────────────────────────────────────────────
+async function loadVehiclesFromDB(){
+  if(_sbClient){
+    const{data,error}=await _sbClient.from('vehicles').select('*').order('created_at',{ascending:false});
+    if(error) console.error('[SB] vehicles:',error);
+    else if(data) DATA.vehicles=data;
   }
   persist();
-  closeModal('car');
-  document.getElementById('car-edit-id').value = '';
-  document.getElementById('car-modal-title').textContent = 'Add Car';
-  loadCars(); updateDashboard();
-  showToast('Car saved successfully ✓', 'success');
 }
-
-async function deleteCar(i) {
-  if (!confirm('Delete this car?')) return;
-  const c = DATA.cars.splice(i, 1)[0];
-  if (_sbClient && c.id) await _sbClient.from('cars').delete().eq('id', c.id);
-  persist(); loadCars();
-}
-
-// OWNERS
-async function loadOwners() {
-  if (_sbClient) {
-    const { data, error } = await _sbClient.from('owners').select('*');
-    if (error) { showToast('Owners load error: ' + error.message, 'error'); console.error('[SB] loadOwners:', error); }
-    else if (data) DATA.owners = data;
+async function loadFleet(){
+  await loadVehiclesFromDB();
+  const grid=document.getElementById('fleet-grid');
+  const drivers=DATA.drivers.filter(d=>d.status==='active');
+  // populate driver select
+  const dsel=document.getElementById('v-driver');
+  if(dsel) dsel.innerHTML='<option value="">None</option>'+drivers.map(d=>`<option value="${d.id||d.name}">${d.name}</option>`).join('');
+  
+  if(!DATA.vehicles.length){
+    grid.innerHTML='<p style="color:var(--text-muted);padding:2rem;">No vehicles added yet. Click "Add Vehicle" to start.</p>';
+    return;
   }
-  const tb = document.getElementById('owners-table');
-  if (!DATA.owners.length) { tb.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">No owners added yet</td></tr>'; return; }
-  tb.innerHTML = DATA.owners.map((o,i) => {
-    const carCount = DATA.cars.filter(c => c.owner_id === o.id || c.owner_name === o.name).length;
-    return `<tr>
-      <td><strong>${o.name}</strong></td>
-      <td>${o.phone}</td>
-      <td>${o.address || '–'}</td>
-      <td>${carCount} car(s)</td>
-      <td><span class="badge badge-${o.status === 'active' ? 'active' : 'inactive'}">${(o.status||'active').toUpperCase()}</span></td>
-      <td style="display:flex;gap:4px;">
-        <button class="btn btn-outline btn-sm" onclick="editOwner(${i})">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteOwner(${i})">Del</button>
-      </td>
-    </tr>`;
-  }).join('');
+  grid.innerHTML=DATA.vehicles.map((v,i)=>`
+    <div class="fleet-card">
+      ${v.image?`<img src="${v.image}" alt="${v.model}" onerror="this.style.display='none'">`:'<div style="height:160px;background:linear-gradient(135deg,#E8EBF4,#F0EDE8);display:flex;align-items:center;justify-content:center;font-size:3rem;">🚗</div>'}
+      <div class="fleet-card-body">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.5rem;">
+          <h4>${v.model}</h4>
+          <span class="badge badge-${v.status==='active'?'active':'inactive'}">${v.status}</span>
+        </div>
+        <div class="fleet-card-meta">
+          ${v.type} • ${v.seats} Seats • ${v.ac==='yes'?'AC':'Non-AC'} • ${v.color||'–'} • ${v.year||''}
+        </div>
+        ${v.features?`<div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">${v.features}</div>`:''}
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem;">${v.reg_number||''}</div>
+        <div style="display:flex;gap:0.5rem;">
+          <button class="btn btn-sm btn-primary" onclick="editVehicle(${i})" style="flex:1;">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteVehicle(${i})">Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
 }
 
-function editOwner(i) {
-  const o = DATA.owners[i];
-  document.getElementById('owner-modal-title').textContent = 'Edit Owner';
-  document.getElementById('owner-edit-id').value = i;
-  ['name','phone','address','aadhaar','pan','bank_acc','ifsc','status'].forEach(f => {
-    const key = f.replace('_','-');
-    const el = document.getElementById('o-' + key); if (el) el.value = o[f] || '';
-  });
-  openModal('owner');
+function openModal(type){
+  if(type==='vehicle'){
+    document.getElementById('vehicle-edit-id').value='';
+    document.getElementById('vehicle-modal-title').textContent='Add Vehicle';
+    document.getElementById('v-model').value='';
+    document.getElementById('v-type-select').value='Sedan';
+    document.getElementById('v-type').value='Sedan';
+    document.getElementById('v-type-manual').style.display='none';
+    document.getElementById('v-color').value='';
+    document.getElementById('v-seats').value='';
+    document.getElementById('v-reg').value='';
+    document.getElementById('v-year').value='';
+    document.getElementById('v-ac').value='yes';
+    document.getElementById('v-status').value='active';
+    document.getElementById('v-image').value='';
+    document.getElementById('v-image-preview').style.display='none';
+    document.getElementById('v-features').value='';
+    // populate driver
+    const dsel=document.getElementById('v-driver');
+    dsel.innerHTML='<option value="">None</option>'+DATA.drivers.filter(d=>d.status==='active').map(d=>`<option value="${d.id||d.name}">${d.name}</option>`).join('');
+  }
+  document.getElementById('modal-'+type).classList.add('active');
+}
+function closeModal(type){ document.getElementById('modal-'+type).classList.remove('active'); }
+
+function editVehicle(idx){
+  const v=DATA.vehicles[idx];
+  document.getElementById('vehicle-edit-id').value=idx;
+  document.getElementById('vehicle-modal-title').textContent='Edit Vehicle';
+  document.getElementById('v-model').value=v.model||'';
+  const presets=['Sedan','SUV','Innova','Innova HyCross','Tempo','Bolero','Dzire','Etios','Swift','Ertiga','Scorpio','Fortuner'];
+  const sel=document.getElementById('v-type-select');
+  const manual=document.getElementById('v-type-manual');
+  const hidden=document.getElementById('v-type');
+  if(presets.includes(v.type)){sel.value=v.type;manual.style.display='none';manual.value='';}
+  else{sel.value='Other';manual.style.display='block';manual.value=v.type||'';}
+  hidden.value=v.type||'Sedan';
+  document.getElementById('v-color').value=v.color||'';
+  document.getElementById('v-seats').value=v.seats||'';
+  document.getElementById('v-reg').value=v.reg_number||'';
+  document.getElementById('v-year').value=v.year||'';
+  document.getElementById('v-ac').value=v.ac||'yes';
+  document.getElementById('v-status').value=v.status||'active';
+  document.getElementById('v-image').value=v.image||'';
+  const prev=document.getElementById('v-image-preview');
+  if(v.image){prev.src=v.image;prev.style.display='block';}else{prev.style.display='none';}
+  document.getElementById('v-features').value=v.features||'';
+  const dsel=document.getElementById('v-driver');
+  dsel.innerHTML='<option value="">None</option>'+DATA.drivers.filter(d=>d.status==='active').map(d=>`<option value="${d.id||d.name}" ${(d.id||d.name)===(v.driver_id||v.driver_name)?'selected':''} >${d.name}</option>`).join('');
+  document.getElementById('modal-vehicle').classList.add('active');
 }
 
-async function saveOwner() {
-  const idx = document.getElementById('owner-edit-id').value;
-  const ownerFields = {
-    name: document.getElementById('o-name').value.trim(),
-    phone: document.getElementById('o-phone').value.trim(),
-    address: document.getElementById('o-address').value.trim(),
-    aadhaar: document.getElementById('o-aadhaar').value.trim(),
-    pan: document.getElementById('o-pan').value.trim(),
-    bank_acc: document.getElementById('o-bank-acc').value.trim(),
-    ifsc: document.getElementById('o-ifsc').value.trim(),
-    status: document.getElementById('o-status').value,
+async function saveVehicle(){
+  const idx=document.getElementById('vehicle-edit-id').value;
+  const driverVal=document.getElementById('v-driver').value;
+  const driver=DATA.drivers.find(d=>(d.id||d.name)===driverVal)||{};
+  const imgUrl=document.getElementById('v-image').value.trim();
+  const fields={
+    model:document.getElementById('v-model').value.trim(),
+    type:document.getElementById('v-type').value||document.getElementById('v-type-select').value,
+    color:document.getElementById('v-color').value.trim(),
+    seats:parseInt(document.getElementById('v-seats').value)||4,
+    reg_number:document.getElementById('v-reg').value.trim(),
+    year:document.getElementById('v-year').value||null,
+    ac:document.getElementById('v-ac').value,
+    status:document.getElementById('v-status').value,
+    image:imgUrl||null,
+    features:document.getElementById('v-features').value.trim(),
+    driver_id:driverVal||null,
+    driver_name:driver.name||null,
   };
-  if (!ownerFields.name || !ownerFields.phone) { showToast('Name and phone are required', 'error'); return; }
-  if (_sbClient) {
-    if (idx !== '') {
-      const existingId = DATA.owners[parseInt(idx)].id;
-      const { error } = await _sbClient.from('owners').update(ownerFields).eq('id', existingId);
-      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
-      DATA.owners[parseInt(idx)] = { ...DATA.owners[parseInt(idx)], ...ownerFields };
+  if(!fields.model){showToast('Vehicle name is required','error');return;}
+  if(_sbClient){
+    if(idx!==''){
+      const existingId=DATA.vehicles[parseInt(idx)].id;
+      const{error}=await _sbClient.from('vehicles').update(fields).eq('id',existingId);
+      if(error){showToast('Save failed: '+error.message,'error');return;}
+      DATA.vehicles[parseInt(idx)]={...DATA.vehicles[parseInt(idx)],...fields};
     } else {
-      const { data, error } = await _sbClient.from('owners').insert([ownerFields]).select().single();
-      if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
-      DATA.owners.push(data || ownerFields);
+      const{data,error}=await _sbClient.from('vehicles').insert([fields]).select().single();
+      if(error){showToast('Save failed: '+error.message,'error');return;}
+      DATA.vehicles.push(data||fields);
     }
   } else {
-    if (idx !== '') { DATA.owners[parseInt(idx)] = { ...DATA.owners[parseInt(idx)], ...ownerFields }; }
-    else { DATA.owners.push(ownerFields); }
+    if(idx!=='') DATA.vehicles[parseInt(idx)]={...DATA.vehicles[parseInt(idx)],...fields};
+    else DATA.vehicles.push(fields);
   }
   persist();
-  closeModal('owner');
-  document.getElementById('owner-edit-id').value = '';
-  document.getElementById('owner-modal-title').textContent = 'Add Car Owner';
-  loadOwners();
-  showToast('Owner saved successfully ✓', 'success');
+  closeModal('vehicle'); loadFleet();
+  showToast('Vehicle saved ✓','success');
 }
 
-async function deleteOwner(i) {
-  if (!confirm('Delete this owner?')) return;
-  const o = DATA.owners.splice(i, 1)[0];
-  if (_sbClient && o.id) await _sbClient.from('owners').delete().eq('id', o.id);
-  persist(); loadOwners();
-}
-
-// SETTINGS
-function saveConfig() {
-  CONFIG = {
-    sbUrl:        document.getElementById('cfg-sb-url').value.trim(),
-    sbKey:        document.getElementById('cfg-sb-key').value.trim(),
-    fonnteToken:  document.getElementById('cfg-fonnte').value.trim(),
-    tgToken:      document.getElementById('cfg-tg-token').value.trim(),
-    tgChat:       document.getElementById('cfg-tg-chat').value.trim()
-  };
-  localStorage.setItem('st_admin_config', JSON.stringify(CONFIG));
-  // FIX: re-init Supabase with new keys immediately, reset old client
-  _sbClient = null;
-  if (CONFIG.sbUrl && CONFIG.sbKey && window.supabase) {
-    try {
-      _sbClient = window.supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
-      showToast('Configuration saved! Supabase connected ✓', 'success');
-      loadAll(); // reload data with new connection
-    } catch(e) {
-      showToast('Config saved but Supabase error: ' + e.message, 'error');
-    }
-  } else {
-    showToast('Configuration saved!', 'success');
+async function deleteVehicle(idx){
+  if(!confirm('Delete this vehicle?')) return;
+  const v=DATA.vehicles[idx];
+  if(_sbClient&&v.id){
+    const{error}=await _sbClient.from('vehicles').delete().eq('id',v.id);
+    if(error){showToast('Delete failed: '+error.message,'error');return;}
   }
+  DATA.vehicles.splice(idx,1);
+  persist(); loadFleet();
+  showToast('Vehicle deleted','success');
 }
 
-function changePassword() {
-  const old = document.getElementById('old-pass').value;
-  const n = document.getElementById('new-pass').value;
-  const c = document.getElementById('confirm-pass').value;
-  if (old !== ADMIN_CREDS.pass) { showToast('Current password is wrong', 'error'); return; }
-  if (n !== c) { showToast('Passwords do not match', 'error'); return; }
-  localStorage.setItem('st_admin_pass', n);
-  ADMIN_CREDS.pass = n;
-  showToast('Password updated!', 'success');
-}
-
-// WHATSAPP – proxy with direct Fonnte fallback
-function normalizePhone(phone) {
-  let clean = String(phone).replace(/[^\d]/g, '');
-  if (clean.startsWith('0')) clean = '91' + clean.slice(1);
-  if (clean.length === 10) clean = '91' + clean;
-  return clean;
-}
-
-async function sendWhatsAppDirect(phone, message) {
-  const token = CONFIG.fonnteToken;
-  if (!token || token === 'PLACEHOLDER') return { ok: false, error: 'Fonnte token not configured' };
-  const clean = normalizePhone(phone);
-  try {
-    const body = new URLSearchParams({ target: clean, message, countryCode: '91' });
-    const res = await fetch('https://api.fonnte.com/send', {
-      method: 'POST',
-      headers: { 'Authorization': token, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
+// Image URL preview
+document.addEventListener('DOMContentLoaded',()=>{
+  const imgInput=document.getElementById('v-image');
+  const imgPreview=document.getElementById('v-image-preview');
+  if(imgInput){
+    imgInput.addEventListener('input',()=>{
+      const url=imgInput.value.trim();
+      if(url){imgPreview.src=url;imgPreview.style.display='block';}
+      else{imgPreview.style.display='none';}
     });
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } catch(e) { data = { status: false, reason: text.slice(0, 100) }; }
-    if (data.status === false || data.status === 'false') return { ok: false, error: data.reason || 'Fonnte rejected' };
-    return { ok: true, data };
-  } catch(e) { return { ok: false, error: e.message }; }
-}
-
-async function sendWhatsApp(phone, message) {
-  const clean = normalizePhone(phone);
-  try {
-    const res = await fetch('/api/send-whatsapp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target: clean, message, token: CONFIG.fonnteToken }),
-    });
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } catch(e) { data = null; }
-    if (!data || res.status === 404) {
-      console.warn('[Admin WA] Proxy not available, trying direct Fonnte…');
-      return await sendWhatsAppDirect(phone, message);
-    }
-    if (!res.ok || data.status === false) {
-      console.warn('[Admin WA] Proxy error, trying direct Fonnte…');
-      return await sendWhatsAppDirect(phone, message);
-    }
-    console.log('[Admin WA] Proxy success:', data);
-    return { ok: true };
-  } catch(e) {
-    console.error('[Admin WA] Network error:', e.message, '— trying direct…');
-    return await sendWhatsAppDirect(phone, message);
   }
-}
-
-// TOAST
-function showToast(msg, type = 'success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast ${type} show`;
-  setTimeout(() => t.classList.remove('show'), 4000);
-}
-
-// Load saved config into settings
-window.addEventListener('load', () => {
-  if (CONFIG.sbUrl) document.getElementById('cfg-sb-url').value = CONFIG.sbUrl;
-  if (CONFIG.sbKey) document.getElementById('cfg-sb-key').value = CONFIG.sbKey;
-  if (CONFIG.fonnteToken) document.getElementById('cfg-fonnte').value = CONFIG.fonnteToken;
-  if (CONFIG.tgToken) document.getElementById('cfg-tg-token').value = CONFIG.tgToken;
-  if (CONFIG.tgChat) document.getElementById('cfg-tg-chat').value = CONFIG.tgChat;
 });
+
+// ── FARE RULES ────────────────────────────────────────────────────────────────
+const FARE_TYPES=[
+  {value:'per_km',label:'Per KM (₹/km)'},
+  {value:'per_trip',label:'Per Trip Fixed (₹)'},
+  {value:'per_hour',label:'Per Hour (₹/hr)'},
+  {value:'per_day',label:'Per Day (₹/day)'},
+  {value:'waiting',label:'Waiting Charge (₹/hr)'},
+  {value:'night_surcharge',label:'Night Surcharge (₹)'},
+  {value:'airport_pickup',label:'Airport Pickup Fixed (₹)'},
+  {value:'extra_km',label:'Extra KM beyond package (₹/km)'},
+  {value:'manual',label:'Manual / Custom Rule'},
+];
+
+function loadFareRulesUI(){
+  if(!DATA.fareRules.length) DATA.fareRules=[{vehicleType:'Sedan',ruleType:'per_km',amount:12,description:'',minKm:'',maxKm:''}];
+  renderFareRules();
+}
+function renderFareRules(){
+  const c=document.getElementById('fare-rules-container');
+  c.innerHTML=DATA.fareRules.map((r,i)=>`
+    <div class="fare-rule-row" style="display:grid;grid-template-columns:160px 1fr 100px 1fr auto;gap:0.75rem;align-items:end;margin-bottom:0.75rem;background:#F8F6F3;padding:0.75rem;border-radius:10px;">
+      <div>
+        <label style="font-size:0.72rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">VEHICLE TYPE</label>
+        <input type="text" value="${r.vehicleType||''}" onchange="updateFareRule(${i},'vehicleType',this.value)" placeholder="Sedan / All" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;">
+      </div>
+      <div>
+        <label style="font-size:0.72rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">RULE TYPE</label>
+        <select onchange="updateFareRule(${i},'ruleType',this.value)" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;">
+          ${FARE_TYPES.map(f=>`<option value="${f.value}" ${r.ruleType===f.value?'selected':''}>${f.label}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label style="font-size:0.72rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">AMOUNT (₹)</label>
+        <input type="number" value="${r.amount||''}" onchange="updateFareRule(${i},'amount',parseFloat(this.value))" placeholder="0" min="0" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;">
+      </div>
+      <div>
+        <label style="font-size:0.72rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">DESCRIPTION / NOTE</label>
+        <input type="text" value="${r.description||''}" onchange="updateFareRule(${i},'description',this.value)" placeholder="e.g. one way, within city…" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;">
+      </div>
+      <button onclick="removeFareRule(${i})" style="background:var(--danger);color:white;border:none;border-radius:8px;padding:0.5rem 0.75rem;cursor:pointer;font-size:1rem;align-self:end;">✕</button>
+    </div>
+  `).join('');
+}
+function updateFareRule(i,key,val){ DATA.fareRules[i][key]=val; }
+function addFareRule(){
+  DATA.fareRules.push({vehicleType:'Sedan',ruleType:'per_km',amount:0,description:''});
+  renderFareRules();
+}
+function removeFareRule(i){ DATA.fareRules.splice(i,1); renderFareRules(); }
+async function saveFareRules(){
+  persist();
+  if(_sbClient){
+    // Delete existing rules, re-insert
+    await _sbClient.from('fare_rules').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    if(DATA.fareRules.length){
+      const{error}=await _sbClient.from('fare_rules').insert(DATA.fareRules.map(r=>({vehicle_type:r.vehicleType,rule_type:r.ruleType,amount:r.amount,description:r.description||''})));
+      if(error) console.warn('[SB] fare_rules:',error.message);
+    }
+  }
+  showToast('Fare rules saved ✓ – visible to customers now','success');
+}
+
+// ── DRIVERS ──────────────────────────────────────────────────────────────────
+async function loadDrivers(){
+  if(_sbClient){
+    const{data,error}=await _sbClient.from('drivers').select('*');
+    if(error) showToast('Drivers error: '+error.message,'error');
+    else if(data) DATA.drivers=data;
+  }
+  const tb=document.getElementById('drivers-table');
+  if(!tb) return;
+  tb.innerHTML=DATA.drivers.length ? DATA.drivers.map((d,i)=>`<tr>
+    <td><strong>${d.name}</strong></td>
+    <td>${d.phone}</td>
+    <td>${d.license||'–'}</td>
+    <td>${d.car_id||'–'}</td>
+    <td><span class="badge badge-${d.status}">${d.status}</span></td>
+    <td>
+      <button class="btn btn-sm btn-primary" onclick="editDriver(${i})">Edit</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteDriver(${i})">Delete</button>
+    </td>
+  </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);">No drivers yet</td></tr>';
+}
+
+function editDriver(idx){
+  const d=DATA.drivers[idx];
+  document.getElementById('driver-edit-id').value=idx;
+  document.getElementById('driver-modal-title').textContent='Edit Driver';
+  document.getElementById('d-name').value=d.name||'';
+  document.getElementById('d-phone').value=d.phone||'';
+  document.getElementById('d-license').value=d.license||'';
+  document.getElementById('d-license-exp').value=d.license_exp||'';
+  document.getElementById('d-address').value=d.address||'';
+  document.getElementById('d-aadhaar').value=d.aadhaar||'';
+  document.getElementById('d-status').value=d.status||'active';
+  document.getElementById('d-notes').value=d.notes||'';
+  document.getElementById('modal-driver').classList.add('active');
+}
+async function saveDriver(){
+  const idx=document.getElementById('driver-edit-id').value;
+  const fields={
+    name:document.getElementById('d-name').value.trim(),
+    phone:document.getElementById('d-phone').value.trim(),
+    license:document.getElementById('d-license').value.trim(),
+    license_exp:document.getElementById('d-license-exp').value||null,
+    address:document.getElementById('d-address').value.trim(),
+    aadhaar:document.getElementById('d-aadhaar').value.trim(),
+    status:document.getElementById('d-status').value,
+    notes:document.getElementById('d-notes').value.trim(),
+  };
+  if(!fields.name||!fields.phone){showToast('Name and phone required','error');return;}
+  if(_sbClient){
+    if(idx!==''){
+      const eid=DATA.drivers[parseInt(idx)].id;
+      const{error}=await _sbClient.from('drivers').update(fields).eq('id',eid);
+      if(error){showToast('Save failed: '+error.message,'error');return;}
+      DATA.drivers[parseInt(idx)]={...DATA.drivers[parseInt(idx)],...fields};
+    } else {
+      const{data,error}=await _sbClient.from('drivers').insert([fields]).select().single();
+      if(error){showToast('Save failed: '+error.message,'error');return;}
+      DATA.drivers.push(data||fields);
+    }
+  } else {
+    if(idx!=='') DATA.drivers[parseInt(idx)]={...DATA.drivers[parseInt(idx)],...fields};
+    else DATA.drivers.push(fields);
+  }
+  persist(); closeModal('driver');
+  document.getElementById('driver-edit-id').value='';
+  document.getElementById('driver-modal-title').textContent='Add Driver';
+  loadDrivers(); showToast('Driver saved ✓','success');
+}
+async function deleteDriver(idx){
+  if(!confirm('Delete this driver?')) return;
+  const d=DATA.drivers[idx];
+  if(_sbClient&&d.id) await _sbClient.from('drivers').delete().eq('id',d.id);
+  DATA.drivers.splice(idx,1); persist(); loadDrivers();
+  showToast('Driver deleted','success');
+}
+
+// ── OWNERS ────────────────────────────────────────────────────────────────────
+async function loadOwners(){
+  if(_sbClient){
+    const{data,error}=await _sbClient.from('owners').select('*');
+    if(error) showToast('Owners error: '+error.message,'error');
+    else if(data) DATA.owners=data;
+  }
+  const tb=document.getElementById('owners-table');
+  if(!tb) return;
+  tb.innerHTML=DATA.owners.length ? DATA.owners.map((o,i)=>`<tr>
+    <td><strong>${o.name}</strong></td>
+    <td>${o.phone}</td>
+    <td>${o.address||'–'}</td>
+    <td><span class="badge badge-${o.status}">${o.status}</span></td>
+    <td>
+      <button class="btn btn-sm btn-primary" onclick="editOwner(${i})">Edit</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteOwner(${i})">Delete</button>
+    </td>
+  </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted);">No owners yet</td></tr>';
+}
+function editOwner(idx){
+  const o=DATA.owners[idx];
+  document.getElementById('owner-edit-id').value=idx;
+  document.getElementById('owner-modal-title').textContent='Edit Owner';
+  ['o-name','o-phone','o-address','o-aadhaar','o-pan','o-bank-acc','o-ifsc'].forEach(id=>{
+    const field=id.replace('o-','').replace('-','_');
+    const map={'o-name':'name','o-phone':'phone','o-address':'address','o-aadhaar':'aadhaar','o-pan':'pan','o-bank-acc':'bank_acc','o-ifsc':'ifsc'};
+    document.getElementById(id).value=o[map[id]]||'';
+  });
+  document.getElementById('o-status').value=o.status||'active';
+  document.getElementById('modal-owner').classList.add('active');
+}
+async function saveOwner(){
+  const idx=document.getElementById('owner-edit-id').value;
+  const fields={
+    name:document.getElementById('o-name').value.trim(),
+    phone:document.getElementById('o-phone').value.trim(),
+    address:document.getElementById('o-address').value.trim(),
+    aadhaar:document.getElementById('o-aadhaar').value.trim(),
+    pan:document.getElementById('o-pan').value.trim(),
+    bank_acc:document.getElementById('o-bank-acc').value.trim(),
+    ifsc:document.getElementById('o-ifsc').value.trim(),
+    status:document.getElementById('o-status').value,
+  };
+  if(!fields.name||!fields.phone){showToast('Name and phone required','error');return;}
+  if(_sbClient){
+    if(idx!==''){
+      const eid=DATA.owners[parseInt(idx)].id;
+      const{error}=await _sbClient.from('owners').update(fields).eq('id',eid);
+      if(error){showToast('Save failed: '+error.message,'error');return;}
+      DATA.owners[parseInt(idx)]={...DATA.owners[parseInt(idx)],...fields};
+    } else {
+      const{data,error}=await _sbClient.from('owners').insert([fields]).select().single();
+      if(error){showToast('Save failed: '+error.message,'error');return;}
+      DATA.owners.push(data||fields);
+    }
+  } else {
+    if(idx!=='') DATA.owners[parseInt(idx)]={...DATA.owners[parseInt(idx)],...fields};
+    else DATA.owners.push(fields);
+  }
+  persist(); closeModal('owner');
+  document.getElementById('owner-edit-id').value='';
+  document.getElementById('owner-modal-title').textContent='Add Car Owner';
+  loadOwners(); showToast('Owner saved ✓','success');
+}
+async function deleteOwner(idx){
+  if(!confirm('Delete this owner?')) return;
+  const o=DATA.owners[idx];
+  if(_sbClient&&o.id) await _sbClient.from('owners').delete().eq('id',o.id);
+  DATA.owners.splice(idx,1); persist(); loadOwners();
+  showToast('Owner deleted','success');
+}
+
+// ── CUSTOMERS ─────────────────────────────────────────────────────────────────
+async function loadCustomers(){
+  const tb=document.getElementById('customers-table');
+  if(!_sbClient){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted);">⚠️ Supabase not connected. Check Settings.</td></tr>';return;}
+  tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--text-muted);">Loading…</td></tr>';
+  const{data,error}=await _sbClient.from('customers').select('*').order('created_at',{ascending:false});
+  if(error){tb.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:2rem;color:red;">${error.message}</td></tr>`;return;}
+  const bookingCounts={};
+  DATA.bookings.forEach(b=>{bookingCounts[b.customer_phone]=(bookingCounts[b.customer_phone]||0)+1;});
+  tb.innerHTML=data&&data.length ? data.map(c=>`<tr>
+    <td><strong>${c.name||'–'}</strong></td>
+    <td>${c.phone}</td>
+    <td>${bookingCounts[c.phone]||0}</td>
+    <td>${c.last_login?new Date(c.last_login).toLocaleString('en-IN'):'–'}</td>
+    <td>${c.created_at?new Date(c.created_at).toLocaleDateString('en-IN'):'–'}</td>
+  </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted);">No customers yet</td></tr>';
+}
+
+// ── TERMS ─────────────────────────────────────────────────────────────────────
+function loadTermsUI(){
+  const saved=localStorage.getItem('st_terms')||`SOWMIYA TRAVELS – TERMS & CONDITIONS
+
+1. BOOKING
+   • Bookings are confirmed only after OTP verification.
+   • Booking ID must be retained for reference.
+
+2. FARE
+   • Fares are calculated as per the published fare rules.
+   • Toll, parking, and state tax extra unless specified.
+   • Waiting charges: ₹100/hr after 30 mins grace period.
+
+3. CANCELLATION
+   • Free cancellation up to 2 hours before pickup.
+   • No refund for no-shows or last-minute cancellations.
+
+4. PAYMENT
+   • Payment via UPI or cash accepted.
+   • Full payment due at end of trip.
+   • Extra charges (extra km, waiting) settled at trip end.
+
+5. PASSENGER CONDUCT
+   • Passengers must not damage the vehicle.
+   • Smoking not permitted in vehicles.
+
+6. LIABILITY
+   • Sowmiya Travels is not responsible for delays due to traffic, weather, or road conditions.
+   • Passengers travel at their own risk.
+
+7. CONTACT
+   • For complaints or support, WhatsApp us at the number provided at booking.`;
+  document.getElementById('terms-content').value=saved;
+}
+function saveTerms(){
+  localStorage.setItem('st_terms',document.getElementById('terms-content').value);
+  showToast('Terms saved ✓ – customers will see updated terms','success');
+}
+
+// ── VEHICLE TYPE COMBO ────────────────────────────────────────────────────────
+function onVehicleTypeChange(sel,manualId,hiddenId){
+  const manual=document.getElementById(manualId);
+  const hidden=document.getElementById(hiddenId);
+  if(sel.value==='Other'){
+    manual.style.display='block'; manual.focus();
+    manual.oninput=()=>{hidden.value=manual.value.trim();};
+    hidden.value='';
+  } else {
+    manual.style.display='none'; manual.value='';
+    hidden.value=sel.value;
+  }
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
+function loadSettings(){
+  document.getElementById('cfg-sb-url').value=CONFIG.sbUrl||'';
+  document.getElementById('cfg-sb-key').value=CONFIG.sbKey||'';
+  document.getElementById('cfg-fonnte').value=CONFIG.fonnteToken||'';
+  document.getElementById('cfg-tg-token').value=CONFIG.tgToken||'';
+  document.getElementById('cfg-tg-chat').value=CONFIG.tgChat||'';
+  document.getElementById('cfg-upi').value=CONFIG.upiId||'6382986186@ybl';
+}
+function saveConfig(){
+  CONFIG={
+    sbUrl:document.getElementById('cfg-sb-url').value.trim(),
+    sbKey:document.getElementById('cfg-sb-key').value.trim(),
+    fonnteToken:document.getElementById('cfg-fonnte').value.trim(),
+    tgToken:document.getElementById('cfg-tg-token').value.trim(),
+    tgChat:document.getElementById('cfg-tg-chat').value.trim(),
+    upiId:document.getElementById('cfg-upi').value.trim()||'6382986186@ybl',
+  };
+  localStorage.setItem('st_admin_config',JSON.stringify(CONFIG));
+  _sbClient=null;
+  if(CONFIG.sbUrl&&CONFIG.sbKey&&window.supabase){
+    try{_sbClient=window.supabase.createClient(CONFIG.sbUrl,CONFIG.sbKey);showToast('Config saved! Supabase connected ✓','success');loadAll();}
+    catch(e){showToast('Config saved but SB error: '+e.message,'error');}
+  } else { showToast('Configuration saved ✓','success'); }
+}
+function changePassword(){
+  const old=document.getElementById('old-pass').value;
+  const nw=document.getElementById('new-pass').value;
+  const cf=document.getElementById('confirm-pass').value;
+  if(old!==ADMIN_CREDS.pass){showToast('Current password wrong','error');return;}
+  if(nw!==cf){showToast('New passwords do not match','error');return;}
+  if(nw.length<6){showToast('Min 6 characters','error');return;}
+  localStorage.setItem('st_admin_pass',nw);
+  ADMIN_CREDS.pass=nw;
+  showToast('Password updated ✓','success');
+  document.getElementById('old-pass').value='';
+  document.getElementById('new-pass').value='';
+  document.getElementById('confirm-pass').value='';
+}
+
+// ── WHATSAPP ──────────────────────────────────────────────────────────────────
+function normalizePhone(p){ let c=String(p).replace(/[^\d]/g,''); if(c.startsWith('0'))c='91'+c.slice(1); if(c.length===10)c='91'+c; return c; }
+async function sendWhatsApp(phone,message){
+  const clean=normalizePhone(phone);
+  try {
+    const res=await fetch('/api/send-whatsapp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:clean,message,token:CONFIG.fonnteToken})});
+    const text=await res.text(); let data;
+    try{data=JSON.parse(text);}catch(e){data=null;}
+    if(!data||res.status===404) return await sendWhatsAppDirect(phone,message);
+    if(!res.ok||data.status===false) return await sendWhatsAppDirect(phone,message);
+    return{ok:true};
+  } catch(e){ return await sendWhatsAppDirect(phone,message); }
+}
+async function sendWhatsAppDirect(phone,message){
+  const token=CONFIG.fonnteToken;
+  if(!token) return{ok:false,error:'No token'};
+  const clean=normalizePhone(phone);
+  try {
+    const body=new URLSearchParams({target:clean,message,countryCode:'91'});
+    const res=await fetch('https://api.fonnte.com/send',{method:'POST',headers:{'Authorization':token,'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
+    const text=await res.text(); let data;
+    try{data=JSON.parse(text);}catch(e){data={status:false};}
+    if(data.status===false||data.status==='false') return{ok:false,error:data.reason||'Fonnte rejected'};
+    return{ok:true};
+  } catch(e){return{ok:false,error:e.message};}
+}
 </script>
 </body>
 </html>
