@@ -976,9 +976,10 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="nav-links">
     <a href="#vehicles">Our Fleet</a>
     <a href="#booking">Book Now</a>
+    <a href="#my-bookings" onclick="showMyBookings()" id="my-bookings-nav" style="display:none;">📋 My Bookings</a>
     <a href="#track">Track</a>
     <a href="admin.html" target="_blank">Admin</a>
-    <span id="user-pill"></span>
+    <span id="user-pill" onclick="showMyBookings()" style="cursor:pointer;" title="View my bookings"></span>
     <button class="btn-nav" id="auth-btn" onclick="openAuth()">Login / Sign Up</button>
     <button class="btn-nav" id="logout-btn" style="display:none;background:#C9933A;" onclick="logout()">Logout</button>
   </div>
@@ -1018,6 +1019,15 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="scroll-hint">
     SCROLL
     <div class="scroll-arrow"><div class="scroll-dot"></div></div>
+  </div>
+</section>
+
+<!-- MY BOOKINGS / PROFILE SECTION -->
+<section class="booking-section" id="my-bookings" style="background:var(--bg);display:none;">
+  <span class="section-label">✦ Your Account</span>
+  <h2 class="section-title">My Bookings</h2>
+  <div id="profile-bookings-list" style="max-width:800px;margin:1.5rem auto 0;">
+    <p style="color:var(--text-muted);text-align:center;padding:2rem;">Login to see your bookings</p>
   </div>
 </section>
 
@@ -1115,6 +1125,17 @@ document.addEventListener('DOMContentLoaded', function() {
       <div id="return-row" style="display:none;margin-bottom:1rem;">
         <div class="form-group"><label>Return Date</label><input type="date" id="return-date"></div>
       </div>
+
+      <!-- FARE RULE SELECTOR -->
+      <div class="form-group" id="fare-rule-group" style="margin-bottom:1rem;background:#F8F6F1;border-radius:12px;padding:1rem;border:1.5px solid var(--border);">
+        <label style="font-size:0.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.05em;">💰 Select Fare Type</label>
+        <select id="fare-rule-select" onchange="onFareRuleChange()" style="border:1.5px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;font-size:0.92rem;font-family:'Outfit',sans-serif;outline:none;width:100%;margin-top:0.5rem;background:white;color:var(--text);">
+          <option value="">Loading fare options…</option>
+        </select>
+        <div id="fare-rule-detail" style="margin-top:0.75rem;padding:0.75rem;background:white;border-radius:8px;border:1px solid var(--border);font-size:0.85rem;color:var(--text-muted);display:none;"></div>
+        <div id="fare-rule-total" style="margin-top:0.5rem;font-weight:700;color:var(--navy);font-size:1rem;display:none;"></div>
+      </div>
+
       <button class="btn-book" id="btn-book" onclick="submitBooking()">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.22z"/></svg>
         Confirm Booking
@@ -1684,6 +1705,7 @@ function selectCar(el, type) {
   document.querySelectorAll('.car-type').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   selectedCar = type;
+  loadFareRuleDropdown();
   window._lastFareEstimate = null;
   updateDistanceBadge();
 }
@@ -1711,7 +1733,11 @@ function submitBooking() {
   const notes  = document.getElementById('notes').value.trim();
   if (!pickup||!drop||!date||!time||!name||!phone) { showToast('⚠️ Please fill in all required fields','error'); return; }
   // Store pending data
-  _pendingBookingData = {pickup,drop,date,time,name,phone,notes};
+  _pendingBookingData = {pickup,drop,date,time,name,phone,notes,
+    fareRule: window._selectedFareRule||null,
+    fareRuleLabel: window._selectedFareRule ? ((window._selectedFareRule.description||window._selectedFareRule.ruleType)+' – ₹'+window._selectedFareRule.amount) : '',
+    estTotal: window._selectedFareTotal||0
+  };
   // Show terms modal
   const terms = localStorage.getItem('st_terms') || 'By booking, you agree to Sowmiya Travels standard terms and conditions.\n\nFull terms available at our office.';
   document.getElementById('terms-modal-content').textContent = terms;
@@ -1754,8 +1780,13 @@ function agreeAndBook(){
   _pendingBookingData.bookingId=bookingId;
   _pendingBookingData.vehicleType=vType;
   const cfg=JSON.parse(localStorage.getItem('st_admin_config')||'{}');
-  const upiId=cfg.upiId||'kaviapt02@okaxis';
+  const upiId=cfg.upiId||'6382986186@ybl';
   _pendingBookingData.upiId=upiId;
+  // If user selected a fare rule, override estTotal with that
+  if(_pendingBookingData.fareRule && _pendingBookingData.estTotal>0){
+    estTotal = _pendingBookingData.estTotal;
+    fareLines = '<div style="display:flex;justify-content:space-between;"><span>'+_pendingBookingData.fareRuleLabel+'</span><span>₹'+estTotal+'</span></div>';
+  }
   _pendingBookingData.estTotal=estTotal;
   document.getElementById('payment-booking-ref').textContent='Booking '+bookingId+' – '+vType;
   document.getElementById('payment-fare-summary').innerHTML=`<div style="font-weight:600;color:#1A2744;margin-bottom:0.5rem;">Fare Breakdown</div>${fareLines}${estTotal>0?`<div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #E2DDD6;padding-top:0.5rem;margin-top:0.5rem;"><span>Estimated Total</span><span>₹${estTotal}</span></div>`:''}`;
@@ -1971,6 +2002,8 @@ async function confirmPayment(method){
     notes:d.notes,
     status:'pending',
     payment_method:method,
+    payment_status: method==='cash' ? 'pending' : 'pending_verification',
+    fare_rule_label: d.fareRuleLabel||'',
     estimated_fare:d.estTotal||0,
     razorpay_payment_id:d.razorpayPaymentId||null
   };
@@ -2005,15 +2038,65 @@ _Your Journey, Our Joy 🙏_`);
 
   if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML='<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.22z"/></svg> Confirm Booking';}
 
-  // Show success screen inside the payment modal
+  // ── UPI: auto-poll Supabase for payment_status update ────────────────────
+  if(method!=='cash'){
+    startPaymentPolling(d.bookingId);
+  } else {
+    // Cash — mark placed immediately
+    _markBookingPlaced(d.bookingId,'cash');
+  }
+
+  // Show success screen inside modal
   var confirmSection=document.getElementById('payment-confirmed-section');
   if(confirmSection){
     confirmSection.style.display='block';
     var confirmId=document.getElementById('payment-confirmed-id');
     if(confirmId) confirmId.textContent='Booking ID: '+d.bookingId+' | '+payLabel;
   }
-  showToast('✅ Booking '+d.bookingId+' confirmed!'+(waResult.ok?' WhatsApp sent.':' (WA failed – we\'ll call you)'),'success');
+  showToast('✅ Booking '+d.bookingId+' confirmed!'+(waResult.ok?' WhatsApp sent.':' (WA failed)'), 'success');
   _pendingBookingData=null;
+
+  // Show My Bookings after short delay
+  setTimeout(function(){ showMyBookings(); }, 2200);
+}
+
+// ── PAYMENT POLLING: checks every 4s if admin marked paid ────────────────────
+var _payPollTimer = null;
+var _payPollCount = 0;
+function startPaymentPolling(bookingId){
+  _payPollCount = 0;
+  clearInterval(_payPollTimer);
+  _payPollTimer = setInterval(async function(){
+    _payPollCount++;
+    if(_payPollCount > 30){ clearInterval(_payPollTimer); return; } // stop after 2min
+    if(!_sbClient){ clearInterval(_payPollTimer); return; }
+    try {
+      var res = await _sbClient.from('bookings').select('payment_status,status').eq('booking_id',bookingId).single();
+      if(res.data){
+        var ps = res.data.payment_status;
+        if(ps==='paid'||ps==='confirmed'){
+          clearInterval(_payPollTimer);
+          _markBookingPlaced(bookingId,'upi');
+          showToast('✅ Payment verified! Booking placed successfully.','success');
+          showMyBookings();
+        }
+      }
+    } catch(e){}
+  }, 4000);
+}
+
+function _markBookingPlaced(bookingId, method){
+  // Update localStorage status
+  var stored = JSON.parse(localStorage.getItem('st_bookings')||'[]');
+  stored = stored.map(function(b){
+    if(b.booking_id===bookingId){
+      b.payment_status = method==='cash'?'cash_on_delivery':'paid';
+      b.status = 'confirmed';
+    }
+    return b;
+  });
+  localStorage.setItem('st_bookings', JSON.stringify(stored));
+  showMyBookings();
 }
 
 // ── LOAD VEHICLES FROM SUPABASE / LOCALSTORAGE ────────────────────────────────
@@ -2051,6 +2134,7 @@ async function loadVehicles(){
     }
   }
 
+  loadFareRuleDropdown();
   // ── Booking form car-type pills ──
   if(carTypesContainer){
     if(!vehicles.length){
@@ -2101,6 +2185,146 @@ async function notifyTelegram(b) {
 // Returns { ok: true } on success or { ok: false, error: '...' } on failure.
 
 // FIX: Normalize phone before sending (strip everything non-digit, add 91 prefix)
+// ── FARE RULE DROPDOWN ───────────────────────────────────────────────────────
+function loadFareRuleDropdown(){
+  var sel = document.getElementById('fare-rule-select');
+  if(!sel) return;
+  var rules = JSON.parse(localStorage.getItem('st_fare_rules')||'[]');
+  if(_sbClient){
+    _sbClient.from('fare_rules').select('*').then(function(res){
+      if(res.data && res.data.length){
+        var mapped = res.data.map(function(r){
+          return {vehicleType:r.vehicle_type,ruleType:r.rule_type,amount:r.amount,description:r.description};
+        });
+        localStorage.setItem('st_fare_rules', JSON.stringify(mapped));
+        _populateFareSelect(mapped);
+      }
+    });
+  }
+  if(rules.length) _populateFareSelect(rules);
+  else { var s=document.getElementById('fare-rule-select'); if(s) s.innerHTML='<option value="">Admin fare rules not set yet</option>'; }
+}
+
+function _populateFareSelect(rules){
+  var sel = document.getElementById('fare-rule-select');
+  if(!sel) return;
+  var filtered = rules.filter(function(r){
+    return !r.vehicleType || r.vehicleType==='' || r.vehicleType==='All' || r.vehicleType===selectedCar;
+  });
+  if(!filtered.length) filtered = rules;
+  sel.innerHTML = '<option value="">-- Select a fare type --</option>' +
+    filtered.map(function(r,i){
+      var label = (r.description||r.ruleType) + ' – ₹' + (r.amount||0);
+      if(r.vehicleType && r.vehicleType!=='All') label += ' (' + r.vehicleType + ')';
+      return '<option value="'+i+'" data-amount="'+r.amount+'" data-type="'+r.ruleType+'">'+label+'</option>';
+    }).join('');
+  sel._rules = filtered;
+  var grp = document.getElementById('fare-rule-group');
+  if(grp) grp.style.display = filtered.length ? 'block' : 'none';
+}
+
+function onFareRuleChange(){
+  var sel = document.getElementById('fare-rule-select');
+  var detail = document.getElementById('fare-rule-detail');
+  var totalEl = document.getElementById('fare-rule-total');
+  var idx = sel.value;
+  if(idx==='' || !sel._rules){ if(detail) detail.style.display='none'; if(totalEl) totalEl.style.display='none'; return; }
+  var r = sel._rules[parseInt(idx)];
+  if(!r) return;
+  var typeLabels = {per_km:'Per Kilometre – charged based on distance',per_trip:'Fixed per trip – flat rate',per_hour:'Per Hour – rental by the hour',per_day:'Per Day – full day rental',waiting:'Waiting charge – driver wait time',night_surcharge:'Night surcharge – after 10 PM',airport_pickup:'Airport pickup – fixed fee',extra_km:'Extra KM beyond package',manual:'Custom rate – as quoted'};
+  if(detail){ detail.style.display='block'; detail.innerHTML='<strong>'+(r.description||r.ruleType)+'</strong><br><span style="color:#888;font-size:0.82rem;">'+(typeLabels[r.ruleType]||r.ruleType)+'</span>'; }
+  var km = window._lastFareEstimate ? window._lastFareEstimate.roadKm : 0;
+  var amt = parseFloat(r.amount||0);
+  var est = (r.ruleType==='per_km' && km>0) ? Math.round(amt*km) : amt;
+  if(totalEl){
+    totalEl.style.display='block';
+    totalEl.innerHTML = (km>0 && r.ruleType==='per_km') ? '💰 Estimated: ₹'+est+' ('+km+' km × ₹'+amt+')' : '💰 Rate: ₹'+amt;
+  }
+  window._selectedFareRule = r;
+  window._selectedFareTotal = est||amt;
+}
+
+// ── MY BOOKINGS / PROFILE ─────────────────────────────────────────────────────
+async function showMyBookings(){
+  var sec = document.getElementById('my-bookings');
+  if(!sec) return;
+  if(!currentUser){ openAuth(); return; }
+  sec.style.display = 'block';
+  sec.scrollIntoView({behavior:'smooth',block:'start'});
+  var list = document.getElementById('profile-bookings-list');
+  list.innerHTML = '<p style="text-align:center;padding:2rem;color:#999;">Loading your bookings…</p>';
+  var bookings = [];
+  if(_sbClient){
+    try {
+      var res = await _sbClient.from('bookings').select('*').eq('customer_phone',currentUser.phone).order('created_at',{ascending:false});
+      if(res.data && res.data.length) bookings = res.data;
+    } catch(e){}
+  }
+  if(!bookings.length){
+    var stored = JSON.parse(localStorage.getItem('st_bookings')||'[]');
+    bookings = stored.filter(function(b){ return b.customer_phone===currentUser.phone; }).reverse();
+  }
+  if(!bookings.length){
+    list.innerHTML = '<div style="text-align:center;padding:3rem;color:#999;"><div style="font-size:3rem;margin-bottom:1rem;">📋</div><p>No bookings yet.</p><a href="#booking" style="color:var(--gold);font-weight:600;text-decoration:none;">Book your first trip →</a></div>';
+    return;
+  }
+  var statusColor={pending:'#D4860A',confirmed:'#1D9E75',completed:'#1A2744',cancelled:'#C0392B'};
+  var statusBg={pending:'#FFF3D9',confirmed:'#E1F5EE',completed:'#E8EBF4',cancelled:'#FDECEA'};
+  var payColor={paid:'#1D9E75',cash_on_delivery:'#1A2744',pending_verification:'#D4860A',pending:'#666'};
+  var payLabel={paid:'✅ Paid',cash_on_delivery:'💵 Cash on delivery',pending_verification:'⏳ Verifying payment…',pending:'⏳ Pending'};
+  list.innerHTML = bookings.map(function(b){
+    var st=b.status||'pending';
+    var ps=b.payment_status||'pending';
+    var extra = b.extra_total ? '<div style="color:#C0392B;font-size:0.82rem;margin-top:2px;">⚠️ Extra charges: ₹'+b.extra_total+'</div>' : '';
+    var driver = b.driver_name ? '<div style="font-size:0.83rem;color:#1D9E75;margin-top:4px;">🧑 Driver: '+b.driver_name+(b.driver_phone?' · '+b.driver_phone:'')+'</div>' : '';
+    return '<div style="background:#fff;border-radius:14px;border:1.5px solid #E2DDD6;padding:1.25rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.05);">'
+      +'<div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;">'
+      +'<div><span style="font-weight:700;color:#1A2744;font-size:0.95rem;">'+b.booking_id+'</span>'
+      +'<span style="margin-left:0.75rem;background:'+(statusBg[st]||'#F0F0F0')+';color:'+(statusColor[st]||'#333')+';font-size:0.75rem;font-weight:700;padding:3px 10px;border-radius:50px;">'+st.toUpperCase()+'</span></div>'
+      +'<span style="color:'+(payColor[ps]||'#666')+';font-size:0.82rem;font-weight:600;">'+(payLabel[ps]||ps)+'</span>'
+      +'</div>'
+      +'<div style="font-size:0.88rem;color:#444;line-height:1.8;">'
+      +'📍 <strong>'+b.pickup_location+'</strong> → <strong>'+b.drop_location+'</strong><br>'
+      +'📅 '+b.pickup_date+' '+(b.pickup_time||'')+'&nbsp;&nbsp;🚗 '+(b.vehicle_type||'–')+'<br>'
+      +(b.fare_rule_label?'💰 '+b.fare_rule_label+'<br>':'')
+      +(b.estimated_fare?'💵 Estimated: ₹'+b.estimated_fare+'<br>':'')
+      +extra+driver
+      +'</div></div>';
+  }).join('');
+}
+
+// ── PAYMENT POLLING ───────────────────────────────────────────────────────────
+var _payPollTimer = null, _payPollCount = 0;
+function startPaymentPolling(bookingId){
+  _payPollCount=0; clearInterval(_payPollTimer);
+  _payPollTimer=setInterval(async function(){
+    _payPollCount++;
+    if(_payPollCount>30){ clearInterval(_payPollTimer); return; }
+    if(!_sbClient){ clearInterval(_payPollTimer); return; }
+    try {
+      var res=await _sbClient.from('bookings').select('payment_status,status').eq('booking_id',bookingId).single();
+      if(res.data){
+        var ps=res.data.payment_status;
+        if(ps==='paid'||ps==='confirmed'){
+          clearInterval(_payPollTimer);
+          _markBookingPlaced(bookingId,'upi');
+          showToast('Payment verified! Booking confirmed.','success');
+          showMyBookings();
+        }
+      }
+    } catch(e){}
+  },4000);
+}
+function _markBookingPlaced(bookingId,method){
+  var stored=JSON.parse(localStorage.getItem('st_bookings')||'[]');
+  stored=stored.map(function(b){
+    if(b.booking_id===bookingId){ b.payment_status=method==='cash'?'cash_on_delivery':'paid'; b.status='confirmed'; }
+    return b;
+  });
+  localStorage.setItem('st_bookings',JSON.stringify(stored));
+  showMyBookings();
+}
+
 function normalizePhone(phone) {
   let clean = String(phone).replace(/[^\d]/g, '');
   if (clean.startsWith('0')) clean = '91' + clean.slice(1);
@@ -2250,14 +2474,22 @@ function updateUIForUser() {
   if (!currentUser) return;
   document.getElementById('user-pill').style.display = 'inline-block';
   document.getElementById('user-pill').textContent = '👤 ' + currentUser.name;
+  document.getElementById('user-pill').style.display = 'inline-block';
   document.getElementById('auth-btn').style.display = 'none';
   document.getElementById('logout-btn').style.display = 'inline-block';
+  var mbNav = document.getElementById('my-bookings-nav');
+  if(mbNav) mbNav.style.display = 'inline-block';
+  loadFareRuleDropdown();
   if (document.getElementById('cust-name')) document.getElementById('cust-name').value = currentUser.name;
   if (document.getElementById('cust-phone')) document.getElementById('cust-phone').value = currentUser.phone;
 }
 
 function logout() {
   currentUser = null; localStorage.removeItem('st_user');
+  var mbNav = document.getElementById('my-bookings-nav');
+  if(mbNav) mbNav.style.display = 'none';
+  var mbSec = document.getElementById('my-bookings');
+  if(mbSec) mbSec.style.display = 'none';
   document.getElementById('user-pill').style.display = 'none';
   document.getElementById('auth-btn').style.display = 'inline-block';
   document.getElementById('logout-btn').style.display = 'none';
