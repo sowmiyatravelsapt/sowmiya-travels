@@ -1342,26 +1342,36 @@ var TOLL_ESTIMATE = 0;
 function estimateFare(roadKm, vType, tripType){
   var perKm  = BASE_PER_KM[vType]  || 12;
   var minFare= MIN_FARE[vType]     || 250;
-  var bata   = DRIVER_BATA[vType]  || 250;
   if(tripType==='roundtrip') roadKm *= 2;
-  // Check admin fare rules first
+  // Check admin fare rules first — support per_km and per_day
   var fareRules = JSON.parse(localStorage.getItem('st_fare_rules')||'[]');
   var cfg = JSON.parse(localStorage.getItem('st_admin_config')||'{}');
+  var perDayTotal = 0;
   fareRules.forEach(function(r){
-    if((r.vehicleType===vType||r.vehicleType==='All'||!r.vehicleType) && r.ruleType==='per_km'){
+    var matchVehicle = (r.vehicleType===vType||r.vehicleType==='All'||!r.vehicleType);
+    if(!matchVehicle) return;
+    if(r.ruleType==='per_km'){
       perKm = parseFloat(r.amount||0) || perKm;
+    } else if(r.ruleType==='per_day'){
+      perDayTotal += parseFloat(r.amount||0);
     }
   });
   var toll = parseFloat(cfg.tollEstimate||0) || TOLL_ESTIMATE;
-  var base = Math.max(roadKm * perKm, minFare);
-  var total = base + bata + toll;
+  var base;
+  if(perDayTotal > 0){
+    base = perDayTotal; // per-day rule overrides km calc
+  } else {
+    base = Math.max(roadKm * perKm, minFare);
+  }
+  var total = base + toll;
   return {
     roadKm: Math.round(roadKm),
     base: Math.round(base),
-    bata: bata,
+    bata: 0,
     toll: toll,
     total: Math.round(total),
-    perKm: perKm
+    perKm: perKm,
+    perDay: perDayTotal
   };
 }
 
@@ -1717,8 +1727,11 @@ function agreeAndBook(){
   let fareLines=''; let estTotal=0;
   if(f && f.roadKm > 0){
     // Distance-based fare breakdown
-    fareLines += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>🛣️ Distance (~'+f.roadKm+' km × ₹'+f.perKm+'/km)</span><span>₹'+f.base+'</span></div>';
-    if(f.bata)  fareLines += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>👤 Driver allowance</span><span>₹'+f.bata+'</span></div>';
+    if(f.perDay > 0){
+      fareLines += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>📅 Per Day Rate</span><span>₹'+f.base+'</span></div>';
+    } else {
+      fareLines += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>🛣️ Distance (~'+f.roadKm+' km × ₹'+f.perKm+'/km)</span><span>₹'+f.base+'</span></div>';
+    }
     if(f.toll)  fareLines += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>🛂 Toll estimate</span><span>₹'+f.toll+'</span></div>';
     estTotal = f.total;
     if(currentTab==='roundtrip') fareLines += '<div style="font-size:0.78rem;color:#888;margin-top:4px;">↩️ Return trip included</div>';
@@ -1741,7 +1754,7 @@ function agreeAndBook(){
   _pendingBookingData.bookingId=bookingId;
   _pendingBookingData.vehicleType=vType;
   const cfg=JSON.parse(localStorage.getItem('st_admin_config')||'{}');
-  const upiId=cfg.upiId||'6382986186@ybl';
+  const upiId=cfg.upiId||'kaviapt02@okaxis';
   _pendingBookingData.upiId=upiId;
   _pendingBookingData.estTotal=estTotal;
   document.getElementById('payment-booking-ref').textContent='Booking '+bookingId+' – '+vType;
@@ -1772,7 +1785,7 @@ function _hideAllPaymentSections(){
 function choosePayment(method){
   const d=_pendingBookingData;
   const amt=d.estTotal||0;
-  const upiId=d.upiId||'6382986186@ybl';
+  const upiId=d.upiId||'kaviapt02@okaxis';
   const bookingNote='Booking+'+d.bookingId;
 
   // Hide chooser, show relevant section
@@ -1932,6 +1945,9 @@ async function confirmPayment(method){
   });
 
   if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.innerHTML='⏳ Confirming…';}
+  // Show spinner in modal too
+  var confirmSec = document.getElementById('payment-confirmed-section');
+  if(confirmSec){ confirmSec.style.display='block'; confirmSec.innerHTML='<div style="text-align:center;padding:2rem"><div style="font-size:2rem;animation:spin 1s linear infinite;display:inline-block">⏳</div><p style="margin-top:1rem;color:#666;">Processing…</p></div>'; }
 
   const payLabel={
     upi:'💳 UPI / App Payment',
