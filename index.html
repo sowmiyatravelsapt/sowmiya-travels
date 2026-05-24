@@ -499,10 +499,103 @@
   }
 
   @media(max-width:640px){
-    .form-row{ grid-template-columns:1fr; }
-    nav{ padding:0.9rem 1.2rem; }
+    /* ── NAV ── */
+    nav{ padding:0.75rem 1rem; }
     .nav-links a{ display:none; }
-    .hero h1{ font-size:2.5rem; }
+    .nav-brand{ font-size:0.95rem; }
+    .btn-nav{ padding:0.4rem 0.9rem; font-size:0.75rem; }
+    #user-pill{ font-size:0.72rem; padding:0.35rem 0.7rem; }
+
+    /* ── HERO ── */
+    .hero{ padding:6rem 1.2rem 3rem; }
+    .hero h1{ font-size:2.1rem; line-height:1.1; }
+    .hero-sub{ font-size:0.95rem; }
+    .hero-logo{ width:120px; height:120px; }
+    .hero-cta{ flex-direction:column; align-items:center; gap:0.7rem; }
+    .btn-hero-primary,.btn-hero-secondary{ width:100%; max-width:280px; padding:0.85rem 1.5rem; font-size:0.95rem; }
+
+    /* ── BOOKING SECTION ── */
+    .booking-section{ padding:3rem 0.9rem; }
+    .section-title{ font-size:1.5rem; }
+    .booking-card{ border-radius:16px; }
+    .booking-body{ padding:1rem 0.9rem 1.2rem; }
+    .booking-tab{ font-size:0.75rem; padding:0.85rem 0.25rem; letter-spacing:0.01em; }
+
+    /* ── FORM ── */
+    .form-row{ grid-template-columns:1fr; gap:0.75rem; }
+    /* Prevent iOS auto-zoom on input focus */
+    .form-group input,
+    .form-group select,
+    .form-group textarea,
+    .track-input,
+    #map-search-input{ font-size:16px !important; }
+    .form-group input{ padding:0.85rem 1rem; }
+    .form-group label{ font-size:0.68rem; }
+
+    /* ── CAR TYPE GRID ── */
+    .car-types{ grid-template-columns:1fr 1fr; gap:0.5rem; }
+    .car-type{ padding:0.75rem 0.3rem; border-radius:10px; }
+    .car-type .icon{ font-size:1.6rem; }
+    .car-type .name{ font-size:0.78rem; }
+    .car-type .seats{ font-size:0.66rem; }
+
+    /* ── QUICK PICK BUTTONS ── */
+    #quick-places{ gap:0.3rem; }
+    .qp-btn{ font-size:0.72rem; padding:0.28rem 0.6rem; }
+
+    /* ── LIVE LOCATION BUTTON ── */
+    #live-loc-btn{ font-size:0.88rem !important; padding:0.8rem 0.75rem !important; }
+
+    /* ── DISTANCE BADGE ── */
+    .distance-badge{ flex-wrap:wrap; gap:8px; font-size:0.82rem; }
+    .dist-chip,.fare-chip{ font-size:0.72rem; }
+
+    /* ── TOAST ── */
+    .toast{
+      bottom:0; right:0; left:0; max-width:100%; width:100%;
+      border-radius:0; border-left:none; border-top:4px solid var(--gold);
+      padding:0.9rem 1.2rem; font-size:0.85rem;
+    }
+    .toast.error{ border-top-color:var(--danger); border-left:none; }
+    .toast.success{ border-top-color:var(--teal); border-left:none; }
+
+    /* ── MAP PICKER MODAL ── */
+    #map-picker-modal > div{
+      width:100% !important;
+      max-width:100% !important;
+      height:100% !important;
+      max-height:100% !important;
+      border-radius:0 !important;
+    }
+    #leaflet-map{ height:calc(100vh - 220px) !important; }
+
+    /* ── AUTH MODAL ── */
+    .modal{ padding:1.5rem 1.1rem; border-radius:16px; }
+    .modal h2{ font-size:1.3rem; }
+
+    /* ── FEATURES ── */
+    .features-section{ padding:3.5rem 1rem; }
+    .feature-grid{ grid-template-columns:1fr 1fr; gap:0.85rem; }
+    .feature-card{ padding:1.2rem 0.9rem; }
+    .feature-card h3{ font-size:0.88rem; }
+    .feature-card p{ font-size:0.76rem; }
+    .f-icon{ width:50px; height:50px; font-size:1.4rem; }
+
+    /* ── TRACK ── */
+    .track-section{ padding:3rem 1rem; }
+    .track-input-row{ flex-direction:column; gap:0.6rem; }
+    .btn-track{ width:100%; text-align:center; }
+    .track-box{ padding:1.5rem 1rem; }
+
+    /* ── FOOTER ── */
+    footer{ padding:2rem 1rem 1.5rem; }
+  }
+
+  /* Very small phones */
+  @media(max-width:360px){
+    .hero h1{ font-size:1.85rem; }
+    .booking-tab{ font-size:0.68rem; }
+    .feature-grid{ grid-template-columns:1fr; }
   }
 </style>
 <script>
@@ -956,7 +1049,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <!-- 📍 LIVE LOCATION + QUICK AREA PICKS -->
       <div style="margin-bottom:1.2rem;">
-        <button onclick="detectMyLocation('pickup')" style="width:100%;background:linear-gradient(135deg,#1D9E75,#16a085);color:#fff;border:none;border-radius:12px;padding:0.85rem 1rem;font-size:0.97rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Outfit',sans-serif;letter-spacing:0.03em;box-shadow:0 4px 18px rgba(29,158,117,0.35);transition:all 0.25s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(29,158,117,0.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 18px rgba(29,158,117,0.35)'">
+        <button id="live-loc-btn" onclick="detectMyLocation('pickup')" style="width:100%;background:linear-gradient(135deg,#1D9E75,#16a085);color:#fff;border:none;border-radius:12px;padding:0.85rem 1rem;font-size:0.97rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Outfit',sans-serif;letter-spacing:0.03em;box-shadow:0 4px 18px rgba(29,158,117,0.35);transition:all 0.25s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(29,158,117,0.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 18px rgba(29,158,117,0.35)'">
           <span style="font-size:1.3rem;">📍</span> Use My Current Location as Pickup
         </button>
         <div style="margin-top:0.8rem;">
@@ -1303,59 +1396,124 @@ function setQuickPlace(fieldId, name, lat, lng) {
   updateDistanceBadge();
 }
 
-// 📍 GPS: fill pickup with user's current location using FREE Nominatim reverse geocode
+// 📍 GPS: Two-stage location — fast network fix first, then refine with GPS
+// Stage 1: Quick low-accuracy (2s) → fills field immediately
+// Stage 2: High-accuracy GPS (20s) → updates field silently if better
+var _locWatchId = null;
+
 function detectMyLocation(fieldId){
-  if(!navigator.geolocation){ showToast('GPS not supported on this browser','error'); return; }
-  showToast('📍 Getting your location…','success');
-  navigator.geolocation.getCurrentPosition(function(pos){
-    var lat=pos.coords.latitude, lng=pos.coords.longitude;
-    var inp=document.getElementById(fieldId);
-    inp.dataset.lat=lat; inp.dataset.lng=lng;
-    // Free reverse geocode via Nominatim (OpenStreetMap)
-    // Use Geoapify reverse geocode if key set, else Nominatim
+  if(!navigator.geolocation){
+    showToast('GPS not available on this browser','error');
+    return;
+  }
+
+  // Update button to show loading state
+  var btn = document.querySelector('button[onclick*="detectMyLocation"]');
+  if(btn){ btn.style.opacity='0.7'; btn.innerHTML='<span style="display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px;"></span> Getting location…'; btn.disabled=true; }
+
+  function resetBtn(){
+    if(btn){ btn.style.opacity=''; btn.innerHTML='<span style="font-size:1.3rem;">📍</span> Use My Current Location as Pickup'; btn.disabled=false; }
+  }
+
+  function doReverseGeocode(lat, lng, inp, onDone){
     var revUrl;
-    if (typeof GEOAPIFY_KEY !== 'undefined' && GEOAPIFY_KEY && GEOAPIFY_KEY !== 'YOUR_GEOAPIFY_KEY') {
-      revUrl = 'https://api.geoapify.com/v1/geocode/reverse?lat='+lat+'&lon='+lng+'&lang=en&apiKey='+GEOAPIFY_KEY;
+    if(typeof GEOAPIFY_KEY!=='undefined' && GEOAPIFY_KEY && GEOAPIFY_KEY!=='YOUR_GEOAPIFY_KEY'){
+      revUrl='https://api.geoapify.com/v1/geocode/reverse?lat='+lat+'&lon='+lng+'&lang=en&apiKey='+GEOAPIFY_KEY;
     } else {
-      revUrl = 'https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng+'&addressdetails=1&accept-language=en';
+      revUrl='https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng+'&addressdetails=1&accept-language=en&zoom=17';
     }
-    fetch(revUrl, { headers:{ 'User-Agent':'SowmiyaTravels/1.0' } })
+    // AbortController with 8s timeout for reverse geocode
+    var ac = new AbortController();
+    var t = setTimeout(function(){ ac.abort(); }, 8000);
+    fetch(revUrl, { headers:{'User-Agent':'SowmiyaTravels/1.0'}, signal: ac.signal })
       .then(function(r){ return r.json(); })
       .then(function(data){
-        var addr = '';
-        // Geoapify response
-        if (data.features && data.features[0]) {
-          var p = data.features[0].properties;
-          var parts = geoapifyLabel(p);
-          addr = parts.slice(0,2).join(', ');
+        clearTimeout(t);
+        var addr='';
+        if(data.features && data.features[0]){
+          var p=data.features[0].properties;
+          var parts=geoapifyLabel(p);
+          addr=parts.slice(0,3).join(', ');
+        } else if(data && data.address){
+          var a=data.address;
+          var road = a.road||a.pedestrian||a.footway||'';
+          var vill = a.village||a.hamlet||a.suburb||a.neighbourhood||a.town||a.city||'';
+          var city2= a.city||a.town||a.county||a.state_district||'';
+          if(road && vill) addr=road+', '+vill;
+          else if(vill) addr=vill+(city2 && city2!==vill ? ', '+city2 : '');
+          else addr=(data.display_name||'').split(',').slice(0,3).join(',').trim();
         }
-        // Nominatim response
-        else if (data && data.address) {
-          var a = data.address;
-          var name = a.amenity||a.suburb||a.neighbourhood||a.village||a.hamlet||a.town||a.city||a.county||'';
-          var city = a.city||a.town||a.county||a.state_district||'';
-          addr = name ? (name + (city && city!==name ? ', '+city : '')) : (data.display_name||'').split(',').slice(0,2).join(',');
-        }
-        if (addr) {
-          inp.value = addr; inp.dataset.addr = addr;
-          showToast('📍 ' + addr, 'success');
-        } else {
-          inp.value = 'Near '+lat.toFixed(4)+','+lng.toFixed(4);
-          inp.dataset.addr = inp.value;
-          showToast('📍 Location set','success');
-        }
-        updateDistanceBadge();
+        if(addr){ inp.value=addr; inp.dataset.addr=addr; }
+        else { inp.value='Near '+lat.toFixed(4)+','+lng.toFixed(4); inp.dataset.addr=inp.value; }
+        if(onDone) onDone(addr);
       })
       .catch(function(){
-        inp.value='Near '+lat.toFixed(4)+','+lng.toFixed(4);
-        inp.dataset.addr=inp.value;
-        updateDistanceBadge();
-        showToast('📍 Location set (offline mode)','success');
+        clearTimeout(t);
+        var fallback='Near '+lat.toFixed(4)+','+lng.toFixed(4);
+        inp.value=fallback; inp.dataset.addr=fallback;
+        if(onDone) onDone(fallback);
       });
-  }, function(err){
-    var msgs={1:'Permission denied – please allow location access',2:'Location unavailable',3:'Location request timed out'};
-    showToast('📍 GPS: '+(msgs[err.code]||err.message),'error');
-  }, { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
+  }
+
+  // Clear any previous watcher
+  if(_locWatchId!=null){ navigator.geolocation.clearWatch(_locWatchId); _locWatchId=null; }
+
+  var inp = document.getElementById(fieldId);
+  var gotFirstFix = false;
+  var highAccDone = false;
+
+  showToast('📍 Detecting your location…','success');
+
+  // Stage 1: Fast coarse fix (network/cell, ~1-2s, no accuracy requirement)
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      var lat=pos.coords.latitude, lng=pos.coords.longitude;
+      inp.dataset.lat=lat; inp.dataset.lng=lng;
+      gotFirstFix=true;
+      doReverseGeocode(lat, lng, inp, function(addr){
+        showToast('📍 '+(addr||'Location set')+' (refining…)','success');
+        updateDistanceBadge();
+        resetBtn();
+      });
+    },
+    function(){ /* silent — Stage 2 will handle */ },
+    { enableHighAccuracy:false, timeout:5000, maximumAge:120000 }
+  );
+
+  // Stage 2: High-accuracy GPS (runs in parallel, updates silently if better)
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      if(highAccDone) return;
+      highAccDone=true;
+      var lat=pos.coords.latitude, lng=pos.coords.longitude;
+      inp.dataset.lat=lat; inp.dataset.lng=lng;
+      doReverseGeocode(lat, lng, inp, function(addr){
+        if(!gotFirstFix){
+          showToast('📍 '+(addr||'Location set'),'success');
+          resetBtn();
+        } else {
+          showToast('📍 Precise location: '+(addr||'Updated'),'success');
+        }
+        updateDistanceBadge();
+        resetBtn();
+      });
+    },
+    function(err){
+      highAccDone=true;
+      resetBtn();
+      if(!gotFirstFix){
+        // Both stages failed
+        var msgs={
+          1:'Please allow location permission in your browser settings',
+          2:'Location signal unavailable. Try outdoors or use map 🗺️',
+          3:'GPS timed out. Try again or tap 🗺️ to pin manually'
+        };
+        showToast('📍 '+(msgs[err.code]||'Location failed — try the 🗺️ map button'),'error');
+      }
+      // If Stage 1 already got a fix, just silently use that
+    },
+    { enableHighAccuracy:true, timeout:20000, maximumAge:30000 }
+  );
 }
 </script>
 
@@ -1840,8 +1998,7 @@ document.getElementById('pickup-date').min = new Date().toISOString().split('T')
 // Location powered by OpenStreetMap (free, no API key needed)
 </script>
 
-<!-- ── MAP PICKER MODAL ─────────────────────────────────────────────────── -->
-<div id="map-picker-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(13,26,54,0.85);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
+  <div id="map-picker-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(13,26,54,0.85);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:20px;width:min(96vw,640px);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.4);">
     <!-- Header -->
     <div style="background:var(--navy);padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
@@ -1849,7 +2006,7 @@ document.getElementById('pickup-date').min = new Date().toISOString().split('T')
         <div style="color:var(--gold-light);font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;">Pin Location on Map</div>
         <div id="map-picker-title" style="color:#fff;font-size:1rem;font-weight:600;margin-top:2px;">Select Pickup</div>
       </div>
-      <button onclick="closeMapPicker()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+      <button onclick="closeMapPicker()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
     <!-- Search inside map -->
     <div style="padding:0.75rem 1rem;border-bottom:1px solid #F0EDE8;flex-shrink:0;position:relative;">
@@ -1873,8 +2030,9 @@ document.getElementById('pickup-date').min = new Date().toISOString().split('T')
       <div id="map-picked-addr" style="font-size:0.88rem;color:#1A2744;font-weight:500;min-height:1.2em;">Move the map to set location…</div>
     </div>
     <!-- Confirm button -->
-    <div style="padding:0.75rem 1rem;flex-shrink:0;border-top:1px solid #F0EDE8;">
-      <button id="map-confirm-btn" onclick="confirmMapLocation()" style="width:100%;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:0.9rem;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;transition:all 0.25s;" onmouseover="this.style.background='#C9933A'" onmouseout="this.style.background='var(--navy)'">
+    <div style="padding:0.75rem 1rem 0.65rem;flex-shrink:0;border-top:1px solid #F0EDE8;display:flex;gap:0.6rem;align-items:center;">
+      <button onclick="mapGoToMyLocation()" title="Center on my location" style="background:#f0f0f0;border:none;border-radius:10px;width:44px;height:44px;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Use my live location">📍</button>
+      <button id="map-confirm-btn" onclick="confirmMapLocation()" style="flex:1;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:0.9rem;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;transition:all 0.25s;" onmouseover="this.style.background='#C9933A'" onmouseout="this.style.background='var(--navy)'">
         ✅ Confirm This Location
       </button>
     </div>
@@ -1891,6 +2049,20 @@ var _mapPicker = {
   searchTimer: null,
   geocoding: false
 };
+
+function mapGoToMyLocation() {
+  if (!navigator.geolocation) { showToast('GPS not available','error'); return; }
+  var btn = document.querySelector('[onclick="mapGoToMyLocation()"]');
+  if (btn) btn.textContent = '⏳';
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    if (btn) btn.textContent = '📍';
+    _mapPicker.map.setView([pos.coords.latitude, pos.coords.longitude], 17);
+    updateMapAddress(pos.coords.latitude, pos.coords.longitude);
+  }, function() {
+    if (btn) btn.textContent = '📍';
+    showToast('Could not get GPS location','error');
+  }, { enableHighAccuracy:false, timeout:8000, maximumAge:120000 });
+}
 
 function openMapPicker(fieldId) {
   _mapPicker.field = fieldId;
