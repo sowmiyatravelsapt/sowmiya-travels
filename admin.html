@@ -68,7 +68,7 @@ tr:hover td{background:#FAFAF8;}
 .toast.show{transform:translateY(0);opacity:1;}
 .toast.success{background:var(--success);}.toast.error{background:var(--danger);}
 /* Fare rules */
-.fare-rule-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:0.75rem;align-items:end;margin-bottom:0.75rem;background:#F8F6F3;padding:0.75rem;border-radius:10px;}
+.fare-rule-row{display:grid;grid-template-columns:180px 1fr 100px 1fr auto;gap:0.75rem;align-items:end;margin-bottom:0.75rem;background:#F8F6F3;padding:0.75rem;border-radius:10px;flex-wrap:wrap;}
 /* Vehicle card in fleet section */
 .fleet-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;}
 .fleet-card{background:var(--white);border-radius:14px;border:1px solid var(--border);overflow:hidden;}
@@ -276,7 +276,7 @@ tr:hover td{background:#FAFAF8;}
       <div class="form-group" style="margin-bottom:0.75rem;"><label>Fonnte Token</label><input type="password" id="cfg-fonnte"></div>
       <div class="form-group" style="margin-bottom:0.75rem;"><label>Telegram Bot Token</label><input type="password" id="cfg-tg-token"></div>
       <div class="form-group" style="margin-bottom:0.75rem;"><label>Telegram Chat ID</label><input type="text" id="cfg-tg-chat"></div>
-      <div class="form-group" style="margin-bottom:1rem;"><label>UPI ID</label><input type="text" id="cfg-upi" placeholder="6382986186@ybl"></div>
+      <div class="form-group" style="margin-bottom:1rem;"><label>UPI ID</label><input type="text" id="cfg-upi" placeholder="kaviapt02@okaxis"></div>
       <button class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
     </div>
     <div class="table-card" style="padding:1.5rem;">
@@ -421,7 +421,7 @@ const DEFAULTS = {
   fonnteToken:'QP4Hop3z3fEdzTv1sQiK',
   tgToken:'8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA',
   tgChat:'8252090421',
-  upiId:'6382986186@ybl'
+  upiId:'kaviapt02@okaxis'
 };
 let CONFIG = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('st_admin_config')||'{}'));
 const ADMIN_CREDS = { user:'admin', pass: localStorage.getItem('st_admin_pass')||'sowmiya2024' };
@@ -857,38 +857,69 @@ const FARE_TYPES=[
 ];
 
 function loadFareRulesUI(){
-  if(!DATA.fareRules.length) DATA.fareRules=[{vehicleType:'Sedan',ruleType:'per_km',amount:12,description:'',minKm:'',maxKm:''}];
+  if(!DATA.fareRules.length) DATA.fareRules=[{vehicleType:'All',ruleType:'per_km',amount:12,description:'Base rate per km'}];
   renderFareRules();
 }
 function renderFareRules(){
   const c=document.getElementById('fare-rules-container');
+  const vehicleOptions = ['All','Sedan','SUV','Innova','Innova HyCross','Tempo','Bolero','Dzire','Etios','Swift','Ertiga','Scorpio','Fortuner'];
+  // Add any vehicles from fleet not in preset list
+  DATA.vehicles.forEach(v=>{if(v.type && !vehicleOptions.includes(v.type)) vehicleOptions.push(v.type);});
+
   c.innerHTML=DATA.fareRules.map((r,i)=>`
-    <div class="fare-rule-row" style="display:grid;grid-template-columns:160px 1fr 100px 1fr auto;gap:0.75rem;align-items:end;margin-bottom:0.75rem;background:#F8F6F3;padding:0.75rem;border-radius:10px;">
+    <div class="fare-rule-row" id="fare-row-${i}" style="display:grid;grid-template-columns:180px 1fr 110px 1fr auto;gap:0.75rem;align-items:end;margin-bottom:0.75rem;background:#F8F6F3;padding:0.75rem;border-radius:10px;">
       <div>
         <label style="font-size:0.72rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">VEHICLE TYPE</label>
-        <input type="text" value="${r.vehicleType||''}" onchange="updateFareRule(${i},'vehicleType',this.value)" placeholder="Sedan / All" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;">
+        <select id="fr-vtype-${i}" onchange="onFareVehicleChange(${i},this)" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;margin-bottom:4px;">
+          ${vehicleOptions.map(v=>`<option value="${v}" ${(r.vehicleType||'All')===v?'selected':''}>${v}</option>`).join('')}
+          <option value="__custom__" ${!vehicleOptions.includes(r.vehicleType||'All')?'selected':''}>✏️ Type manually…</option>
+        </select>
+        <input type="text" id="fr-vtype-manual-${i}" value="${vehicleOptions.includes(r.vehicleType||'All')?'':(r.vehicleType||'')}" placeholder="Custom vehicle type…" oninput="DATA.fareRules[${i}].vehicleType=this.value" style="border:1.5px solid var(--gold);border-radius:8px;padding:0.45rem 0.65rem;font-size:0.83rem;width:100%;display:${vehicleOptions.includes(r.vehicleType||'All')?'none':'block'};">
       </div>
       <div>
         <label style="font-size:0.72rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">RULE TYPE</label>
-        <select onchange="updateFareRule(${i},'ruleType',this.value)" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;">
+        <select id="fr-rtype-${i}" onchange="onFareRuleTypeChange(${i},this.value)" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;">
           ${FARE_TYPES.map(f=>`<option value="${f.value}" ${r.ruleType===f.value?'selected':''}>${f.label}</option>`).join('')}
+          <option value="manual" ${r.ruleType==='manual'?'selected':''}>✏️ Manual / Custom Rule</option>
         </select>
+        <input type="text" id="fr-rtype-manual-${i}" value="${r.ruleType==='manual'?(r.manualLabel||''):''}" placeholder="Custom rule label…" oninput="DATA.fareRules[${i}].manualLabel=this.value" style="border:1.5px solid var(--gold);border-radius:8px;padding:0.45rem 0.65rem;font-size:0.83rem;width:100%;margin-top:4px;display:${r.ruleType==='manual'?'block':'none'};">
       </div>
       <div>
         <label style="font-size:0.72rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">AMOUNT (₹)</label>
-        <input type="number" value="${r.amount||''}" onchange="updateFareRule(${i},'amount',parseFloat(this.value))" placeholder="0" min="0" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;">
+        <input type="number" value="${r.amount||''}" oninput="DATA.fareRules[${i}].amount=parseFloat(this.value)||0" placeholder="0" min="0" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;">
       </div>
       <div>
         <label style="font-size:0.72rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">DESCRIPTION / NOTE</label>
-        <input type="text" value="${r.description||''}" onchange="updateFareRule(${i},'description',this.value)" placeholder="e.g. one way, within city…" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;">
+        <input type="text" value="${r.description||''}" oninput="DATA.fareRules[${i}].description=this.value" placeholder="e.g. one way, within city…" style="border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.85rem;width:100%;">
       </div>
       <button onclick="removeFareRule(${i})" style="background:var(--danger);color:white;border:none;border-radius:8px;padding:0.5rem 0.75rem;cursor:pointer;font-size:1rem;align-self:end;">✕</button>
     </div>
   `).join('');
 }
-function updateFareRule(i,key,val){ DATA.fareRules[i][key]=val; }
+
+function onFareVehicleChange(i, sel){
+  const manualInput = document.getElementById('fr-vtype-manual-'+i);
+  if(sel.value==='__custom__'){
+    manualInput.style.display='block'; manualInput.focus();
+    DATA.fareRules[i].vehicleType='';
+  } else {
+    manualInput.style.display='none';
+    DATA.fareRules[i].vehicleType=sel.value;
+  }
+}
+
+function onFareRuleTypeChange(i, val){
+  const manualLabel = document.getElementById('fr-rtype-manual-'+i);
+  if(val==='manual'){
+    manualLabel.style.display='block'; manualLabel.focus();
+  } else {
+    manualLabel.style.display='none';
+  }
+  DATA.fareRules[i].ruleType=val;
+}
+function updateFareRule(i,key,val){ if(DATA.fareRules[i]) DATA.fareRules[i][key]=val; }
 function addFareRule(){
-  DATA.fareRules.push({vehicleType:'Sedan',ruleType:'per_km',amount:0,description:''});
+  DATA.fareRules.push({vehicleType:'All',ruleType:'per_km',amount:0,description:''});
   renderFareRules();
 }
 function removeFareRule(i){ DATA.fareRules.splice(i,1); renderFareRules(); }
@@ -1133,7 +1164,7 @@ function loadSettings(){
   document.getElementById('cfg-fonnte').value=CONFIG.fonnteToken||'';
   document.getElementById('cfg-tg-token').value=CONFIG.tgToken||'';
   document.getElementById('cfg-tg-chat').value=CONFIG.tgChat||'';
-  document.getElementById('cfg-upi').value=CONFIG.upiId||'6382986186@ybl';
+  document.getElementById('cfg-upi').value=CONFIG.upiId||'kaviapt02@okaxis';
 }
 function saveConfig(){
   CONFIG={
@@ -1142,7 +1173,7 @@ function saveConfig(){
     fonnteToken:document.getElementById('cfg-fonnte').value.trim(),
     tgToken:document.getElementById('cfg-tg-token').value.trim(),
     tgChat:document.getElementById('cfg-tg-chat').value.trim(),
-    upiId:document.getElementById('cfg-upi').value.trim()||'6382986186@ybl',
+    upiId:document.getElementById('cfg-upi').value.trim()||'kaviapt02@okaxis',
   };
   localStorage.setItem('st_admin_config',JSON.stringify(CONFIG));
   _sbClient=null;
