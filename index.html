@@ -855,7 +855,6 @@ function selectCar(el, type) {
 }
 
 // ── SUBMIT BOOKING ──
-let _bookingInProgress = false; // prevent double-submit
 // ── LOGIN REQUIRED BEFORE BOOKING ─────────────────────────────────────────
 let _pendingBookingData = null;
 function submitBooking() {
@@ -960,50 +959,9 @@ Status: *PENDING* – Our team will confirm shortly.
 
 _Your Journey, Our Joy 🙏_`);
   _bookingInProgress=false;
-  if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML='🚗 Confirm Booking';}
-  showToast(`✅ Booking ${d.bookingId} confirmed!${waResult.ok?' WhatsApp sent.':' (WA failed – we'll call you)'}`, 'success');
+  if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML='<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.22z"/></svg> Confirm Booking';}
+  showToast(`✅ Booking ${d.bookingId} confirmed!${waResult.ok?' WhatsApp sent.':' (WA failed – we\'ll call you)'}`, 'success');
   _pendingBookingData=null;
-
-// placeholder for old code end
-  const btn_unused = null;
-  const bookingId = 'ST-' + Date.now().toString().slice(-6);
-  const booking = { booking_id:bookingId, customer_name:name, customer_phone:phone, pickup_location:pickup, drop_location:drop, pickup_date:date, pickup_time:time, trip_type:currentTab, vehicle_type:selectedCar, notes, status:'pending' };
-  const stored = JSON.parse(localStorage.getItem('st_bookings') || '[]');
-  stored.push(booking);
-  localStorage.setItem('st_bookings', JSON.stringify(stored));
-  // FIX: retry Supabase init if it wasn't ready yet when page loaded
-  if (!_sbClient) initSupabase();
-  if (_sbClient) {
-    const { error: sbErr } = await _sbClient.from('bookings').insert([booking]);
-    if (sbErr) {
-      console.error('[SB] Booking insert error:', sbErr.message, sbErr.code);
-      showToast('⚠️ Database save failed: ' + sbErr.message, 'error');
-    } else {
-      console.log('[SB] Booking saved to Supabase:', bookingId);
-    }
-  } else {
-    console.warn('[SB] Supabase not connected – booking saved to localStorage only');
-  }
-  await notifyTelegram(booking);
-  const waResult = await sendWhatsApp(phone, `✅ *Booking Confirmed – Sowmiya Travels*
-
-🆔 Booking ID: *${bookingId}*
-👤 Name: ${name}
-📍 From: ${pickup}
-📍 To: ${drop}
-📅 Date: ${date} at ${time}
-🚗 Vehicle: ${selectedCar}
-
-Status: *PENDING* – Our team will confirm shortly.
-
-_Your Journey, Our Joy 🙏_`);
-  if (waResult.ok) {
-    showToast(`✅ Booking ${bookingId} submitted! Confirmation sent to WhatsApp.`, 'success');
-  } else {
-    showToast(`✅ Booking ${bookingId} submitted! (WhatsApp notification failed – we'll call you)`, 'success');
-  }
-
-// end of old submitBooking
 }
 
 // ── LOAD VEHICLES FROM SUPABASE / LOCALSTORAGE ────────────────────────────────
