@@ -515,6 +515,7 @@
     <span class="nav-brand">Sowmiya <span>Travels</span></span>
   </a>
   <div class="nav-links">
+    <a href="#vehicles">Our Fleet</a>
     <a href="#booking">Book Now</a>
     <a href="#track">Track</a>
     <a href="admin.html" target="_blank">Admin</a>
@@ -561,6 +562,13 @@
   </div>
 </section>
 
+<!-- VEHICLES SECTION (Admin-controlled) -->
+<section class="booking-section" id="vehicles" style="background:#fff;">
+  <span class="section-label">✦ Choose Your Ride</span>
+  <h2 class="section-title">Our Fleet</h2>
+  <div id="vehicles-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-top:1.5rem;max-width:1100px;margin-left:auto;margin-right:auto;"></div>
+</section>
+
 <!-- BOOKING -->
 <section class="booking-section" id="booking">
   <span class="section-label">✦ Reserve Your Seat</span>
@@ -578,7 +586,7 @@
         <label style="font-size:0.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:0.6rem;">Select Vehicle</label>
         <div class="car-types">
           <div class="car-type selected" onclick="selectCar(this,'Sedan')">
-            <span class="icon">🚗</span><div class="name">tavera car</div><div class="seats">8 Seats</div>
+            <span class="icon">🚗</span><div class="name">Sedan</div><div class="seats">4 Seats</div>
           </div>
           <div class="car-type" onclick="selectCar(this,'SUV')">
             <span class="icon">🚙</span><div class="name">SUV</div><div class="seats">6 Seats</div>
@@ -708,6 +716,55 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- TERMS MODAL -->
+<div class="modal-bg" id="terms-modal" style="z-index:600;">
+  <div class="modal-box" style="background:#fff;border-radius:18px;padding:2rem;max-width:600px;width:95%;max-height:80vh;overflow-y:auto;position:relative;">
+    <button onclick="closeTermsModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#666;">×</button>
+    <h3 style="color:#1A2744;font-family:Cinzel,serif;margin-bottom:1rem;font-size:1.1rem;">Terms & Conditions</h3>
+    <div id="terms-modal-content" style="font-size:0.88rem;color:#333;white-space:pre-wrap;line-height:1.6;"></div>
+    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+      <button onclick="agreeAndBook()" style="flex:1;background:#1A2744;color:white;border:none;border-radius:10px;padding:0.85rem;font-size:0.95rem;font-weight:600;cursor:pointer;">✅ I Agree – Proceed to Book</button>
+      <button onclick="closeTermsModal()" style="background:none;border:1.5px solid #E2DDD6;border-radius:10px;padding:0.85rem 1.2rem;cursor:pointer;font-size:0.9rem;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-bg" id="payment-modal" style="z-index:700;">
+  <div class="modal-box" style="background:#fff;border-radius:18px;padding:2rem;max-width:480px;width:95%;position:relative;">
+    <button onclick="closePaymentModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#666;">×</button>
+    <h3 style="color:#1A2744;font-family:Cinzel,serif;margin-bottom:0.5rem;font-size:1.1rem;">💳 Payment</h3>
+    <p id="payment-booking-ref" style="color:#666;font-size:0.85rem;margin-bottom:1.25rem;"></p>
+    <div id="payment-fare-summary" style="background:#F8F6F1;border-radius:12px;padding:1rem;margin-bottom:1.25rem;font-size:0.88rem;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+      <button onclick="choosePayment('upi')" style="background:#1A2744;color:white;border:none;border-radius:12px;padding:1.1rem 0.75rem;font-size:0.9rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
+        <span style="font-size:1.6rem;">📱</span>UPI / GPay / PhonePe
+      </button>
+      <button onclick="choosePayment('cash')" style="background:#F0EDE8;color:#1A2744;border:1.5px solid #E2DDD6;border-radius:12px;padding:1.1rem 0.75rem;font-size:0.9rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
+        <span style="font-size:1.6rem;">💵</span>Cash at Trip End
+      </button>
+    </div>
+    <!-- UPI Section -->
+    <div id="upi-section" style="display:none;text-align:center;">
+      <p style="font-size:0.85rem;color:#666;margin-bottom:0.75rem;">Scan QR or tap to open UPI app</p>
+      <img id="upi-qr-img" src="" alt="UPI QR" style="width:200px;height:200px;border-radius:12px;border:1px solid #E2DDD6;margin-bottom:0.75rem;">
+      <div style="background:#F8F6F1;border-radius:10px;padding:0.75rem;font-size:0.88rem;color:#1A2744;font-weight:600;margin-bottom:0.75rem;" id="upi-id-display"></div>
+      <a id="upi-deep-link" href="#" style="display:inline-block;background:#C9933A;color:white;padding:0.75rem 2rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:0.9rem;margin-bottom:0.75rem;">Open UPI App →</a>
+      <p style="font-size:0.8rem;color:#999;">After payment, click confirm below</p>
+      <button onclick="confirmPayment('upi')" style="width:100%;background:#1D9E75;color:white;border:none;border-radius:10px;padding:0.85rem;font-size:0.95rem;font-weight:600;cursor:pointer;margin-top:0.75rem;">✅ I've Paid – Confirm Booking</button>
+    </div>
+    <!-- Cash Section -->
+    <div id="cash-section" style="display:none;text-align:center;">
+      <div style="background:#F8F6F1;border-radius:12px;padding:1.5rem;margin-bottom:1rem;">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">💵</div>
+        <p style="font-size:0.9rem;color:#1A2744;font-weight:600;">Pay cash to driver at end of trip</p>
+        <p style="font-size:0.85rem;color:#666;margin-top:0.5rem;">Please keep exact change ready</p>
+      </div>
+      <button onclick="confirmPayment('cash')" style="width:100%;background:#1A2744;color:white;border:none;border-radius:10px;padding:0.85rem;font-size:0.95rem;font-weight:600;cursor:pointer;">Confirm Booking – Pay Later</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // CONFIG
 // ── CONFIG ────────────────────────────────────────────────────────────────────
@@ -738,7 +795,7 @@ function initSupabase() {
 }
 const sbScript = document.createElement('script');
 sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-sbScript.onload = () => { initSupabase(); restoreSession(); };
+sbScript.onload = () => { initSupabase(); restoreSession(); loadVehicles(); };
 sbScript.onerror = () => console.error('[SB] CDN load failed');
 document.head.appendChild(sbScript);
 
@@ -799,23 +856,116 @@ function selectCar(el, type) {
 
 // ── SUBMIT BOOKING ──
 let _bookingInProgress = false; // prevent double-submit
-async function submitBooking() {
-  // FIX: block if already submitting (prevents double-click duplicate bookings)
-  if (_bookingInProgress) return;
-  const btn = document.getElementById('btn-book');
+// ── LOGIN REQUIRED BEFORE BOOKING ─────────────────────────────────────────
+let _pendingBookingData = null;
+function submitBooking() {
+  // Require login
+  if (!currentUser) { openAuth(); showToast('Please login with WhatsApp OTP first', 'error'); return; }
   const pickup = document.getElementById('pickup').value.trim();
-  const drop = document.getElementById('drop').value.trim();
-  const date = document.getElementById('pickup-date').value;
-  const time = document.getElementById('pickup-time').value;
-  const name = document.getElementById('cust-name').value.trim();
-  const phone = document.getElementById('cust-phone').value.trim();
-  const notes = document.getElementById('notes').value.trim();
-  if (!pickup || !drop || !date || !time || !name || !phone) {
-    showToast('⚠️ Please fill in all required fields', 'error'); return;
+  const drop   = document.getElementById('drop').value.trim();
+  const date   = document.getElementById('pickup-date').value;
+  const time   = document.getElementById('pickup-time').value;
+  const name   = document.getElementById('cust-name').value.trim();
+  const phone  = document.getElementById('cust-phone').value.trim();
+  const notes  = document.getElementById('notes').value.trim();
+  if (!pickup||!drop||!date||!time||!name||!phone) { showToast('⚠️ Please fill in all required fields','error'); return; }
+  // Store pending data
+  _pendingBookingData = {pickup,drop,date,time,name,phone,notes};
+  // Show terms modal
+  const terms = localStorage.getItem('st_terms') || 'By booking, you agree to Sowmiya Travels standard terms and conditions.\n\nFull terms available at our office.';
+  document.getElementById('terms-modal-content').textContent = terms;
+  document.getElementById('terms-modal').style.display = 'flex';
+}
+function closeTermsModal(){ document.getElementById('terms-modal').style.display='none'; }
+
+function agreeAndBook(){
+  closeTermsModal();
+  // Calculate fare and show payment
+  const vType = selectedCar;
+  const fareRules = JSON.parse(localStorage.getItem('st_fare_rules')||'[]');
+  const rules = fareRules.filter(r=>r.vehicleType===vType||r.vehicleType==='All'||r.vehicleType==='');
+  let fareLines=''; let estTotal=0;
+  if(rules.length){
+    rules.forEach(r=>{
+      const amt=parseFloat(r.amount||0);
+      fareLines+=`<div style="display:flex;justify-content:space-between;"><span>${r.description||r.ruleType}</span><span>₹${amt}</span></div>`;
+      if(r.ruleType==='per_trip'||r.ruleType==='airport_pickup') estTotal+=amt;
+    });
+  } else {
+    fareLines='<div style="color:#666;">Fare to be quoted by admin</div>';
   }
-  // Lock button immediately
-  _bookingInProgress = true;
-  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.style.cursor = 'not-allowed'; btn.innerHTML = '⏳ Submitting…'; }
+  const bookingId='ST-'+Date.now().toString().slice(-6);
+  _pendingBookingData.bookingId=bookingId;
+  _pendingBookingData.vehicleType=vType;
+  const cfg=JSON.parse(localStorage.getItem('st_admin_config')||'{}');
+  const upiId=cfg.upiId||'6382986186@ybl';
+  _pendingBookingData.upiId=upiId;
+  _pendingBookingData.estTotal=estTotal;
+  document.getElementById('payment-booking-ref').textContent='Booking '+bookingId+' – '+vType;
+  document.getElementById('payment-fare-summary').innerHTML=`<div style="font-weight:600;color:#1A2744;margin-bottom:0.5rem;">Fare Breakdown</div>${fareLines}${estTotal>0?`<div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid #E2DDD6;padding-top:0.5rem;margin-top:0.5rem;"><span>Estimated Total</span><span>₹${estTotal}</span></div>`:''}`;
+  document.getElementById('upi-section').style.display='none';
+  document.getElementById('cash-section').style.display='none';
+  document.getElementById('payment-modal').style.display='flex';
+}
+function closePaymentModal(){ document.getElementById('payment-modal').style.display='none'; }
+
+function choosePayment(method){
+  const d=_pendingBookingData;
+  const amt=d.estTotal||0;
+  const upiId=d.upiId||'6382986186@ybl';
+  if(method==='upi'){
+    document.getElementById('upi-section').style.display='block';
+    document.getElementById('cash-section').style.display='none';
+    const upiLink=`upi://pay?pa=${upiId}&pn=Sowmiya+Travels&am=${amt}&cu=INR&tn=Booking+${d.bookingId}`;
+    document.getElementById('upi-deep-link').href=upiLink;
+    document.getElementById('upi-id-display').textContent='UPI ID: '+upiId;
+    const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
+    document.getElementById('upi-qr-img').src=qrUrl;
+  } else {
+    document.getElementById('cash-section').style.display='block';
+    document.getElementById('upi-section').style.display='none';
+  }
+}
+
+let _bookingInProgress = false;
+async function confirmPayment(method){
+  if(_bookingInProgress) return;
+  _bookingInProgress=true;
+  const d=_pendingBookingData;
+  const btn=document.getElementById('btn-book');
+  closePaymentModal();
+  if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.innerHTML='⏳ Confirming…';}
+  const booking={booking_id:d.bookingId,customer_name:d.name,customer_phone:d.phone,pickup_location:d.pickup,drop_location:d.drop,pickup_date:d.date,pickup_time:d.time,trip_type:currentTab,vehicle_type:d.vehicleType,notes:d.notes,status:'pending',payment_method:method,estimated_fare:d.estTotal||0};
+  const stored=JSON.parse(localStorage.getItem('st_bookings')||'[]');
+  stored.push(booking); localStorage.setItem('st_bookings',JSON.stringify(stored));
+  if(!_sbClient) initSupabase();
+  if(_sbClient){
+    const{error:sbErr}=await _sbClient.from('bookings').insert([booking]);
+    if(sbErr){console.error('[SB] insert:',sbErr.message);showToast('⚠️ DB save failed: '+sbErr.message,'error');}
+    else console.log('[SB] ✅ Booking saved');
+  }
+  await notifyTelegram(booking);
+  const payMsg=method==='upi'?'💳 UPI Payment initiated':'💵 Cash payment at trip end';
+  const waResult=await sendWhatsApp(d.phone,`✅ *Booking Confirmed – Sowmiya Travels*
+
+🆔 Booking ID: *${d.bookingId}*
+👤 Name: ${d.name}
+📍 From: ${d.pickup}
+📍 To: ${d.drop}
+📅 Date: ${d.date} at ${d.time}
+🚗 Vehicle: ${d.vehicleType}
+💰 Payment: ${payMsg}
+
+Status: *PENDING* – Our team will confirm shortly.
+
+_Your Journey, Our Joy 🙏_`);
+  _bookingInProgress=false;
+  if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML='🚗 Confirm Booking';}
+  showToast(`✅ Booking ${d.bookingId} confirmed!${waResult.ok?' WhatsApp sent.':' (WA failed – we'll call you)'}`, 'success');
+  _pendingBookingData=null;
+
+// placeholder for old code end
+  const btn_unused = null;
   const bookingId = 'ST-' + Date.now().toString().slice(-6);
   const booking = { booking_id:bookingId, customer_name:name, customer_phone:phone, pickup_location:pickup, drop_location:drop, pickup_date:date, pickup_time:time, trip_type:currentTab, vehicle_type:selectedCar, notes, status:'pending' };
   const stored = JSON.parse(localStorage.getItem('st_bookings') || '[]');
@@ -852,15 +1002,47 @@ _Your Journey, Our Joy 🙏_`);
   } else {
     showToast(`✅ Booking ${bookingId} submitted! (WhatsApp notification failed – we'll call you)`, 'success');
   }
-  // Unlock button after done
-  _bookingInProgress = false;
-  if (btn) {
-    btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = '';
-    btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.22z"/></svg> ✓ Booking Submitted!';
-    setTimeout(() => {
-      btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.22z"/></svg> Confirm Booking';
-    }, 3000);
+
+// end of old submitBooking
+}
+
+// ── LOAD VEHICLES FROM SUPABASE / LOCALSTORAGE ────────────────────────────────
+async function loadVehicles(){
+  let vehicles=[];
+  if(_sbClient){
+    const{data,error}=await _sbClient.from('vehicles').select('*').eq('status','active').order('created_at',{ascending:true});
+    if(!error&&data) vehicles=data;
   }
+  if(!vehicles.length) vehicles=JSON.parse(localStorage.getItem('st_vehicles')||'[]').filter(v=>v.status==='active');
+  const grid=document.getElementById('vehicles-grid');
+  if(!grid) return;
+  if(!vehicles.length){
+    grid.innerHTML='<p style="color:#999;text-align:center;grid-column:1/-1;padding:2rem;">Fleet information loading… Please check back soon.</p>';
+    return;
+  }
+  grid.innerHTML=vehicles.map(v=>`
+    <div onclick="selectVehicleCard(this,'${v.type||v.model}')" style="background:#fff;border:2px solid #E2DDD6;border-radius:16px;overflow:hidden;cursor:pointer;transition:all 0.2s;" class="vehicle-card">
+      ${v.image?`<img src="${v.image}" alt="${v.model}" style="width:100%;height:175px;object-fit:cover;" onerror="this.style.display='none'">`:'<div style="height:175px;background:linear-gradient(135deg,#E8EBF4,#F0EDE8);display:flex;align-items:center;justify-content:center;font-size:4rem;">🚗</div>'}
+      <div style="padding:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:0.4rem;">
+          <h4 style="font-size:1rem;font-weight:700;color:#1A2744;">${v.model}</h4>
+          <span style="background:#FFF3D9;color:#C9933A;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:50px;">${v.type}</span>
+        </div>
+        <div style="font-size:0.8rem;color:#666;margin-bottom:0.6rem;">
+          🪑 ${v.seats} Seats &nbsp;•&nbsp; ${v.ac==='yes'?'❄️ AC':'🌬️ Non-AC'} &nbsp;•&nbsp; ${v.color||''} ${v.year?'('+v.year+')':''}
+        </div>
+        ${v.features?`<div style="font-size:0.78rem;color:#888;margin-bottom:0.75rem;">${v.features}</div>`:''}
+        <button onclick="event.stopPropagation();selectVehicleCard(this.closest('.vehicle-card'),'${v.type||v.model}');document.getElementById('booking').scrollIntoView({behavior:'smooth'});" style="width:100%;background:#1A2744;color:white;border:none;border-radius:10px;padding:0.6rem;font-size:0.85rem;font-weight:600;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#C9933A'" onmouseout="this.style.background='#1A2744'">Select & Book →</button>
+      </div>
+    </div>
+  `).join('');
+}
+function selectVehicleCard(el,type){
+  document.querySelectorAll('.vehicle-card').forEach(c=>c.style.borderColor='#E2DDD6');
+  el.style.borderColor='#C9933A';
+  selectedCar=type;
+  // also select in car-type chips
+  document.querySelectorAll('.car-type').forEach(ct=>ct.classList.remove('selected'));
 }
 
 async function notifyTelegram(b) {
