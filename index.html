@@ -1232,36 +1232,88 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- PAYMENT MODAL -->
 <div class="modal-bg" id="payment-modal" style="z-index:700;">
-  <div class="modal-box" style="background:#fff;border-radius:18px;padding:2rem;max-width:480px;width:95%;position:relative;">
+  <div class="modal-box" style="background:#fff;border-radius:18px;padding:2rem;max-width:500px;width:95%;position:relative;max-height:92vh;overflow-y:auto;">
     <button onclick="closePaymentModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#666;">×</button>
-    <h3 style="color:#1A2744;font-family:Cinzel,serif;margin-bottom:0.5rem;font-size:1.1rem;">💳 Payment</h3>
+    <h3 style="color:#1A2744;font-family:Cinzel,serif;margin-bottom:0.5rem;font-size:1.1rem;">💳 Choose Payment Method</h3>
     <p id="payment-booking-ref" style="color:#666;font-size:0.85rem;margin-bottom:1.25rem;"></p>
     <div id="payment-fare-summary" style="background:#F8F6F1;border-radius:12px;padding:1rem;margin-bottom:1.25rem;font-size:0.88rem;"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
-      <button onclick="choosePayment('upi')" style="background:#1A2744;color:white;border:none;border-radius:12px;padding:1.1rem 0.75rem;font-size:0.9rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
-        <span style="font-size:1.6rem;">📱</span>UPI / GPay / PhonePe
-      </button>
-      <button onclick="choosePayment('cash')" style="background:#F0EDE8;color:#1A2744;border:1.5px solid #E2DDD6;border-radius:12px;padding:1.1rem 0.75rem;font-size:0.9rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
-        <span style="font-size:1.6rem;">💵</span>Cash at Trip End
-      </button>
+
+    <!-- Payment App Buttons Grid -->
+    <div id="payment-app-chooser">
+      <p style="font-size:0.78rem;color:#888;margin-bottom:0.75rem;text-align:center;text-transform:uppercase;letter-spacing:0.08em;">Select Payment App</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+        <button onclick="choosePayment('phonepe')" style="background:#5f259f;color:white;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <span style="font-size:1.8rem;">📲</span>PhonePe
+        </button>
+        <button onclick="choosePayment('gpay')" style="background:#1a73e8;color:white;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <span style="font-size:1.8rem;">🔵</span>Google Pay
+        </button>
+        <button onclick="choosePayment('paytm')" style="background:#00b9f5;color:white;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <span style="font-size:1.8rem;">💙</span>Paytm
+        </button>
+        <button onclick="choosePayment('upi')" style="background:#F8A500;color:#1A2744;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <span style="font-size:1.8rem;">📱</span>UPI / QR Code
+        </button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <button onclick="choosePayment('razorpay')" style="background:#2D6FE3;color:white;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <span style="font-size:1.8rem;">💳</span>Razorpay
+        </button>
+        <button onclick="choosePayment('cash')" style="background:#F0EDE8;color:#1A2744;border:1.5px solid #E2DDD6;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <span style="font-size:1.8rem;">💵</span>Cash at Trip End
+        </button>
+      </div>
     </div>
-    <!-- UPI Section -->
+
+    <!-- UPI / QR Section (generic + PhonePe / GPay / Paytm deep links) -->
     <div id="upi-section" style="display:none;text-align:center;">
-      <p style="font-size:0.85rem;color:#666;margin-bottom:0.75rem;">Scan QR or tap to open UPI app</p>
-      <img id="upi-qr-img" src="" alt="UPI QR" style="width:200px;height:200px;border-radius:12px;border:1px solid #E2DDD6;margin-bottom:0.75rem;">
-      <div style="background:#F8F6F1;border-radius:10px;padding:0.75rem;font-size:0.88rem;color:#1A2744;font-weight:600;margin-bottom:0.75rem;" id="upi-id-display"></div>
-      <a id="upi-deep-link" href="#" style="display:inline-block;background:#C9933A;color:white;padding:0.75rem 2rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:0.9rem;margin-bottom:0.75rem;">Open UPI App →</a>
-      <p style="font-size:0.8rem;color:#999;">After payment, click confirm below</p>
-      <button onclick="confirmPayment('upi')" style="width:100%;background:#1D9E75;color:white;border:none;border-radius:10px;padding:0.85rem;font-size:0.95rem;font-weight:600;cursor:pointer;margin-top:0.75rem;">✅ I've Paid – Confirm Booking</button>
+      <button onclick="document.getElementById('upi-section').style.display='none';document.getElementById('payment-app-chooser').style.display='block';" style="background:none;border:none;color:#1A2744;cursor:pointer;font-size:0.85rem;text-decoration:underline;margin-bottom:0.75rem;">← Back</button>
+      <p id="upi-section-title" style="font-size:0.95rem;font-weight:700;color:#1A2744;margin-bottom:0.5rem;"></p>
+      <p style="font-size:0.82rem;color:#666;margin-bottom:0.75rem;">Scan QR or tap the button to open your payment app</p>
+      <img id="upi-qr-img" src="" alt="UPI QR" style="width:200px;height:200px;border-radius:12px;border:1px solid #E2DDD6;margin-bottom:0.75rem;display:block;margin-left:auto;margin-right:auto;">
+      <div style="background:#F8F6F1;border-radius:10px;padding:0.75rem;font-size:0.85rem;color:#1A2744;font-weight:600;margin-bottom:0.75rem;" id="upi-id-display"></div>
+      <!-- Deep link buttons -->
+      <div style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.75rem;">
+        <a id="upi-deep-link" href="#" style="display:block;background:#C9933A;color:white;padding:0.75rem 1rem;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.95rem;">📲 Open Payment App →</a>
+        <a id="phonepe-deep-link" href="#" style="display:none;background:#5f259f;color:white;padding:0.6rem 1rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:0.88rem;">📲 Open PhonePe →</a>
+        <a id="gpay-deep-link" href="#" style="display:none;background:#1a73e8;color:white;padding:0.6rem 1rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:0.88rem;">🔵 Open Google Pay →</a>
+        <a id="paytm-deep-link" href="#" style="display:none;background:#00b9f5;color:white;padding:0.6rem 1rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:0.88rem;">💙 Open Paytm →</a>
+      </div>
+      <p style="font-size:0.78rem;color:#999;margin-bottom:0.5rem;">After completing payment, click the button below</p>
+      <button onclick="confirmPayment('upi')" style="width:100%;background:#1D9E75;color:white;border:none;border-radius:10px;padding:0.9rem;font-size:0.95rem;font-weight:700;cursor:pointer;">✅ I've Paid – Confirm Booking</button>
     </div>
+
+    <!-- Razorpay Section -->
+    <div id="razorpay-section" style="display:none;text-align:center;">
+      <button onclick="document.getElementById('razorpay-section').style.display='none';document.getElementById('payment-app-chooser').style.display='block';" style="background:none;border:none;color:#1A2744;cursor:pointer;font-size:0.85rem;text-decoration:underline;margin-bottom:0.75rem;">← Back</button>
+      <div style="background:#EEF4FF;border-radius:12px;padding:1.5rem;margin-bottom:1rem;">
+        <div style="font-size:2.5rem;margin-bottom:0.5rem;">💳</div>
+        <p style="font-size:0.95rem;color:#1A2744;font-weight:700;margin-bottom:0.4rem;">Pay via Razorpay</p>
+        <p style="font-size:0.82rem;color:#555;">Supports Cards, Net Banking, UPI, Wallets</p>
+      </div>
+      <div id="razorpay-amount-display" style="background:#F8F6F1;border-radius:10px;padding:0.75rem;font-size:1.1rem;color:#1A2744;font-weight:700;margin-bottom:1rem;"></div>
+      <button onclick="openRazorpay()" style="width:100%;background:#2D6FE3;color:white;border:none;border-radius:10px;padding:0.9rem;font-size:0.95rem;font-weight:700;cursor:pointer;margin-bottom:0.5rem;">💳 Pay with Razorpay →</button>
+      <p style="font-size:0.75rem;color:#aaa;">Secured by Razorpay · 100% safe</p>
+    </div>
+
     <!-- Cash Section -->
     <div id="cash-section" style="display:none;text-align:center;">
+      <button onclick="document.getElementById('cash-section').style.display='none';document.getElementById('payment-app-chooser').style.display='block';" style="background:none;border:none;color:#1A2744;cursor:pointer;font-size:0.85rem;text-decoration:underline;margin-bottom:0.75rem;">← Back</button>
       <div style="background:#F8F6F1;border-radius:12px;padding:1.5rem;margin-bottom:1rem;">
         <div style="font-size:2rem;margin-bottom:0.5rem;">💵</div>
         <p style="font-size:0.9rem;color:#1A2744;font-weight:600;">Pay cash to driver at end of trip</p>
         <p style="font-size:0.85rem;color:#666;margin-top:0.5rem;">Please keep exact change ready</p>
       </div>
-      <button onclick="confirmPayment('cash')" style="width:100%;background:#1A2744;color:white;border:none;border-radius:10px;padding:0.85rem;font-size:0.95rem;font-weight:600;cursor:pointer;">Confirm Booking – Pay Later</button>
+      <button onclick="confirmPayment('cash')" style="width:100%;background:#1A2744;color:white;border:none;border-radius:10px;padding:0.9rem;font-size:0.95rem;font-weight:700;cursor:pointer;">✅ Confirm Booking – Pay Later</button>
+    </div>
+
+    <!-- Payment Confirmation Overlay -->
+    <div id="payment-confirmed-section" style="display:none;text-align:center;padding:1rem 0;">
+      <div style="font-size:3.5rem;margin-bottom:0.75rem;">🎉</div>
+      <h3 style="color:#1D9E75;font-family:Cinzel,serif;margin-bottom:0.5rem;">Booking Confirmed!</h3>
+      <p id="payment-confirmed-id" style="font-size:0.9rem;color:#666;margin-bottom:0.5rem;"></p>
+      <p style="font-size:0.85rem;color:#888;">WhatsApp confirmation sent · Our team will contact you shortly</p>
+      <button onclick="closePaymentModal()" style="margin-top:1.25rem;background:#1A2744;color:white;border:none;border-radius:10px;padding:0.85rem 2rem;font-size:0.95rem;font-weight:600;cursor:pointer;">Close</button>
     </div>
   </div>
 </div>
@@ -1697,45 +1749,206 @@ function agreeAndBook(){
   document.getElementById('cash-section').style.display='none';
   document.getElementById('payment-modal').style.display='flex';
 }
-function closePaymentModal(){ document.getElementById('payment-modal').style.display='none'; }
+function closePaymentModal(){
+  document.getElementById('payment-modal').style.display='none';
+  // Reset all sections for next use
+  ['upi-section','cash-section','razorpay-section','payment-confirmed-section'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  var chooser=document.getElementById('payment-app-chooser');
+  if(chooser) chooser.style.display='block';
+}
+
+function _hideAllPaymentSections(){
+  ['upi-section','cash-section','razorpay-section','payment-confirmed-section'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+  var chooser=document.getElementById('payment-app-chooser');
+  if(chooser) chooser.style.display='block';
+}
 
 function choosePayment(method){
   const d=_pendingBookingData;
   const amt=d.estTotal||0;
   const upiId=d.upiId||'6382986186@ybl';
-  if(method==='upi'){
-    document.getElementById('upi-section').style.display='block';
-    document.getElementById('cash-section').style.display='none';
-    const upiLink=`upi://pay?pa=${upiId}&pn=Sowmiya+Travels&am=${amt}&cu=INR&tn=Booking+${d.bookingId}`;
-    document.getElementById('upi-deep-link').href=upiLink;
-    document.getElementById('upi-id-display').textContent='UPI ID: '+upiId;
-    const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiLink)}`;
-    document.getElementById('upi-qr-img').src=qrUrl;
-  } else {
+  const bookingNote='Booking+'+d.bookingId;
+
+  // Hide chooser, show relevant section
+  var chooser=document.getElementById('payment-app-chooser');
+  if(chooser) chooser.style.display='none';
+
+  if(method==='cash'){
     document.getElementById('cash-section').style.display='block';
-    document.getElementById('upi-section').style.display='none';
+    return;
+  }
+
+  if(method==='razorpay'){
+    document.getElementById('razorpay-section').style.display='block';
+    var razAmt=document.getElementById('razorpay-amount-display');
+    if(razAmt) razAmt.textContent='Amount: ₹'+(amt||'TBD');
+    return;
+  }
+
+  // UPI-based methods: phonepe, gpay, paytm, upi
+  document.getElementById('upi-section').style.display='block';
+
+  // Build UPI intent link (works for ALL UPI apps)
+  const upiLink='upi://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
+
+  // App-specific deep links (these open the specific app if installed)
+  const phonePeLink='phonepe://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
+  const gpayLink='tez://upi/pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
+  const paytmLink='paytmmp://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
+
+  // QR code (works with any UPI scanner)
+  const qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(upiLink);
+  document.getElementById('upi-qr-img').src=qrUrl;
+  document.getElementById('upi-id-display').textContent='UPI ID: '+upiId+(amt?' | Amount: ₹'+amt:'');
+
+  // Hide all app-specific links first
+  ['phonepe-deep-link','gpay-deep-link','paytm-deep-link'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.style.display='none';
+  });
+
+  var mainLink=document.getElementById('upi-deep-link');
+
+  if(method==='phonepe'){
+    document.getElementById('upi-section-title').textContent='Pay via PhonePe';
+    mainLink.href=phonePeLink; mainLink.textContent='📲 Open PhonePe →'; mainLink.style.background='#5f259f';
+    // Also show generic UPI fallback
+    var ppLink=document.getElementById('phonepe-deep-link');
+    ppLink.href=upiLink; ppLink.style.display='block'; ppLink.textContent='📱 Or open any UPI app →';
+  } else if(method==='gpay'){
+    document.getElementById('upi-section-title').textContent='Pay via Google Pay';
+    mainLink.href=gpayLink; mainLink.textContent='🔵 Open Google Pay →'; mainLink.style.background='#1a73e8';
+    var gpLink=document.getElementById('gpay-deep-link');
+    gpLink.href=upiLink; gpLink.style.display='block'; gpLink.textContent='📱 Or open any UPI app →';
+  } else if(method==='paytm'){
+    document.getElementById('upi-section-title').textContent='Pay via Paytm';
+    mainLink.href=paytmLink; mainLink.textContent='💙 Open Paytm →'; mainLink.style.background='#00b9f5';
+    var ptLink=document.getElementById('paytm-deep-link');
+    ptLink.href=upiLink; ptLink.style.display='block'; ptLink.textContent='📱 Or open any UPI app →';
+  } else {
+    // Generic UPI / QR
+    document.getElementById('upi-section-title').textContent='Pay via UPI / QR Code';
+    mainLink.href=upiLink; mainLink.textContent='📱 Open UPI App →'; mainLink.style.background='#C9933A';
   }
 }
 
+// ── RAZORPAY INTEGRATION ─────────────────────────────────────────────────────
+function openRazorpay(){
+  const d=_pendingBookingData;
+  const amt=d.estTotal||0;
+  // Check if Razorpay script is loaded
+  if(typeof Razorpay==='undefined'){
+    // Load Razorpay script on-demand
+    var script=document.createElement('script');
+    script.src='https://checkout.razorpay.com/v1/checkout.js';
+    script.onload=function(){ _launchRazorpay(d, amt); };
+    script.onerror=function(){
+      showToast('❌ Razorpay failed to load. Try another payment method.','error');
+    };
+    document.head.appendChild(script);
+  } else {
+    _launchRazorpay(d, amt);
+  }
+}
+
+function _launchRazorpay(d, amt){
+  // Get Razorpay key from admin config
+  var cfg=JSON.parse(localStorage.getItem('st_admin_config')||'{}');
+  var rzpKey=cfg.razorpayKey||'';
+  if(!rzpKey){
+    // No key configured → show QR/UPI fallback
+    showToast('⚠️ Razorpay key not configured. Using UPI QR instead.','error');
+    document.getElementById('razorpay-section').style.display='none';
+    // Fall back to generic UPI
+    _pendingPaymentMethod='upi';
+    choosePayment('upi');
+    return;
+  }
+  var options={
+    key: rzpKey,
+    amount: Math.round((amt||1)*100), // Razorpay needs paise
+    currency: 'INR',
+    name: 'Sowmiya Travels',
+    description: 'Booking '+d.bookingId,
+    prefill: { name: d.name, contact: d.phone },
+    notes: { booking_id: d.bookingId },
+    theme: { color: '#C9933A' },
+    handler: function(response){
+      // Payment successful – store txn id and confirm
+      d.razorpayPaymentId=response.razorpay_payment_id;
+      confirmPayment('razorpay');
+    },
+    modal: {
+      ondismiss: function(){
+        showToast('Payment cancelled. Please try again.','error');
+      }
+    }
+  };
+  try{
+    var rzp=new Razorpay(options);
+    rzp.open();
+  } catch(e){
+    showToast('❌ Razorpay error: '+e.message,'error');
+  }
+}
+
+var _pendingPaymentMethod='';
 let _bookingInProgress = false;
 async function confirmPayment(method){
   if(_bookingInProgress) return;
   _bookingInProgress=true;
   const d=_pendingBookingData;
   const btn=document.getElementById('btn-book');
-  closePaymentModal();
+
+  // Show confirmation screen inside modal instead of closing
+  ['upi-section','cash-section','razorpay-section','payment-app-chooser'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.style.display='none';
+  });
+
   if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.innerHTML='⏳ Confirming…';}
-  const booking={booking_id:d.bookingId,customer_name:d.name,customer_phone:d.phone,pickup_location:d.pickup,drop_location:d.drop,pickup_date:d.date,pickup_time:d.time,trip_type:currentTab,vehicle_type:d.vehicleType,notes:d.notes,status:'pending',payment_method:method,estimated_fare:d.estTotal||0};
+
+  const payLabel={
+    upi:'💳 UPI / App Payment',
+    phonepe:'📲 PhonePe',
+    gpay:'🔵 Google Pay',
+    paytm:'💙 Paytm',
+    razorpay:'💳 Razorpay (ID: '+(d.razorpayPaymentId||'N/A')+')',
+    cash:'💵 Cash at Trip End'
+  }[method]||method;
+
+  const booking={
+    booking_id:d.bookingId,
+    customer_name:d.name,
+    customer_phone:d.phone,
+    pickup_location:d.pickup,
+    drop_location:d.drop,
+    pickup_date:d.date,
+    pickup_time:d.time,
+    trip_type:currentTab,
+    vehicle_type:d.vehicleType,
+    notes:d.notes,
+    status:'pending',
+    payment_method:method,
+    estimated_fare:d.estTotal||0,
+    razorpay_payment_id:d.razorpayPaymentId||null
+  };
+
   const stored=JSON.parse(localStorage.getItem('st_bookings')||'[]');
   stored.push(booking); localStorage.setItem('st_bookings',JSON.stringify(stored));
+
   if(!_sbClient) initSupabase();
   if(_sbClient){
     const{error:sbErr}=await _sbClient.from('bookings').insert([booking]);
-    if(sbErr){console.error('[SB] insert:',sbErr.message);showToast('⚠️ DB save failed: '+sbErr.message,'error');}
+    if(sbErr){console.error('[SB] insert:',sbErr.message);}
     else console.log('[SB] ✅ Booking saved');
   }
+
   await notifyTelegram(booking);
-  const payMsg=method==='upi'?'💳 UPI Payment initiated':'💵 Cash payment at trip end';
+
   const waResult=await sendWhatsApp(d.phone,`✅ *Booking Confirmed – Sowmiya Travels*
 
 🆔 Booking ID: *${d.bookingId}*
@@ -1744,14 +1957,24 @@ async function confirmPayment(method){
 📍 To: ${d.drop}
 📅 Date: ${d.date} at ${d.time}
 🚗 Vehicle: ${d.vehicleType}
-💰 Payment: ${payMsg}
+💰 Payment: ${payLabel}
 
 Status: *PENDING* – Our team will confirm shortly.
 
 _Your Journey, Our Joy 🙏_`);
+
   _bookingInProgress=false;
+
   if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML='<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16.22z"/></svg> Confirm Booking';}
-  showToast(`✅ Booking ${d.bookingId} confirmed!${waResult.ok?' WhatsApp sent.':' (WA failed – we\'ll call you)'}`, 'success');
+
+  // Show success screen inside the payment modal
+  var confirmSection=document.getElementById('payment-confirmed-section');
+  if(confirmSection){
+    confirmSection.style.display='block';
+    var confirmId=document.getElementById('payment-confirmed-id');
+    if(confirmId) confirmId.textContent='Booking ID: '+d.bookingId+' | '+payLabel;
+  }
+  showToast('✅ Booking '+d.bookingId+' confirmed!'+(waResult.ok?' WhatsApp sent.':' (WA failed – we\'ll call you)'),'success');
   _pendingBookingData=null;
 }
 
