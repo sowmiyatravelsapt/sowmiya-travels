@@ -1633,8 +1633,9 @@ function detectMyLocation(fieldId) {
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const _savedCfg = (() => { try { return JSON.parse(localStorage.getItem('st_admin_config') || '{}'); } catch(e) { return {}; } })();
 const CONFIG = {
-  SUPABASE_URL:       _savedCfg.sbUrl        || 'https://cmivqaucimkglcloyjrm.supabase.co',
-  SUPABASE_ANON_KEY:  _savedCfg.sbKey        || 'sb_publishable_VxgbMTVjkCP3JOBdj2AkIA_z5l6lWgo',
+  SUPABASE_URL:       _savedCfg.sbUrl        || 'https://lbvtibzcltkdqqofoqcx.supabase.co',
+  SUPABASE_ANON_KEY:  _savedCfg.sbKey        || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidnRpYnpjbHRrZHFxb2ZvcWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MjU0MzQsImV4cCI6MjA5NTIwMTQzNH0.ShOmMZrzmRMwWlviwNBlgIpLS1On3XTSUkmhG8pgJJw',
+  SUPABASE_SERVICE_KEY: _savedCfg.sbServiceKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidnRpYnpjbHRrZHFxb2ZvcWN4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTYyNTQzNCwiZXhwIjoyMDk1MjAxNDM0fQ.DZ4badiZAnUogelQ8SoMkaO-jURP-dSHjkmcvuqz1Z0',
   FONNTE_TOKEN:       _savedCfg.fonnteToken  || 'QP4Hop3z3fEdzTv1sQiK',
   TELEGRAM_BOT_TOKEN: _savedCfg.tgToken      || '8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA',
   TELEGRAM_CHAT_ID:   _savedCfg.tgChat       || '8252090421',
@@ -1646,25 +1647,51 @@ let _sbClient = null; // renamed to avoid window.supabase namespace collision
 
 // ── FIX: Supabase reliable init ───────────────────────────────────────────────
 function initSupabase() {
-  // Use _sbClient to avoid overwriting window.supabase (the library namespace)
   if (typeof window.supabase === 'undefined') { console.warn('[SB] supabase-js not loaded yet'); return; }
-  if (_sbClient) return; // already initialised
+  if (_sbClient) return;
   try {
-    const lib = window.supabase; // capture library BEFORE any variable shadowing
+    const lib = window.supabase;
     if (typeof lib.createClient !== 'function') { console.error('[SB] createClient not found on window.supabase'); return; }
-    // sb_publishable_ keys are supported from supabase-js v2.49+
+
+    // Use fetch-based REST only — disabling realtime WebSocket fixes the
+    // "DataCloneError: Headers object could not be cloned / postMessage" bug
+    // that appears in supabase-js UMD builds when realtime is enabled.
     _sbClient = lib.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true }
+      auth: {
+        persistSession: false,   // avoids localStorage worker postMessage
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      },
+      realtime: { enabled: false },   // disable WebSocket — not needed for bookings
+      global: {
+        fetch: window.fetch.bind(window),   // use plain window.fetch, no worker
+        headers: { 'X-Client-Info': 'sowmiya-travels/1.0' }
+      }
     });
+
     console.log('[SB] ✅ Supabase client ready:', CONFIG.SUPABASE_URL);
-    // Quick connectivity test
-    _sbClient.from('bookings').select('booking_id', { count:'exact', head:true })
-      .then(function(r){ if(r.error) console.error('[SB] Connection test failed:', r.error.message); else console.log('[SB] ✅ DB reachable'); });
+
+    // Connectivity test using plain fetch (avoids postMessage entirely)
+    fetch(CONFIG.SUPABASE_URL + '/rest/v1/bookings?select=booking_id&limit=1', {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'apikey': CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(function(r) {
+      if (r.ok) { console.log('[SB] ✅ DB reachable (status ' + r.status + ')'); }
+      else { r.text().then(function(t){ console.error('[SB] DB test failed:', r.status, t.slice(0,200)); }); }
+    })
+    .catch(function(e){ console.error('[SB] DB fetch error:', e.message); });
+
   } catch(e) { console.error('[SB] Init failed:', e.message); }
 }
 const sbScript = document.createElement('script');
-sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js';
-sbScript.onload = () => { initSupabase(); restoreSession(); loadVehicles(); };
+sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js';
+sbScript.onload = () => { initSupabase(); restoreSession(); setTimeout(loadVehicles, 300); };
 sbScript.onerror = () => console.error('[SB] CDN load failed');
 document.head.appendChild(sbScript);
 
@@ -2023,6 +2050,8 @@ async function confirmPayment(method){
     cash:'💵 Cash at Trip End'
   }[method]||method;
 
+  // Build notes with fare/payment info appended (only use columns that exist in DB table)
+  const extraNotes = [d.notes||'', d.fareRuleLabel?'Fare: '+d.fareRuleLabel:'', d.estTotal?'Est: ₹'+d.estTotal:'', 'Payment: '+method].filter(Boolean).join(' | ');
   const booking={
     booking_id:d.bookingId,
     customer_name:d.name,
@@ -2033,18 +2062,15 @@ async function confirmPayment(method){
     pickup_time:d.time,
     trip_type:currentTab,
     vehicle_type:d.vehicleType,
-    notes:d.notes,
-    status:'pending',
-    payment_method:method,
-    payment_status: method==='cash' ? 'pending' : 'pending_verification',
-    fare_rule_label: d.fareRuleLabel||'',
-    estimated_fare:d.estTotal||0,
-    razorpay_payment_id:d.razorpayPaymentId||null
+    notes:extraNotes,
+    status:'pending'
   };
+  // Keep full booking in localStorage for local display
+  const bookingLocal=Object.assign({},booking,{payment_method:method,payment_status:method==='cash'?'pending':'pending_verification',fare_rule_label:d.fareRuleLabel||'',estimated_fare:d.estTotal||0});
 
   // ── Save to localStorage immediately ─────────────────────────────────────
   const stored=JSON.parse(localStorage.getItem('st_bookings')||'[]');
-  stored.push(booking); localStorage.setItem('st_bookings',JSON.stringify(stored));
+  stored.push(bookingLocal); localStorage.setItem('st_bookings',JSON.stringify(stored));
 
   // ── Save to Supabase: wait up to 6s for client to be ready ───────────────
   if(!_sbClient) initSupabase();
@@ -2058,14 +2084,55 @@ async function confirmPayment(method){
       },100);
     });
   }
-  if(_sbClient){
-    try {
-      const{error:sbErr}=await _sbClient.from('bookings').insert([booking]);
-      if(sbErr){ console.error('[SB] insert error:',sbErr.message); }
-      else { console.log('[SB] ✅ Booking saved to Supabase:', booking.booking_id); }
-    } catch(e){ console.error('[SB] insert exception:',e.message); }
-  } else {
-    console.warn('[SB] Client not ready — booking saved to localStorage only');
+  // ── Insert to Supabase via direct fetch (bypasses any supabase-js worker/postMessage issues)
+  try {
+    const sbRes = await fetch(CONFIG.SUPABASE_URL + '/rest/v1/bookings', {
+      method: 'POST',
+      headers: {
+        'apikey':        CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON_KEY,
+        'Content-Type':  'application/json',
+        'Prefer':        'return=minimal'
+      },
+      body: JSON.stringify(booking)
+    });
+    if (sbRes.ok) {
+      console.log('[SB] ✅ Booking saved to Supabase:', booking.booking_id);
+    } else {
+      const errText = await sbRes.text();
+      console.error('[SB] insert error:', sbRes.status, errText.slice(0, 300));
+      // If it failed because of unknown columns, retry with only core columns
+      if (errText.includes('column') || sbRes.status === 400) {
+        console.warn('[SB] Retrying with core columns only...');
+        const coreBooking = {
+          booking_id: booking.booking_id,
+          customer_name: booking.customer_name,
+          customer_phone: booking.customer_phone,
+          pickup_location: booking.pickup_location,
+          drop_location: booking.drop_location,
+          pickup_date: booking.pickup_date,
+          pickup_time: booking.pickup_time,
+          trip_type: booking.trip_type,
+          vehicle_type: booking.vehicle_type,
+          notes: booking.notes,
+          status: booking.status
+        };
+        const retryRes = await fetch(CONFIG.SUPABASE_URL + '/rest/v1/bookings', {
+          method: 'POST',
+          headers: {
+            'apikey':        CONFIG.SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON_KEY,
+            'Content-Type':  'application/json',
+            'Prefer':        'return=minimal'
+          },
+          body: JSON.stringify(coreBooking)
+        });
+        if (retryRes.ok) { console.log('[SB] ✅ Booking saved (core columns):', booking.booking_id); }
+        else { const t2 = await retryRes.text(); console.error('[SB] Retry failed:', retryRes.status, t2.slice(0,200)); }
+      }
+    }
+  } catch(e) {
+    console.error('[SB] fetch insert exception:', e.message);
   }
 
   // ── Notify Telegram (non-blocking) ───────────────────────────────────────
@@ -2121,14 +2188,22 @@ function startPaymentPolling(bookingId){
     if(_payPollCount > 30){ clearInterval(_payPollTimer); return; } // stop after 2min
     if(!_sbClient){ clearInterval(_payPollTimer); return; }
     try {
-      var res = await _sbClient.from('bookings').select('payment_status,status').eq('booking_id',bookingId).single();
-      if(res.data){
-        var ps = res.data.payment_status;
-        if(ps==='paid'||ps==='confirmed'){
-          clearInterval(_payPollTimer);
-          _markBookingPlaced(bookingId,'upi');
-          showToast('✅ Payment verified! Booking placed successfully.','success');
-          showMyBookings();
+      var pollRes = await fetch(CONFIG.SUPABASE_URL + '/rest/v1/bookings?select=payment_status,status&booking_id=eq.' + encodeURIComponent(bookingId) + '&limit=1', {
+        headers: {
+          'apikey': CONFIG.SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON_KEY
+        }
+      });
+      if(pollRes.ok){
+        var pollData = await pollRes.json();
+        if(pollData && pollData[0]){
+          var ps = pollData[0].payment_status;
+          if(ps==='paid'||ps==='confirmed'){
+            clearInterval(_payPollTimer);
+            _markBookingPlaced(bookingId,'upi');
+            showToast('✅ Payment verified! Booking placed successfully.','success');
+            showMyBookings();
+          }
         }
       }
     } catch(e){}
@@ -2152,9 +2227,26 @@ function _markBookingPlaced(bookingId, method){
 // ── LOAD VEHICLES FROM SUPABASE / LOCALSTORAGE ────────────────────────────────
 async function loadVehicles(){
   let vehicles=[];
-  if(_sbClient){
-    const{data,error}=await _sbClient.from('vehicles').select('*').eq('status','active').order('created_at',{ascending:true});
-    if(!error&&data) vehicles=data;
+  const _fetchVehicles = async () => {
+    var vRes = await fetch(CONFIG.SUPABASE_URL + '/rest/v1/vehicles?select=*&status=eq.active&order=created_at.asc', {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'apikey': CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+    if(vRes.ok){ var vData = await vRes.json(); return (vData&&vData.length) ? vData : []; }
+    return [];
+  };
+  try {
+    vehicles = await _fetchVehicles();
+  } catch(e){
+    console.warn('[SB] vehicles fetch error (attempt 1):', e.message);
+    await new Promise(r => setTimeout(r, 1500));
+    try { vehicles = await _fetchVehicles(); }
+    catch(e2){ console.warn('[SB] vehicles fetch error (attempt 2):', e2.message); }
   }
   if(!vehicles.length) vehicles=JSON.parse(localStorage.getItem('st_vehicles')||'[]').filter(v=>v.status==='active');
   const grid=document.getElementById('vehicles-grid');
@@ -2240,17 +2332,15 @@ function loadFareRuleDropdown(){
   var sel = document.getElementById('fare-rule-select');
   if(!sel) return;
   var rules = JSON.parse(localStorage.getItem('st_fare_rules')||'[]');
-  if(_sbClient){
-    _sbClient.from('fare_rules').select('*').then(function(res){
-      if(res.data && res.data.length){
-        var mapped = res.data.map(function(r){
-          return {vehicleType:r.vehicle_type,ruleType:r.rule_type,amount:r.amount,description:r.description};
-        });
-        localStorage.setItem('st_fare_rules', JSON.stringify(mapped));
+  fetch(CONFIG.SUPABASE_URL+'/rest/v1/fare_rules?select=*',{method:'GET',mode:'cors',headers:{'apikey':CONFIG.SUPABASE_ANON_KEY,'Authorization':'Bearer '+CONFIG.SUPABASE_ANON_KEY,'Content-Type':'application/json'}})
+    .then(function(r){return r.ok?r.json():[];})
+    .then(function(data){
+      if(data&&data.length){
+        var mapped=data.map(function(r){return{vehicleType:r.vehicle_type,ruleType:r.rule_type,amount:r.amount,description:r.description};});
+        localStorage.setItem('st_fare_rules',JSON.stringify(mapped));
         _populateFareSelect(mapped);
       }
-    });
-  }
+    }).catch(function(){});
   if(rules.length) _populateFareSelect(rules);
   else { var s=document.getElementById('fare-rule-select'); if(s) s.innerHTML='<option value="">Admin fare rules not set yet</option>'; }
 }
@@ -2318,7 +2408,10 @@ async function showMyBookings(){
   var bookings = [];
   if(_sbClient){
     try {
-      var res = await _sbClient.from('bookings').select('*').eq('customer_phone',currentUser.phone).order('created_at',{ascending:false});
+      var myRes = await fetch(CONFIG.SUPABASE_URL + '/rest/v1/bookings?select=*&customer_phone=eq.' + encodeURIComponent(currentUser.phone) + '&order=created_at.desc', {
+        headers: { 'apikey': CONFIG.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON_KEY }
+      });
+      var res = { data: myRes.ok ? await myRes.json() : null, error: myRes.ok ? null : {message: myRes.status} };
       if(res.data && res.data.length) bookings = res.data;
     } catch(e){}
   }
@@ -2370,7 +2463,8 @@ function startPaymentPolling(bookingId){
     if(_payPollCount>30){ clearInterval(_payPollTimer); return; }
     if(!_sbClient){ clearInterval(_payPollTimer); return; }
     try {
-      var res=await _sbClient.from('bookings').select('payment_status,status').eq('booking_id',bookingId).single();
+      var _pr=await fetch(CONFIG.SUPABASE_URL+'/rest/v1/bookings?select=payment_status,status&booking_id=eq.'+encodeURIComponent(bookingId)+'&limit=1',{method:'GET',mode:'cors',headers:{'apikey':CONFIG.SUPABASE_ANON_KEY,'Authorization':'Bearer '+CONFIG.SUPABASE_ANON_KEY,'Content-Type':'application/json'}});
+      var res={data:_pr.ok?(await _pr.json())[0]:null};
       if(res.data){
         var ps=res.data.payment_status;
         if(ps==='paid'||ps==='confirmed'){
@@ -2467,8 +2561,9 @@ async function trackBooking() {
   el.innerHTML = '<p style="color:var(--text-muted);margin-top:1rem;font-size:0.9rem;">🔍 Searching…</p>';
   let data = null;
   if (_sbClient) {
-    const res = await _sbClient.from('bookings').select('*').eq('booking_id', id).single();
-    data = res.data;
+    const _tr=await fetch(CONFIG.SUPABASE_URL+'/rest/v1/bookings?select=*&booking_id=eq.'+encodeURIComponent(id)+'&limit=1',{method:'GET',mode:'cors',headers:{'apikey':CONFIG.SUPABASE_ANON_KEY,'Authorization':'Bearer '+CONFIG.SUPABASE_ANON_KEY,'Content-Type':'application/json'}});
+    const _td=_tr.ok?await _tr.json():[];
+    data = _td[0]||null;
   }
   if (!data) {
     const local = JSON.parse(localStorage.getItem('st_bookings') || '[]').find(b => b.booking_id === id);
@@ -2526,7 +2621,7 @@ async function verifyOTP() {
     const name = document.getElementById('auth-name').value.trim() || 'Customer';
     currentUser = { phone: pendingPhone, name };
     localStorage.setItem('st_user', JSON.stringify(currentUser));
-    if (_sbClient) { try { await _sbClient.from('customers').upsert([{ phone: pendingPhone, name, last_login: new Date().toISOString() }], { onConflict:'phone' }); } catch(e) {} }
+    try { fetch(CONFIG.SUPABASE_URL+'/rest/v1/customers',{method:'POST',mode:'cors',headers:{'apikey':CONFIG.SUPABASE_ANON_KEY,'Authorization':'Bearer '+CONFIG.SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({phone:pendingPhone,name:name,last_login:new Date().toISOString()})}); } catch(e) {}
     updateUIForUser();
     closeAuth();
     showToast(`Welcome, ${name}! 🎉`, 'success');
