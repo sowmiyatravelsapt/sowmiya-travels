@@ -2013,9 +2013,6 @@ async function confirmPayment(method){
   });
 
   if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.innerHTML='⏳ Confirming…';}
-  // Show spinner in modal too
-  var confirmSec = document.getElementById('payment-confirmed-section');
-  if(confirmSec){ confirmSec.style.display='block'; confirmSec.innerHTML='<div style="text-align:center;padding:2rem"><div style="font-size:2rem;animation:spin 1s linear infinite;display:inline-block">⏳</div><p style="margin-top:1rem;color:#666;">Processing…</p></div>'; }
 
   const payLabel={
     upi:'💳 UPI / App Payment',
@@ -2045,10 +2042,11 @@ async function confirmPayment(method){
     razorpay_payment_id:d.razorpayPaymentId||null
   };
 
+  // ── Save to localStorage immediately ─────────────────────────────────────
   const stored=JSON.parse(localStorage.getItem('st_bookings')||'[]');
   stored.push(booking); localStorage.setItem('st_bookings',JSON.stringify(stored));
 
-  // Wait for Supabase client to be ready (it loads async via script tag)
+  // ── Save to Supabase: wait up to 6s for client to be ready ───────────────
   if(!_sbClient) initSupabase();
   if(!_sbClient){
     await new Promise(function(resolve){
@@ -2056,33 +2054,31 @@ async function confirmPayment(method){
       var poll=setInterval(function(){
         waited+=100;
         if(!_sbClient) initSupabase();
-        if(_sbClient||waited>=5000){ clearInterval(poll); resolve(); }
+        if(_sbClient||waited>=6000){ clearInterval(poll); resolve(); }
       },100);
     });
   }
   if(_sbClient){
-    const{error:sbErr}=await _sbClient.from('bookings').insert([booking]);
-    if(sbErr){console.error('[SB] insert:',sbErr.message);}
-    else console.log('[SB] ✅ Booking saved');
+    try {
+      const{error:sbErr}=await _sbClient.from('bookings').insert([booking]);
+      if(sbErr){ console.error('[SB] insert error:',sbErr.message); }
+      else { console.log('[SB] ✅ Booking saved to Supabase:', booking.booking_id); }
+    } catch(e){ console.error('[SB] insert exception:',e.message); }
   } else {
     console.warn('[SB] Client not ready — booking saved to localStorage only');
   }
 
-  await notifyTelegram(booking);
+  // ── Notify Telegram (non-blocking) ───────────────────────────────────────
+  notifyTelegram(booking).catch(function(){});
 
-  const waResult=await sendWhatsApp(d.phone,`✅ *Booking Confirmed – Sowmiya Travels*
-
-🆔 Booking ID: *${d.bookingId}*
-👤 Name: ${d.name}
-📍 From: ${d.pickup}
-📍 To: ${d.drop}
-📅 Date: ${d.date} at ${d.time}
-🚗 Vehicle: ${d.vehicleType}
-💰 Payment: ${payLabel}
-
-Status: *PENDING* – Our team will confirm shortly.
-
-_Your Journey, Our Joy 🙏_`);
+  // ── WhatsApp with timeout so it never freezes the UI ─────────────────────
+  var waResult={ok:false};
+  try {
+    waResult=await Promise.race([
+      sendWhatsApp(d.phone,'✅ *Booking Confirmed – Sowmiya Travels*\n\n🆔 Booking ID: *'+d.bookingId+'*\n👤 Name: '+d.name+'\n📍 From: '+d.pickup+'\n📍 To: '+d.drop+'\n📅 Date: '+d.date+' at '+d.time+'\n🚗 Vehicle: '+d.vehicleType+'\n💰 Payment: '+payLabel+'\n\nStatus: *PENDING* – Our team will confirm shortly.\n\n_Your Journey, Our Joy 🙏_'),
+      new Promise(function(resolve){ setTimeout(function(){ resolve({ok:false,error:'timeout'}); },8000); })
+    ]);
+  } catch(e){ waResult={ok:false,error:e.message}; }
 
   _bookingInProgress=false;
 
@@ -2092,16 +2088,20 @@ _Your Journey, Our Joy 🙏_`);
   if(method!=='cash'){
     startPaymentPolling(d.bookingId);
   } else {
-    // Cash — mark placed immediately
     _markBookingPlaced(d.bookingId,'cash');
   }
 
-  // Show success screen inside modal
+  // ── FIX: Replace spinner with confirmed success content ───────────────────
   var confirmSection=document.getElementById('payment-confirmed-section');
   if(confirmSection){
     confirmSection.style.display='block';
-    var confirmId=document.getElementById('payment-confirmed-id');
-    if(confirmId) confirmId.textContent='Booking ID: '+d.bookingId+' | '+payLabel;
+    confirmSection.innerHTML=
+      '<div style="text-align:center;padding:1.5rem 1rem;">'+
+      '<div style="font-size:3rem;margin-bottom:0.75rem;">✅</div>'+
+      '<div style="font-weight:700;font-size:1.1rem;color:#1A2744;margin-bottom:0.4rem;">Booking Confirmed!</div>'+
+      '<div style="font-size:0.88rem;color:#555;margin-bottom:0.5rem;">'+d.bookingId+' | '+payLabel+'</div>'+
+      '<div style="font-size:0.82rem;color:#888;">Our team will contact you shortly.</div>'+
+      '</div>';
   }
   showToast('✅ Booking '+d.bookingId+' confirmed!'+(waResult.ok?' WhatsApp sent.':' (WA failed)'), 'success');
   _pendingBookingData=null;
