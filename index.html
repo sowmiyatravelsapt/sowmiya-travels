@@ -925,7 +925,7 @@ function searchAll(query, fieldId, dropdown, state) {
     + '&countrycodes=in&limit=8&addressdetails=1&accept-language=en'
     + '&viewbox=79.2,9.9,80.3,10.9&bounded=0'; // Nagapattinam district box
 
-  fetch(nomUrl, { signal: sig, headers: { 'User-Agent': 'SowmiyaTravels/1.0' } })
+  fetch(nomUrl, { signal: sig })
     .then(function(r) { return r.json(); })
     .then(function(results) {
       results.forEach(function(place) {
@@ -1396,124 +1396,139 @@ function setQuickPlace(fieldId, name, lat, lng) {
   updateDistanceBadge();
 }
 
-// 📍 GPS: Two-stage location — fast network fix first, then refine with GPS
-// Stage 1: Quick low-accuracy (2s) → fills field immediately
-// Stage 2: High-accuracy GPS (20s) → updates field silently if better
-var _locWatchId = null;
+// ── LIVE LOCATION — bulletproof single-call + auto-retry on timeout ────────────
+// Flow:
+//  1. Try high-accuracy GPS (15 s) — accurate outdoors
+//  2. If timeout → auto-retry with network/cell (instant, works indoors & everywhere)
+//  3. Show coords immediately; reverse-geocode address in background
+//  NOTE: User-Agent header removed — it is a forbidden browser header and causes
+//        fetch failures on strict mobile browsers
 
-function detectMyLocation(fieldId){
-  if(!navigator.geolocation){
-    showToast('GPS not available on this browser','error');
+function _locBtnState(loading) {
+  var btn = document.getElementById('live-loc-btn');
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.style.opacity = loading ? '0.75' : '1';
+  if (loading) {
+    btn.innerHTML =
+      '<span style="display:inline-block;width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.35);border-top-color:#fff;border-radius:50%;animation:spin 0.75s linear infinite;vertical-align:middle;margin-right:10px;flex-shrink:0;"></span>'
+      + 'Detecting location… please wait';
+  } else {
+    btn.innerHTML = '<span style="font-size:1.3rem;">📍</span> Use My Current Location as Pickup';
+  }
+}
+
+function _reverseGeocode(lat, lng, inp) {
+  var useGeoapify = typeof GEOAPIFY_KEY !== 'undefined' && GEOAPIFY_KEY && GEOAPIFY_KEY !== 'YOUR_GEOAPIFY_KEY';
+  var url = useGeoapify
+    ? 'https://api.geoapify.com/v1/geocode/reverse?lat=' + lat + '&lon=' + lng + '&lang=en&apiKey=' + GEOAPIFY_KEY
+    : 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&addressdetails=1&accept-language=en&zoom=17';
+
+  var ac = new AbortController();
+  var killTimer = setTimeout(function () { ac.abort(); }, 9000);
+
+  // NOTE: No custom User-Agent — forbidden header in browser fetch; causes CORS/TypeError on mobile
+  fetch(url, { signal: ac.signal })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      clearTimeout(killTimer);
+      var addr = '';
+      if (data.features && data.features[0]) {
+        // Geoapify
+        addr = geoapifyLabel(data.features[0].properties).slice(0, 3).join(', ');
+      } else if (data && data.address) {
+        // Nominatim
+        var a = data.address;
+        var place = a.road || a.pedestrian || a.village || a.hamlet
+                  || a.suburb || a.neighbourhood || a.town || a.city || '';
+        var city  = a.city || a.town || a.county || a.state_district || '';
+        if (place) {
+          addr = place + (city && city !== place ? ', ' + city : '');
+        } else {
+          addr = (data.display_name || '').split(',').slice(0, 3).join(',').trim();
+        }
+      }
+      if (addr) {
+        inp.value = addr;
+        inp.dataset.addr = addr;
+        showToast('📍 ' + addr, 'success');
+        updateDistanceBadge();
+      }
+    })
+    .catch(function () {
+      clearTimeout(killTimer);
+      // Keep the "Near lat,lng" value already set — no error shown
+    });
+}
+
+function detectMyLocation(fieldId) {
+  if (!navigator.geolocation) {
+    showToast('⚠️ Location not supported in this browser', 'error');
     return;
   }
 
-  // Update button to show loading state
-  var btn = document.querySelector('button[onclick*="detectMyLocation"]');
-  if(btn){ btn.style.opacity='0.7'; btn.innerHTML='<span style="display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px;"></span> Getting location…'; btn.disabled=true; }
-
-  function resetBtn(){
-    if(btn){ btn.style.opacity=''; btn.innerHTML='<span style="font-size:1.3rem;">📍</span> Use My Current Location as Pickup'; btn.disabled=false; }
-  }
-
-  function doReverseGeocode(lat, lng, inp, onDone){
-    var revUrl;
-    if(typeof GEOAPIFY_KEY!=='undefined' && GEOAPIFY_KEY && GEOAPIFY_KEY!=='YOUR_GEOAPIFY_KEY'){
-      revUrl='https://api.geoapify.com/v1/geocode/reverse?lat='+lat+'&lon='+lng+'&lang=en&apiKey='+GEOAPIFY_KEY;
-    } else {
-      revUrl='https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng+'&addressdetails=1&accept-language=en&zoom=17';
-    }
-    // AbortController with 8s timeout for reverse geocode
-    var ac = new AbortController();
-    var t = setTimeout(function(){ ac.abort(); }, 8000);
-    fetch(revUrl, { headers:{'User-Agent':'SowmiyaTravels/1.0'}, signal: ac.signal })
-      .then(function(r){ return r.json(); })
-      .then(function(data){
-        clearTimeout(t);
-        var addr='';
-        if(data.features && data.features[0]){
-          var p=data.features[0].properties;
-          var parts=geoapifyLabel(p);
-          addr=parts.slice(0,3).join(', ');
-        } else if(data && data.address){
-          var a=data.address;
-          var road = a.road||a.pedestrian||a.footway||'';
-          var vill = a.village||a.hamlet||a.suburb||a.neighbourhood||a.town||a.city||'';
-          var city2= a.city||a.town||a.county||a.state_district||'';
-          if(road && vill) addr=road+', '+vill;
-          else if(vill) addr=vill+(city2 && city2!==vill ? ', '+city2 : '');
-          else addr=(data.display_name||'').split(',').slice(0,3).join(',').trim();
-        }
-        if(addr){ inp.value=addr; inp.dataset.addr=addr; }
-        else { inp.value='Near '+lat.toFixed(4)+','+lng.toFixed(4); inp.dataset.addr=inp.value; }
-        if(onDone) onDone(addr);
-      })
-      .catch(function(){
-        clearTimeout(t);
-        var fallback='Near '+lat.toFixed(4)+','+lng.toFixed(4);
-        inp.value=fallback; inp.dataset.addr=fallback;
-        if(onDone) onDone(fallback);
-      });
-  }
-
-  // Clear any previous watcher
-  if(_locWatchId!=null){ navigator.geolocation.clearWatch(_locWatchId); _locWatchId=null; }
-
   var inp = document.getElementById(fieldId);
-  var gotFirstFix = false;
-  var highAccDone = false;
+  var finished = false;
 
-  showToast('📍 Detecting your location…','success');
+  _locBtnState(true);
+  showToast('📍 Detecting your location…', 'success');
 
-  // Stage 1: Fast coarse fix (network/cell, ~1-2s, no accuracy requirement)
+  function onGot(lat, lng) {
+    if (finished) return;
+    finished = true;
+    _locBtnState(false);
+    inp.dataset.lat  = lat;
+    inp.dataset.lng  = lng;
+    // Show coords instantly so user gets immediate feedback
+    var coordStr = lat.toFixed(5) + ', ' + lng.toFixed(5);
+    inp.value        = '📍 ' + coordStr;
+    inp.dataset.addr = coordStr;
+    updateDistanceBadge();
+    showToast('✅ Location found — getting address…', 'success');
+    _reverseGeocode(lat, lng, inp);
+  }
+
+  function onFail(code) {
+    if (finished) return;
+    finished = true;
+    _locBtnState(false);
+    inp.value = '';
+    var msgs = {
+      1: '🔒 Permission denied — tap the lock icon in your browser address bar and allow Location, then try again.',
+      2: '📡 Location unavailable — try moving outdoors, or tap 🗺️ to pin on map.',
+      3: '⏱️ Location timed out — tap again or use the 🗺️ map button to pin manually.'
+    };
+    showToast(msgs[code] || '⚠️ Location failed — use the 🗺️ map button to pin manually.', 'error');
+  }
+
+  // ── Attempt 1: High-accuracy GPS (works outdoors, 15 s) ──
   navigator.geolocation.getCurrentPosition(
-    function(pos){
-      var lat=pos.coords.latitude, lng=pos.coords.longitude;
-      inp.dataset.lat=lat; inp.dataset.lng=lng;
-      gotFirstFix=true;
-      doReverseGeocode(lat, lng, inp, function(addr){
-        showToast('📍 '+(addr||'Location set')+' (refining…)','success');
-        updateDistanceBadge();
-        resetBtn();
-      });
-    },
-    function(){ /* silent — Stage 2 will handle */ },
-    { enableHighAccuracy:false, timeout:5000, maximumAge:120000 }
-  );
-
-  // Stage 2: High-accuracy GPS (runs in parallel, updates silently if better)
-  navigator.geolocation.getCurrentPosition(
-    function(pos){
-      if(highAccDone) return;
-      highAccDone=true;
-      var lat=pos.coords.latitude, lng=pos.coords.longitude;
-      inp.dataset.lat=lat; inp.dataset.lng=lng;
-      doReverseGeocode(lat, lng, inp, function(addr){
-        if(!gotFirstFix){
-          showToast('📍 '+(addr||'Location set'),'success');
-          resetBtn();
-        } else {
-          showToast('📍 Precise location: '+(addr||'Updated'),'success');
-        }
-        updateDistanceBadge();
-        resetBtn();
-      });
-    },
-    function(err){
-      highAccDone=true;
-      resetBtn();
-      if(!gotFirstFix){
-        // Both stages failed
-        var msgs={
-          1:'Please allow location permission in your browser settings',
-          2:'Location signal unavailable. Try outdoors or use map 🗺️',
-          3:'GPS timed out. Try again or tap 🗺️ to pin manually'
-        };
-        showToast('📍 '+(msgs[err.code]||'Location failed — try the 🗺️ map button'),'error');
+    function (pos) { onGot(pos.coords.latitude, pos.coords.longitude); },
+    function (err) {
+      if (finished) return;
+      if (err.code === 3) {
+        // Timed out → auto-retry with network/cell location (instant everywhere)
+        showToast('📡 GPS slow — trying network location…', 'success');
+        navigator.geolocation.getCurrentPosition(
+          function (pos) { onGot(pos.coords.latitude, pos.coords.longitude); },
+          function (err2) { onFail(err2.code); },
+          { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }
+        );
+      } else {
+        onFail(err.code); // permission denied or unavailable
       }
-      // If Stage 1 already got a fix, just silently use that
     },
-    { enableHighAccuracy:true, timeout:20000, maximumAge:30000 }
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
   );
+
+  // ── Safety net: if BOTH attempts hang for >30s, reset button ──
+  setTimeout(function () {
+    if (!finished) {
+      finished = true;
+      _locBtnState(false);
+      showToast('⏱️ Location timed out — tap 🗺️ to pin on map.', 'error');
+    }
+  }, 30000);
 }
 </script>
 
@@ -2031,7 +2046,7 @@ document.getElementById('pickup-date').min = new Date().toISOString().split('T')
     </div>
     <!-- Confirm button -->
     <div style="padding:0.75rem 1rem 0.65rem;flex-shrink:0;border-top:1px solid #F0EDE8;display:flex;gap:0.6rem;align-items:center;">
-      <button onclick="mapGoToMyLocation()" title="Center on my location" style="background:#f0f0f0;border:none;border-radius:10px;width:44px;height:44px;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Use my live location">📍</button>
+      <button onclick="mapGoToMyLocation()" title="Center on my live location" style="background:#f0f0f0;border:none;border-radius:10px;width:44px;height:44px;font-size:1.25rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📍</button>
       <button id="map-confirm-btn" onclick="confirmMapLocation()" style="flex:1;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:0.9rem;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;transition:all 0.25s;" onmouseover="this.style.background='#C9933A'" onmouseout="this.style.background='var(--navy)'">
         ✅ Confirm This Location
       </button>
@@ -2054,14 +2069,31 @@ function mapGoToMyLocation() {
   if (!navigator.geolocation) { showToast('GPS not available','error'); return; }
   var btn = document.querySelector('[onclick="mapGoToMyLocation()"]');
   if (btn) btn.textContent = '⏳';
-  navigator.geolocation.getCurrentPosition(function(pos) {
+
+  function flyTo(lat, lng) {
     if (btn) btn.textContent = '📍';
-    _mapPicker.map.setView([pos.coords.latitude, pos.coords.longitude], 17);
-    updateMapAddress(pos.coords.latitude, pos.coords.longitude);
-  }, function() {
+    _mapPicker.map.setView([lat, lng], 17);
+    updateMapAddress(lat, lng);
+  }
+  function fail() {
     if (btn) btn.textContent = '📍';
-    showToast('Could not get GPS location','error');
-  }, { enableHighAccuracy:false, timeout:8000, maximumAge:120000 });
+    showToast('Could not get GPS — try moving outdoors','error');
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos){ flyTo(pos.coords.latitude, pos.coords.longitude); },
+    function(err){
+      if (err.code === 3) {
+        // Timeout → retry with network location
+        navigator.geolocation.getCurrentPosition(
+          function(pos){ flyTo(pos.coords.latitude, pos.coords.longitude); },
+          function(){ fail(); },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+        );
+      } else { fail(); }
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+  );
 }
 
 function openMapPicker(fieldId) {
@@ -2124,7 +2156,7 @@ function updateMapAddress(lat, lng) {
   } else {
     url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&addressdetails=1&accept-language=en&zoom=17';
   }
-  fetch(url, { headers: { 'User-Agent': 'SowmiyaTravels/1.0' } })
+  fetch(url, {})
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var addr = '';
@@ -2228,7 +2260,7 @@ function onMapSearchInput() {
 
     // Nominatim
     fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q + ' Tamil Nadu')
-      + '&countrycodes=in&limit=5&addressdetails=1&accept-language=en', { signal: sig, headers:{'User-Agent':'SowmiyaTravels/1.0'} })
+      + '&countrycodes=in&limit=5&addressdetails=1&accept-language=en', { signal: sig })
       .then(function(r){return r.json();})
       .then(function(results){
         results.forEach(function(place){
