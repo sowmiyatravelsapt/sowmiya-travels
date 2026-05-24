@@ -1343,11 +1343,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     <!-- Payment Confirmation Overlay -->
     <div id="payment-confirmed-section" style="display:none;text-align:center;padding:1rem 0;">
-      <div style="font-size:3.5rem;margin-bottom:0.75rem;">🎉</div>
-      <h3 style="color:#1D9E75;font-family:Cinzel,serif;margin-bottom:0.5rem;">Booking Confirmed!</h3>
-      <p id="payment-confirmed-id" style="font-size:0.9rem;color:#666;margin-bottom:0.5rem;"></p>
-      <p style="font-size:0.85rem;color:#888;">WhatsApp confirmation sent · Our team will contact you shortly</p>
-      <button onclick="closePaymentModal()" style="margin-top:1.25rem;background:#1A2744;color:white;border:none;border-radius:10px;padding:0.85rem 2rem;font-size:0.95rem;font-weight:600;cursor:pointer;">Close</button>
+      <div class="confirmed-content">
+        <div style="font-size:3.5rem;margin-bottom:0.75rem;">🎉</div>
+        <h3 style="color:#1D9E75;font-family:Cinzel,serif;margin-bottom:0.5rem;">Booking Confirmed!</h3>
+        <p id="payment-confirmed-id" style="font-size:0.9rem;color:#666;margin-bottom:0.5rem;"></p>
+        <p style="font-size:0.85rem;color:#888;">WhatsApp confirmation sent · Our team will contact you shortly</p>
+        <button onclick="closePaymentModal()" style="margin-top:1.25rem;background:#1A2744;color:white;border:none;border-radius:10px;padding:0.85rem 2rem;font-size:0.95rem;font-weight:600;cursor:pointer;">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1831,6 +1833,12 @@ function closePaymentModal(){
   ['upi-section','cash-section','razorpay-section','payment-confirmed-section'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.style.display='none';
   });
+  // Reset spinner & confirmed content for next use
+  var spinDiv=document.getElementById('payment-processing-spinner');
+  if(spinDiv) spinDiv.style.display='none';
+  var confirmedContent=document.querySelector('.confirmed-content');
+  if(confirmedContent) confirmedContent.style.display='block'; // restore for next open
+  _bookingInProgress=false;
   var chooser=document.getElementById('payment-app-chooser');
   if(chooser) chooser.style.display='block';
 }
@@ -2007,9 +2015,23 @@ async function confirmPayment(method){
   });
 
   if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.innerHTML='⏳ Confirming…';}
-  // Show spinner in modal too
+  // Show processing state — keep payment-confirmed-section structure intact
   var confirmSec = document.getElementById('payment-confirmed-section');
-  if(confirmSec){ confirmSec.style.display='block'; confirmSec.innerHTML='<div style="text-align:center;padding:2rem"><div style="font-size:2rem;animation:spin 1s linear infinite;display:inline-block">⏳</div><p style="margin-top:1rem;color:#666;">Processing…</p></div>'; }
+  if(confirmSec){
+    confirmSec.style.display='block';
+    var existingContent = confirmSec.querySelector('.confirmed-content');
+    if(existingContent) existingContent.style.display='none';
+    var spinDiv = document.getElementById('payment-processing-spinner');
+    if(!spinDiv){
+      spinDiv = document.createElement('div');
+      spinDiv.id = 'payment-processing-spinner';
+      spinDiv.style.cssText = 'text-align:center;padding:2rem;';
+      spinDiv.innerHTML = '<div style="font-size:2rem;animation:spin 1s linear infinite;display:inline-block">⏳</div><p style="margin-top:1rem;color:#666;">Processing…</p>';
+      confirmSec.insertBefore(spinDiv, confirmSec.firstChild);
+    } else {
+      spinDiv.style.display = 'block';
+    }
+  }
 
   const payLabel={
     upi:'💳 UPI / App Payment',
@@ -2077,10 +2099,16 @@ _Your Journey, Our Joy 🙏_`);
     _markBookingPlaced(d.bookingId,'cash');
   }
 
-  // Show success screen inside modal
+  // Show success screen inside modal — hide spinner, show confirmed content
   var confirmSection=document.getElementById('payment-confirmed-section');
   if(confirmSection){
     confirmSection.style.display='block';
+    // Hide spinner
+    var spinDiv=document.getElementById('payment-processing-spinner');
+    if(spinDiv) spinDiv.style.display='none';
+    // Show confirmed content
+    var confirmedContent=confirmSection.querySelector('.confirmed-content');
+    if(confirmedContent) confirmedContent.style.display='block';
     var confirmId=document.getElementById('payment-confirmed-id');
     if(confirmId) confirmId.textContent='Booking ID: '+d.bookingId+' | '+payLabel;
   }
