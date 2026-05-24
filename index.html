@@ -2085,30 +2085,11 @@ async function confirmPayment(method){
   const stored=JSON.parse(localStorage.getItem('st_bookings')||'[]');
   stored.push(booking); localStorage.setItem('st_bookings',JSON.stringify(stored));
 
-  if(!_sbClient) initSupabase();
-  if(_sbClient){
-    try {
-      const{error:sbErr}=await _sbClient.from('bookings').insert([booking]);
-      if(sbErr){
-        console.error('[SB] insert error:',sbErr.message, sbErr.code);
-        // Retry with upsert in case of conflict
-        const{error:sbErr2}=await _sbClient.from('bookings').upsert([booking],{onConflict:'booking_id'});
-        if(sbErr2){
-          console.error('[SB] upsert also failed:',sbErr2.message);
-          showToast('⚠️ Booking saved locally. Sync to cloud failed: '+sbErr2.message,'error');
-        } else {
-          console.log('[SB] ✅ Booking saved via upsert');
-        }
-      } else {
-        console.log('[SB] ✅ Booking saved to Supabase');
-      }
-    } catch(sbEx) {
-      console.error('[SB] Exception:', sbEx.message);
-      showToast('⚠️ Supabase unreachable – booking saved locally only.','error');
-    }
-  } else {
-    console.warn('[SB] Client not ready – booking saved to localStorage only');
-    showToast('⚠️ Cloud sync unavailable – booking saved locally.','error');
+  // ── SUPABASE SYNC with auto-retry queue ──────────────────────────────────
+  const sbSynced = await _syncBookingToSupabase(booking);
+  if(!sbSynced){
+    // Queue for later retry
+    _queuePendingSync(booking);
   }
 
   await notifyTelegram(booking);
@@ -2165,6 +2146,152 @@ _Your Journey, Our Joy 🙏_`);
     showToast('❌ Booking failed. Please try again.', 'error');
   }
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUPABASE SYNC ENGINE — handles "Host not in allowlist" + RLS + network errors
+// ══════════════════════════════════════════════════════════════════════════════
+
+async function _syncBookingToSupabase(booking) {
+  if(!_sbClient) initSupabase();
+
+  // Method 1: Supabase JS client
+  if(_sbClient){
+    try{
+      const {error} = await _sbClient.from('bookings').upsert([booking], {onConflict:'booking_id'});
+      if(!error){
+        console.log('[SB] ✅ Synced via JS client:', booking.booking_id);
+        _removePendingSync(booking.booking_id);
+        return true;
+      }
+      console.warn('[SB] JS client error:', error.message);
+    } catch(e){ console.warn('[SB] JS client exception:', e.message); }
+  }
+
+  // Method 2: Direct REST API fetch (bypasses JS client restrictions)
+  try{
+    const key = CONFIG.SUPABASE_ANON_KEY;
+    const res = await fetch(CONFIG.SUPABASE_URL + '/rest/v1/bookings', {
+      method: 'POST',
+      headers: {
+        'apikey': key,
+        'Authorization': 'Bearer ' + key,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify(booking)
+    });
+    const txt = await res.text();
+    if(res.ok || res.status===201){
+      console.log('[SB] ✅ Synced via direct REST:', booking.booking_id);
+      _removePendingSync(booking.booking_id);
+      return true;
+    }
+    let errMsg = txt;
+    try{ const j=JSON.parse(txt); errMsg=j.message||j.hint||j.details||txt; }catch(e){}
+    console.error('[SB] REST error:', res.status, errMsg);
+    if(txt.includes('allowlist')||txt.includes('not allowed')||res.status===403){
+      _showSyncBanner('🔒 Supabase is blocking this domain. Fix: Go to <b>Supabase → Settings → API → Allowed Hostnames</b> and add <b>sowmiya-travels.vercel.app</b>. Or paste your <b>anon JWT key</b> (starts with eyJ) below.');
+    } else if(res.status===401){
+      _showSyncBanner('🔑 Supabase key is invalid. Get your <b>anon public key</b> (eyJ…) from <b>Supabase → Settings → API</b> and paste it below.');
+    } else if(res.status===404){
+      _showSyncBanner('📋 The <b>bookings</b> table does not exist in Supabase. Please create it first.');
+    } else if(txt.includes('row-level')||txt.includes('RLS')||res.status===42501){
+      _showSyncBanner('🛡️ RLS is blocking inserts. In Supabase → Table Editor → bookings → RLS Policies, add: <b>INSERT for anon WITH CHECK (true)</b>');
+    } else {
+      _showSyncBanner('❌ Sync failed ('+res.status+'): ' + errMsg.slice(0,100));
+    }
+  } catch(netErr){
+    console.error('[SB] Network error:', netErr.message);
+    _showSyncBanner('🌐 Cannot reach Supabase. Booking saved locally and will retry automatically.');
+  }
+  return false;
+}
+
+var _syncBannerShown = false;
+function _showSyncBanner(html){
+  showToast('⚠️ Supabase sync failed – booking saved locally', 'error');
+  if(_syncBannerShown) return;
+  _syncBannerShown = true;
+  var old = document.getElementById('sb-sync-banner');
+  if(old) old.remove();
+  var b = document.createElement('div');
+  b.id = 'sb-sync-banner';
+  b.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:9998;background:#1A2744;color:#fff;padding:1rem 1.2rem;font-family:Outfit,sans-serif;font-size:0.85rem;border-top:3px solid #C9933A;box-shadow:0 -6px 24px rgba(0,0,0,0.35);animation:fadeUp 0.4s ease;';
+  var pending = JSON.parse(localStorage.getItem('st_pending_sync')||'[]').length;
+  b.innerHTML=`<div style="max-width:820px;margin:0 auto;display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
+    <div style="flex:1;min-width:220px;">
+      <div style="font-weight:700;color:#E8B96A;margin-bottom:0.25rem;">⚠️ Supabase Sync Failed</div>
+      <div style="color:rgba(255,255,255,0.78);font-size:0.8rem;line-height:1.5;">${html}</div>
+      <div id="sb-pending-info" style="margin-top:0.35rem;font-size:0.75rem;color:rgba(255,255,255,0.45);">${pending?pending+' booking(s) pending sync':''}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.4rem;min-width:250px;">
+      <input id="sb-new-key" placeholder="Paste anon key here (eyJ…)" style="border:1px solid rgba(201,147,58,0.45);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.78rem;background:rgba(255,255,255,0.07);color:#fff;font-family:Outfit,sans-serif;width:100%;outline:none;"/>
+      <div style="display:flex;gap:0.4rem;">
+        <button onclick="_applySbKey()" style="flex:1;background:#C9933A;color:#1A2744;border:none;border-radius:8px;padding:0.5rem;font-size:0.78rem;font-weight:700;cursor:pointer;">Save Key & Retry</button>
+        <button onclick="_retrySyncAll()" style="flex:1;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.5rem;font-size:0.78rem;font-weight:600;cursor:pointer;">🔄 Retry Now</button>
+        <button onclick="document.getElementById('sb-sync-banner').remove();_syncBannerShown=false;" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);border:none;border-radius:8px;padding:0.5rem 0.6rem;font-size:0.9rem;cursor:pointer;">✕</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(b);
+}
+
+function _applySbKey(){
+  var key=(document.getElementById('sb-new-key')||{}).value||'';
+  key=key.trim();
+  if(!key.startsWith('eyJ')&&!key.startsWith('sb_')){
+    showToast('Invalid key — should start with eyJ or sb_','error'); return;
+  }
+  var cfg=JSON.parse(localStorage.getItem('st_admin_config')||'{}');
+  cfg.sbKey=key; localStorage.setItem('st_admin_config',JSON.stringify(cfg));
+  CONFIG.SUPABASE_ANON_KEY=key; _sbClient=null; initSupabase();
+  showToast('🔑 Key saved! Retrying…','success');
+  setTimeout(_retrySyncAll,1000);
+}
+
+function _queuePendingSync(booking){
+  var q=JSON.parse(localStorage.getItem('st_pending_sync')||'[]');
+  if(!q.find(function(b){return b.booking_id===booking.booking_id;})){
+    q.push(booking); localStorage.setItem('st_pending_sync',JSON.stringify(q));
+  }
+  var el=document.getElementById('sb-pending-info');
+  if(el) el.textContent=q.length+' booking(s) pending sync';
+}
+
+function _removePendingSync(bookingId){
+  var q=JSON.parse(localStorage.getItem('st_pending_sync')||'[]').filter(function(b){return b.booking_id!==bookingId;});
+  localStorage.setItem('st_pending_sync',JSON.stringify(q));
+}
+
+async function _retrySyncAll(){
+  var q=JSON.parse(localStorage.getItem('st_pending_sync')||'[]');
+  if(!q.length){showToast('✅ No pending bookings','success');return;}
+  _syncBannerShown=false; // allow new banner if still failing
+  showToast('🔄 Retrying '+q.length+' booking(s)…','success');
+  for(var i=0;i<q.length;i++) await _syncBookingToSupabase(q[i]);
+  var left=JSON.parse(localStorage.getItem('st_pending_sync')||'[]');
+  if(!left.length){
+    var ban=document.getElementById('sb-sync-banner'); if(ban) ban.remove();
+    showToast('✅ All bookings synced to Supabase!','success');
+  } else {
+    showToast('⚠️ '+left.length+' still pending. Check key/allowlist.','error');
+  }
+}
+
+// Auto-retry pending syncs 4s after page load
+document.addEventListener('DOMContentLoaded',function(){
+  setTimeout(async function(){
+    var q=JSON.parse(localStorage.getItem('st_pending_sync')||'[]');
+    if(!q.length) return;
+    console.log('[SB] Auto-retrying',q.length,'pending sync(s) on load');
+    _syncBannerShown=true; // suppress banner during auto-retry
+    for(var i=0;i<q.length;i++) await _syncBookingToSupabase(q[i]);
+    _syncBannerShown=false;
+    var left=JSON.parse(localStorage.getItem('st_pending_sync')||'[]');
+    if(!left.length) console.log('[SB] ✅ All auto-synced');
+    else{ console.warn('[SB]',left.length,'still pending'); _showSyncBanner('🔄 '+left.length+' booking(s) still not synced. Check Supabase key or domain allowlist.'); }
+  },4000);
+});
 
 // ── PAYMENT POLLING: checks every 4s if admin marked paid ────────────────────
 var _payPollTimer = null;
