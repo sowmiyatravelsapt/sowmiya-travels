@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sowmiya Travels – Your Journey, Our Joy</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     --gold: #C9933A;
@@ -503,6 +505,370 @@
     .hero h1{ font-size:2.5rem; }
   }
 </style>
+<script>
+// ── LOCATION ENGINE: 3-API parallel search for best Tamil Nadu village coverage ─
+// Uses Geoapify (free 3000/day) + Photon + Nominatim simultaneously.
+// Geoapify has the best India village/hamlet/street coverage of any free API.
+// Get your free key at: https://myprojects.geoapify.com (free, no credit card)
+
+window._gplaces_loaded = true;
+
+// ── PASTE YOUR GEOAPIFY FREE KEY BELOW ────────────────────────────────────────
+// Sign up free at https://myprojects.geoapify.com → Create Project → Copy API Key
+var GEOAPIFY_KEY = 'abf81e0fb280456a88ecbf1c26f546ff'; // replace this — free, 3000 req/day
+// ─────────────────────────────────────────────────────────────────────────────
+
+var _acState = {
+  pickup: { timer: null, idx: -1, results: [], ctrl: null },
+  drop:   { timer: null, idx: -1, results: [], ctrl: null }
+};
+
+function initLocationSearch(fieldId) {
+  var inp = document.getElementById(fieldId);
+  if (!inp) return;
+  var state = _acState[fieldId];
+
+  var dropdown = document.createElement('div');
+  dropdown.id = fieldId + '-ac-dropdown';
+  dropdown.style.cssText = [
+    'position:absolute','left:0','right:0','top:calc(100% + 4px)',
+    'z-index:9999','background:#fff','border:1.5px solid #E2DDD6',
+    'border-radius:12px','box-shadow:0 12px 40px rgba(26,39,68,0.18)',
+    'max-height:300px','overflow-y:auto','display:none',
+    'font-family:Outfit,sans-serif'
+  ].join(';');
+  inp.parentElement.style.position = 'relative';
+  inp.parentElement.appendChild(dropdown);
+
+  inp.addEventListener('input', function() {
+    var q = inp.value.trim();
+    clearTimeout(state.timer);
+    if (state.ctrl) { try { state.ctrl.abort(); } catch(e){} }
+    if (q.length < 2) { dropdown.style.display = 'none'; return; }
+    showLoading(dropdown);
+    state.timer = setTimeout(function() {
+      state.ctrl = new AbortController();
+      searchAll(q, fieldId, dropdown, state);
+    }, 380);
+  });
+
+  inp.addEventListener('keydown', function(e) {
+    var items = dropdown.querySelectorAll('.ac-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown')  { state.idx = Math.min(state.idx+1, items.length-1); hlItem(items, state.idx); e.preventDefault(); }
+    else if (e.key === 'ArrowUp')   { state.idx = Math.max(state.idx-1, 0); hlItem(items, state.idx); e.preventDefault(); }
+    else if (e.key === 'Enter' && state.idx >= 0 && items[state.idx]) { items[state.idx].click(); e.preventDefault(); }
+    else if (e.key === 'Escape') { dropdown.style.display = 'none'; state.idx = -1; }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!inp.parentElement.contains(e.target)) dropdown.style.display = 'none';
+  });
+}
+
+function showLoading(dropdown) {
+  dropdown.innerHTML = '<div style="padding:0.65rem 1rem;color:#bbb;font-size:0.82rem;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:12px;height:12px;border:2px solid #ddd;border-top-color:#C9933A;border-radius:50%;animation:spin 0.7s linear infinite;"></span> Searching nearby places…</div>';
+  if (!document.getElementById('ac-spin-style')) {
+    var s = document.createElement('style');
+    s.id = 'ac-spin-style';
+    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+  dropdown.style.display = 'block';
+}
+
+function hlItem(items, idx) {
+  items.forEach(function(it, i) {
+    it.style.background = i === idx ? '#FFF3D9' : '';
+  });
+}
+
+function escH(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── TYPE ICONS for different place categories ─────────────────────────────────
+function placeIcon(category, type) {
+  var c = (category||'').toLowerCase(), t = (type||'').toLowerCase();
+  if (c.includes('airport') || t.includes('airport')) return '✈️';
+  if (c.includes('hospital') || c.includes('clinic') || t.includes('hospital')) return '🏥';
+  if (c.includes('school') || c.includes('college') || c.includes('university')) return '🎓';
+  if (c.includes('railway') || c.includes('station') || t.includes('station')) return '🚉';
+  if (c.includes('bus') || t.includes('bus')) return '🚌';
+  if (c.includes('temple') || c.includes('church') || c.includes('mosque') || c.includes('religious')) return '🛕';
+  if (c.includes('hotel') || c.includes('accommodation')) return '🏨';
+  if (c.includes('shop') || c.includes('market') || c.includes('mall')) return '🛍️';
+  if (c.includes('restaurant') || c.includes('food') || c.includes('cafe')) return '🍽️';
+  if (c.includes('park') || c.includes('garden')) return '🌳';
+  if (t === 'village' || t === 'hamlet') return '🏘️';
+  if (t === 'city' || t === 'town') return '🏙️';
+  if (t === 'suburb' || t === 'neighbourhood') return '🏠';
+  if (t === 'street' || t === 'road' || t === 'highway') return '🛣️';
+  return '📍';
+}
+
+// ── GEOAPIFY label builder ────────────────────────────────────────────────────
+function geoapifyLabel(p) {
+  // p = feature.properties from Geoapify
+  var parts = [];
+  var name = p.name || p.address_line1 || '';
+  var village = p.village || p.hamlet || p.locality || '';
+  var suburb = p.suburb || p.district || p.neighbourhood || '';
+  var city = p.city || p.town || p.county || '';
+  var state = p.state || '';
+
+  if (name) parts.push(name);
+  if (village && village !== name) parts.push(village);
+  if (suburb && suburb !== village && suburb !== name) parts.push(suburb);
+  if (city && city !== suburb && city !== name && city !== village) parts.push(city);
+  if (state) parts.push(state);
+
+  // If name IS the city (just typed a city), ensure context shows
+  if (!parts.length && p.formatted) {
+    parts = p.formatted.split(',').slice(0,4).map(function(s){return s.trim();}).filter(Boolean);
+  }
+  return dedupeParts(parts);
+}
+
+// ── PHOTON label builder ──────────────────────────────────────────────────────
+function photonLabel(f) {
+  var p = f.properties;
+  var parts = [];
+  if (p.name) parts.push(p.name);
+  if (p.street && p.street !== p.name) parts.push(p.street);
+  if (p.village && p.village !== p.name) parts.push(p.village);
+  if (p.district && p.district !== p.name) parts.push(p.district);
+  if (p.city && p.city !== p.name && p.city !== p.village) parts.push(p.city);
+  if (p.county && p.county !== p.city) parts.push(p.county);
+  if (p.state) parts.push(p.state);
+  return dedupeParts(parts);
+}
+
+// ── NOMINATIM label builder ───────────────────────────────────────────────────
+function nominatimLabel(place) {
+  var a = place.address || {};
+  var parts = [];
+  // Specific place name
+  var name = a.amenity || a.tourism || a.shop || a.leisure || a.building ||
+             a.historic || a.man_made || a.office || '';
+  var village = a.village || a.hamlet || a.isolated_dwelling || '';
+  var suburb = a.suburb || a.neighbourhood || a.quarter || '';
+  var area = a.city_district || a.town || '';
+  var city = a.city || a.municipality || a.county || '';
+  var state = a.state || '';
+  if (name) parts.push(name);
+  if (village && village !== name) parts.push(village);
+  if (suburb && suburb !== village && suburb !== name) parts.push(suburb);
+  if (area && area !== suburb && area !== city) parts.push(area);
+  if (city && city !== name && city !== village) parts.push(city);
+  if (state) parts.push(state);
+  if (!parts.length) {
+    parts = (place.display_name||'').split(',').slice(0,4).map(function(s){return s.trim();}).filter(Boolean);
+  }
+  return dedupeParts(parts);
+}
+
+function dedupeParts(parts) {
+  var seen = {}, out = [];
+  parts.forEach(function(x) {
+    var k = (x||'').trim();
+    if (k && !seen[k.toLowerCase()]) { seen[k.toLowerCase()] = 1; out.push(k); }
+  });
+  return out;
+}
+
+// ── DEDUPLICATE results from all APIs by GPS proximity ────────────────────────
+function dedupeResults(arr) {
+  var seen = [], out = [];
+  arr.forEach(function(r) {
+    var dup = seen.some(function(s) {
+      return Math.abs(s.lat - r.lat) < 0.0015 && Math.abs(s.lng - r.lng) < 0.0015;
+    });
+    if (!dup && r.parts && r.parts.length) { seen.push(r); out.push(r); }
+  });
+  return out;
+}
+
+// ── RENDER DROPDOWN ───────────────────────────────────────────────────────────
+function renderDropdown(results, fieldId, dropdown, state) {
+  state.results = results;
+  state.idx = -1;
+  dropdown.innerHTML = '';
+
+  if (!results.length) {
+    dropdown.innerHTML = [
+      '<div style="padding:1rem;text-align:center;">',
+      '<div style="font-size:1.5rem;margin-bottom:0.4rem;">🔍</div>',
+      '<div style="font-size:0.85rem;color:#888;font-weight:500;">No places found</div>',
+      '<div style="font-size:0.76rem;color:#bbb;margin-top:0.25rem;">Try spelling differently or nearby landmark</div>',
+      '</div>'
+    ].join('');
+    dropdown.style.display = 'block';
+    return;
+  }
+
+  results.forEach(function(r, i) {
+    var item = document.createElement('div');
+    item.className = 'ac-item';
+    var icon = placeIcon(r.category, r.type);
+    var mainName = r.parts[0] || '';
+    var subName = r.parts.slice(1, 4).join(', ');
+    item.innerHTML = [
+      '<div style="display:flex;align-items:flex-start;gap:9px;padding:0.55rem 1rem 0.5rem;cursor:pointer;">',
+      '<span style="font-size:1.1rem;margin-top:1px;flex-shrink:0;line-height:1.2;">', icon, '</span>',
+      '<div style="min-width:0;flex:1;">',
+      '<div style="font-size:0.88rem;color:#1A2744;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">', escH(mainName), '</div>',
+      subName ? '<div style="font-size:0.74rem;color:#999;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escH(subName) + '</div>' : '',
+      '</div></div>'
+    ].join('');
+    item.style.borderBottom = '1px solid #F5F2EE';
+    item.style.transition = 'background 0.1s';
+    item.addEventListener('mouseenter', function() {
+      state.idx = i;
+      hlItem(dropdown.querySelectorAll('.ac-item'), i);
+    });
+    item.addEventListener('click', function() {
+      var inp2 = document.getElementById(fieldId);
+      inp2.value = mainName;
+      inp2.dataset.lat = r.lat;
+      inp2.dataset.lng = r.lng;
+      inp2.dataset.addr = r.parts.slice(0, 3).join(', ');
+      dropdown.style.display = 'none';
+      state.idx = -1;
+      updateDistanceBadge();
+    });
+    dropdown.appendChild(item);
+  });
+  dropdown.style.display = 'block';
+}
+
+// ── MASTER SEARCH: 3 APIs in parallel ────────────────────────────────────────
+function searchAll(query, fieldId, dropdown, state) {
+  var combined = [];
+  var pending = 3; // 3 APIs
+
+  function done(src) {
+    pending--;
+    if (pending > 0) return;
+    // Sort: Geoapify first (best local), then Photon, then Nominatim
+    var order = { geoapify: 0, photon: 1, nominatim: 2 };
+    combined.sort(function(a, b) { return (order[a.src]||9) - (order[b.src]||9); });
+    var final = dedupeResults(combined);
+    renderDropdown(final.slice(0, 9), fieldId, dropdown, state);
+  }
+
+  var sig = state.ctrl ? state.ctrl.signal : undefined;
+
+  // ── 1. GEOAPIFY — best village/street/hamlet coverage ─────────────────────
+  var geoUrl = 'https://api.geoapify.com/v1/geocode/autocomplete?text='
+    + encodeURIComponent(query)
+    + '&filter=countrycode:in'
+    + '&bias=proximity:79.8511,10.3797' // bias near Vedaranyam
+    + '&limit=9&format=geojson&lang=en'
+    + '&apiKey=' + GEOAPIFY_KEY;
+
+  if (GEOAPIFY_KEY && GEOAPIFY_KEY !== 'YOUR_GEOAPIFY_KEY') {
+    fetch(geoUrl, { signal: sig })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.features) {
+          data.features.forEach(function(f) {
+            var p = f.properties;
+            if (!p) return;
+            var parts = geoapifyLabel(p);
+            if (!parts.length) return;
+            combined.push({
+              lat: f.geometry.coordinates[1],
+              lng: f.geometry.coordinates[0],
+              parts: parts,
+              type: p.result_type || p.type || '',
+              category: p.categories ? p.categories[0] || '' : '',
+              src: 'geoapify'
+            });
+          });
+        }
+        done('geoapify');
+      })
+      .catch(function() { done('geoapify'); });
+  } else {
+    // No Geoapify key — skip this source, only need 2 more
+    pending--;
+    done('geoapify-skip');
+  }
+
+  // ── 2. PHOTON — good for streets & local area names ──────────────────────
+  var photonUrl = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(query)
+    + '&limit=8&lang=en&lat=10.3797&lon=79.8511';
+
+  fetch(photonUrl, { signal: sig })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.features) {
+        data.features.forEach(function(f) {
+          var p = f.properties;
+          if (p.country && p.country !== 'India') return;
+          var parts = photonLabel(f);
+          if (!parts.length) return;
+          combined.push({
+            lat: f.geometry.coordinates[1],
+            lng: f.geometry.coordinates[0],
+            parts: parts,
+            type: p.type || p.osm_value || '',
+            category: p.osm_key || '',
+            src: 'photon'
+          });
+        });
+      }
+      done('photon');
+    })
+    .catch(function() { done('photon'); });
+
+  // ── 3. NOMINATIM — good for cities, districts, major POIs ────────────────
+  // Append 'Vedaranyam Nagapattinam' if query looks like a local place name (no spaces or short)
+  var nomQ = query;
+  if (query.length < 20 && !query.match(/,/)) nomQ = query + ' Nagapattinam Tamil Nadu';
+  var nomUrl = 'https://nominatim.openstreetmap.org/search?format=json&q='
+    + encodeURIComponent(nomQ)
+    + '&countrycodes=in&limit=8&addressdetails=1&accept-language=en'
+    + '&viewbox=79.2,9.9,80.3,10.9&bounded=0'; // Nagapattinam district box
+
+  fetch(nomUrl, { signal: sig, headers: { 'User-Agent': 'SowmiyaTravels/1.0' } })
+    .then(function(r) { return r.json(); })
+    .then(function(results) {
+      results.forEach(function(place) {
+        var parts = nominatimLabel(place);
+        if (!parts.length) return;
+        combined.push({
+          lat: parseFloat(place.lat),
+          lng: parseFloat(place.lon),
+          parts: parts,
+          type: place.type || place.class || '',
+          category: place.class || '',
+          src: 'nominatim'
+        });
+      });
+      done('nominatim');
+    })
+    .catch(function() { done('nominatim'); });
+}
+
+// Init both fields when DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+  initLocationSearch('pickup');
+  initLocationSearch('drop');
+});
+
+</script>
+<style>
+  .pac-container{z-index:9999!important;font-family:'Outfit',sans-serif;border-radius:10px;box-shadow:0 8px 30px rgba(26,39,68,0.15);border:1px solid var(--border);margin-top:4px;}
+  .pac-item{padding:0.5rem 1rem;font-size:0.88rem;cursor:pointer;}
+  .pac-item:hover{background:var(--gold-pale);}
+  .pac-item-selected{background:var(--gold-pale);}
+  .distance-badge{display:none;background:linear-gradient(135deg,var(--navy),var(--navy-mid));color:white;border-radius:12px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.88rem;}
+  .distance-badge.show{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .dist-chip{background:rgba(201,147,58,0.2);border:1px solid rgba(201,147,58,0.4);color:var(--gold-light);border-radius:50px;padding:0.25rem 0.75rem;font-size:0.8rem;font-weight:600;white-space:nowrap;}
+  .fare-chip{background:rgba(29,158,117,0.2);border:1px solid rgba(29,158,117,0.4);color:#5DCAA5;border-radius:50px;padding:0.25rem 0.75rem;font-size:0.8rem;font-weight:600;white-space:nowrap;}
+</style>
 </head>
 <body>
 
@@ -588,9 +954,58 @@
           <p style="color:var(--text-muted);font-size:0.85rem;grid-column:1/-1;text-align:center;padding:0.75rem 0;">Loading vehicles…</p>
         </div>
       </div>
+      <!-- 📍 LIVE LOCATION + QUICK AREA PICKS -->
+      <div style="margin-bottom:1.2rem;">
+        <button onclick="detectMyLocation('pickup')" style="width:100%;background:linear-gradient(135deg,#1D9E75,#16a085);color:#fff;border:none;border-radius:12px;padding:0.85rem 1rem;font-size:0.97rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Outfit',sans-serif;letter-spacing:0.03em;box-shadow:0 4px 18px rgba(29,158,117,0.35);transition:all 0.25s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(29,158,117,0.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 18px rgba(29,158,117,0.35)'">
+          <span style="font-size:1.3rem;">📍</span> Use My Current Location as Pickup
+        </button>
+        <div style="margin-top:0.8rem;">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;">⚡ Quick Pick — Vedaranyam Area</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem;" id="quick-places">
+            <button class="qp-btn" onclick="setQuickPlace('pickup','Vedaranyam',10.3797,79.8511)">🕌 Vedaranyam</button>
+            <button class="qp-btn" onclick="setQuickPlace('pickup','Nagapattinam',10.7651,79.8426)">🏙️ Nagapattinam</button>
+            <button class="qp-btn" onclick="setQuickPlace('pickup','Thiruvarur',10.7739,79.6371)">🏛️ Thiruvarur</button>
+            <button class="qp-btn" onclick="setQuickPlace('pickup','Sirkali',11.2227,79.7442)">🛕 Sirkali</button>
+            <button class="qp-btn" onclick="setQuickPlace('pickup','Mayiladuthurai',11.1020,79.6530)">🌊 Mayiladuthurai</button>
+            <button class="qp-btn" onclick="setQuickPlace('pickup','Pattukottai',10.4264,79.3195)">🛣️ Pattukottai</button>
+            <button class="qp-btn" onclick="setQuickPlace('pickup','Kollidam',11.2167,79.7667)">🌿 Kollidam</button>
+            <button class="qp-btn" onclick="setQuickPlace('pickup','Poompuhar',11.1010,79.8526)">⛵ Poompuhar</button>
+            <button class="qp-btn" onclick="setQuickPlace('pickup','Thiruthuraipoondi',10.5249,79.6423)">🏘️ Thiruthuraipoondi</button>
+            <button class="qp-btn" onclick="setQuickPlace('pickup','Kodiyakarai',10.2854,79.8909)">🌴 Kodiyakarai</button>
+          </div>
+          <div style="font-size:0.68rem;color:#aaa;margin-top:0.4rem;">👆 Tap any area to set as pickup · Type in box below for any street or village</div>
+        </div>
+      </div>
+      <style>
+        .qp-btn{background:var(--gold-pale);border:1.5px solid rgba(201,147,58,0.35);color:var(--navy);border-radius:50px;padding:0.32rem 0.75rem;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 0.2s;white-space:nowrap;}
+        .qp-btn:hover{background:var(--gold);color:var(--navy);border-color:var(--gold);transform:scale(1.05);}
+        .qp-btn.active{background:var(--gold);color:var(--navy);border-color:var(--gold);}
+      </style>
       <div class="form-row">
-        <div class="form-group"><label>Pickup Location</label><input type="text" id="pickup" placeholder="City / Area" required></div>
-        <div class="form-group"><label>Drop Location</label><input type="text" id="drop" placeholder="City / Area" required></div>
+        <div class="form-group">
+          <label>Pickup Location</label>
+          <div style="position:relative;">
+            <input type="text" id="pickup" placeholder="Search street, village, landmark…" required autocomplete="off" oninput="onLocInput()" style="padding-right:4rem;">
+            <span onclick="detectMyLocation('pickup')" title="Use GPS" style="position:absolute;right:2.2rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:1.05rem;opacity:0.6;">📍</span>
+            <span onclick="openMapPicker('pickup')" title="Pick on map" style="position:absolute;right:0.55rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:1.05rem;opacity:0.65;">🗺️</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Drop Location</label>
+          <div style="position:relative;">
+            <input type="text" id="drop" placeholder="Search street, village, landmark…" required autocomplete="off" oninput="onLocInput()" style="padding-right:2.2rem;">
+            <span onclick="openMapPicker('drop')" title="Pick on map" style="position:absolute;right:0.55rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:1.05rem;opacity:0.65;">🗺️</span>
+          </div>
+        </div>
+      </div>
+      <div class="distance-badge" id="distance-badge">
+        <span style="font-size:1.2rem;">🗺️</span>
+        <div style="flex:1;">
+          <div style="font-size:0.78rem;opacity:0.7;margin-bottom:2px;">Estimated route</div>
+          <div style="font-weight:600;font-size:0.95rem;" id="dist-label">Calculating…</div>
+        </div>
+        <span class="dist-chip" id="dist-km-chip"></span>
+        <span class="fare-chip" id="dist-fare-chip"></span>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Pickup Date</label><input type="date" id="pickup-date" required></div>
@@ -612,6 +1027,7 @@
         Confirm Booking
       </button>
       <p style="text-align:center;font-size:0.78rem;color:var(--text-muted);margin-top:0.75rem;">📱 WhatsApp confirmation will be sent after booking</p>
+      <p style="text-align:center;font-size:0.72rem;color:var(--teal);margin-top:0.4rem;">✅ Free location search powered by OpenStreetMap · Real road distance by OSRM</p>
     </div>
   </div>
 </section>
@@ -758,6 +1174,192 @@
 </div>
 
 <script>
+// ── DISTANCE & FARE ENGINE (FREE — OSRM real road distance + Nominatim) ─────────
+// No Google API needed. OSRM gives actual road distance in km.
+
+// Haversine kept only as instant fallback while OSRM loads
+function haversineKm(lat1,lng1,lat2,lng2){
+  var R=6371,d2r=Math.PI/180;
+  var dLat=(lat2-lat1)*d2r, dLng=(lng2-lng1)*d2r;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+
+        Math.cos(lat1*d2r)*Math.cos(lat2*d2r)*
+        Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// Base fare per vehicle type (₹/km) — admin can override via st_fare_rules
+var BASE_PER_KM  = { Sedan:12, SUV:16, Tempo:22, Auto:8 };
+var MIN_FARE     = { Sedan:250, SUV:350, Tempo:500, Auto:100 };
+var DRIVER_BATA  = { Sedan:250, SUV:350, Tempo:400, Auto:0 };
+var TOLL_ESTIMATE = 0;
+
+function estimateFare(roadKm, vType, tripType){
+  var perKm  = BASE_PER_KM[vType]  || 12;
+  var minFare= MIN_FARE[vType]     || 250;
+  var bata   = DRIVER_BATA[vType]  || 250;
+  if(tripType==='roundtrip') roadKm *= 2;
+  // Check admin fare rules first
+  var fareRules = JSON.parse(localStorage.getItem('st_fare_rules')||'[]');
+  var cfg = JSON.parse(localStorage.getItem('st_admin_config')||'{}');
+  fareRules.forEach(function(r){
+    if((r.vehicleType===vType||r.vehicleType==='All'||!r.vehicleType) && r.ruleType==='per_km'){
+      perKm = parseFloat(r.amount||0) || perKm;
+    }
+  });
+  var toll = parseFloat(cfg.tollEstimate||0) || TOLL_ESTIMATE;
+  var base = Math.max(roadKm * perKm, minFare);
+  var total = base + bata + toll;
+  return {
+    roadKm: Math.round(roadKm),
+    base: Math.round(base),
+    bata: bata,
+    toll: toll,
+    total: Math.round(total),
+    perKm: perKm
+  };
+}
+
+// OSRM free routing API — returns actual road distance
+function getOSRMDistance(pLat, pLng, dLat, dLng, callback) {
+  var url = 'https://router.project-osrm.org/route/v1/driving/'
+    + pLng + ',' + pLat + ';' + dLng + ',' + dLat
+    + '?overview=false&alternatives=false';
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data.code==='Ok' && data.routes && data.routes[0]){
+        var roadMeters = data.routes[0].distance;
+        callback(roadMeters / 1000); // return km
+      } else {
+        callback(null);
+      }
+    })
+    .catch(function(){ callback(null); });
+}
+
+var _distBadgeTimer = null;
+function updateDistanceBadge(){
+  var pEl = document.getElementById('pickup');
+  var dEl = document.getElementById('drop');
+  if(!pEl||!dEl) return;
+  var pLat=parseFloat(pEl.dataset.lat), pLng=parseFloat(pEl.dataset.lng);
+  var dLat=parseFloat(dEl.dataset.lat), dLng=parseFloat(dEl.dataset.lng);
+  if(!pLat||!pLng||!dLat||!dLng) return;
+  var vType = selectedCar || 'Sedan';
+  var tripType = currentTab || 'oneway';
+  var badge = document.getElementById('distance-badge');
+  var distLabel = document.getElementById('dist-label');
+  var distKmChip = document.getElementById('dist-km-chip');
+  var distFareChip = document.getElementById('dist-fare-chip');
+  if(!badge) return;
+
+  // Show immediately with haversine estimate while OSRM loads
+  var hvKm = haversineKm(pLat,pLng,dLat,dLng);
+  if(hvKm < 0.3){ showToast('Pickup and drop seem to be the same place','error'); return; }
+  var fv = estimateFare(hvKm * 1.3, vType, tripType); // quick estimate × road factor
+  badge.classList.add('show');
+  distLabel.textContent = (pEl.dataset.addr||pEl.value) + ' → ' + (dEl.dataset.addr||dEl.value);
+  distKmChip.textContent = '~' + fv.roadKm + ' km ⏳';
+  distFareChip.textContent = '₹' + fv.total + ' est.';
+  window._lastFareEstimate = fv;
+
+  // Debounce OSRM call
+  clearTimeout(_distBadgeTimer);
+  _distBadgeTimer = setTimeout(function(){
+    getOSRMDistance(pLat, pLng, dLat, dLng, function(roadKm){
+      if(roadKm){
+        var f = estimateFare(roadKm, vType, tripType);
+        distKmChip.textContent = '~' + f.roadKm + ' km ✓';
+        distFareChip.textContent = '₹' + f.total + ' est.';
+        distLabel.textContent = (pEl.dataset.addr||pEl.value) + ' → ' + (dEl.dataset.addr||dEl.value);
+        window._lastFareEstimate = f;
+      } else {
+        // OSRM failed, keep haversine estimate, remove loading indicator
+        distKmChip.textContent = '~' + fv.roadKm + ' km';
+      }
+    });
+  }, 600);
+}
+
+function onLocInput(){
+  // Clear coords if user types manually (re-requires autocomplete selection)
+  var pEl=document.getElementById('pickup'), dEl=document.getElementById('drop');
+  // Only hide badge, don't clear coords mid-type (autocomplete updates them)
+  if(!pEl.dataset.lat || !dEl.dataset.lat){
+    var badge=document.getElementById('distance-badge');
+    if(badge) badge.classList.remove('show');
+  }
+}
+
+// ── QUICK PLACE PICKER ────────────────────────────────────────────────────────
+function setQuickPlace(fieldId, name, lat, lng) {
+  var inp = document.getElementById(fieldId);
+  inp.value = name;
+  inp.dataset.lat = lat;
+  inp.dataset.lng = lng;
+  inp.dataset.addr = name + ', Nagapattinam, Tamil Nadu';
+  document.querySelectorAll('.qp-btn').forEach(function(b){ b.classList.remove('active'); });
+  showToast('📍 Pickup set: ' + name, 'success');
+  updateDistanceBadge();
+}
+
+// 📍 GPS: fill pickup with user's current location using FREE Nominatim reverse geocode
+function detectMyLocation(fieldId){
+  if(!navigator.geolocation){ showToast('GPS not supported on this browser','error'); return; }
+  showToast('📍 Getting your location…','success');
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var lat=pos.coords.latitude, lng=pos.coords.longitude;
+    var inp=document.getElementById(fieldId);
+    inp.dataset.lat=lat; inp.dataset.lng=lng;
+    // Free reverse geocode via Nominatim (OpenStreetMap)
+    // Use Geoapify reverse geocode if key set, else Nominatim
+    var revUrl;
+    if (typeof GEOAPIFY_KEY !== 'undefined' && GEOAPIFY_KEY && GEOAPIFY_KEY !== 'YOUR_GEOAPIFY_KEY') {
+      revUrl = 'https://api.geoapify.com/v1/geocode/reverse?lat='+lat+'&lon='+lng+'&lang=en&apiKey='+GEOAPIFY_KEY;
+    } else {
+      revUrl = 'https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng+'&addressdetails=1&accept-language=en';
+    }
+    fetch(revUrl, { headers:{ 'User-Agent':'SowmiyaTravels/1.0' } })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var addr = '';
+        // Geoapify response
+        if (data.features && data.features[0]) {
+          var p = data.features[0].properties;
+          var parts = geoapifyLabel(p);
+          addr = parts.slice(0,2).join(', ');
+        }
+        // Nominatim response
+        else if (data && data.address) {
+          var a = data.address;
+          var name = a.amenity||a.suburb||a.neighbourhood||a.village||a.hamlet||a.town||a.city||a.county||'';
+          var city = a.city||a.town||a.county||a.state_district||'';
+          addr = name ? (name + (city && city!==name ? ', '+city : '')) : (data.display_name||'').split(',').slice(0,2).join(',');
+        }
+        if (addr) {
+          inp.value = addr; inp.dataset.addr = addr;
+          showToast('📍 ' + addr, 'success');
+        } else {
+          inp.value = 'Near '+lat.toFixed(4)+','+lng.toFixed(4);
+          inp.dataset.addr = inp.value;
+          showToast('📍 Location set','success');
+        }
+        updateDistanceBadge();
+      })
+      .catch(function(){
+        inp.value='Near '+lat.toFixed(4)+','+lng.toFixed(4);
+        inp.dataset.addr=inp.value;
+        updateDistanceBadge();
+        showToast('📍 Location set (offline mode)','success');
+      });
+  }, function(err){
+    var msgs={1:'Permission denied – please allow location access',2:'Location unavailable',3:'Location request timed out'};
+    showToast('📍 GPS: '+(msgs[err.code]||err.message),'error');
+  }, { enableHighAccuracy:true, timeout:10000, maximumAge:60000 });
+}
+</script>
+
+<script>
 // CONFIG
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const _savedCfg = (() => { try { return JSON.parse(localStorage.getItem('st_admin_config') || '{}'); } catch(e) { return {}; } })();
@@ -837,6 +1439,8 @@ function switchTab(tab, el) {
   document.querySelectorAll('.booking-tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
   document.getElementById('return-row').style.display = tab === 'roundtrip' ? 'block' : 'none';
+  window._lastFareEstimate = null;
+  updateDistanceBadge();
 }
 
 // ── CAR SELECT ──
@@ -844,12 +1448,16 @@ function selectCar(el, type) {
   document.querySelectorAll('.car-type').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   selectedCar = type;
+  window._lastFareEstimate = null;
+  updateDistanceBadge();
 }
 function selectCarByIndex(el, idx) {
   document.querySelectorAll('.car-type').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   const v = window._loadedVehicles && window._loadedVehicles[idx];
   if(v) selectedCar = v.type || v.model;
+  window._lastFareEstimate = null;
+  updateDistanceBadge();
 }
 
 // ── SUBMIT BOOKING ──
@@ -877,19 +1485,31 @@ function closeTermsModal(){ document.getElementById('terms-modal').style.display
 
 function agreeAndBook(){
   closeTermsModal();
-  // Calculate fare and show payment
+  // ── FARE CALCULATION ─────────────────────────────────────────────────────────
   const vType = selectedCar;
-  const fareRules = JSON.parse(localStorage.getItem('st_fare_rules')||'[]');
-  const rules = fareRules.filter(r=>r.vehicleType===vType||r.vehicleType==='All'||r.vehicleType==='');
+  const f = window._lastFareEstimate; // set by updateDistanceBadge()
   let fareLines=''; let estTotal=0;
-  if(rules.length){
-    rules.forEach(r=>{
-      const amt=parseFloat(r.amount||0);
-      fareLines+=`<div style="display:flex;justify-content:space-between;"><span>${r.description||r.ruleType}</span><span>₹${amt}</span></div>`;
-      if(r.ruleType==='per_trip'||r.ruleType==='airport_pickup') estTotal+=amt;
-    });
+  if(f && f.roadKm > 0){
+    // Distance-based fare breakdown
+    fareLines += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>🛣️ Distance (~'+f.roadKm+' km × ₹'+f.perKm+'/km)</span><span>₹'+f.base+'</span></div>';
+    if(f.bata)  fareLines += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>👤 Driver allowance</span><span>₹'+f.bata+'</span></div>';
+    if(f.toll)  fareLines += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>🛂 Toll estimate</span><span>₹'+f.toll+'</span></div>';
+    estTotal = f.total;
+    if(currentTab==='roundtrip') fareLines += '<div style="font-size:0.78rem;color:#888;margin-top:4px;">↩️ Return trip included</div>';
+    fareLines += '<div style="font-size:0.75rem;color:#888;margin-top:6px;">* Final fare confirmed by driver at pickup</div>';
   } else {
-    fareLines='<div style="color:#666;">Fare to be quoted by admin</div>';
+    // Fallback: admin flat rules
+    const fareRules = JSON.parse(localStorage.getItem('st_fare_rules')||'[]');
+    const rules = fareRules.filter(r=>r.vehicleType===vType||r.vehicleType==='All'||r.vehicleType==='');
+    if(rules.length){
+      rules.forEach(r=>{
+        const amt=parseFloat(r.amount||0);
+        fareLines+=`<div style="display:flex;justify-content:space-between;"><span>${r.description||r.ruleType}</span><span>₹${amt}</span></div>`;
+        if(r.ruleType==='per_trip'||r.ruleType==='airport_pickup') estTotal+=amt;
+      });
+    } else {
+      fareLines='<div style="color:#888;font-size:0.85rem;">📍 Enter pickup & drop locations to see fare estimate.<br>Admin will confirm final price.</div>';
+    }
   }
   const bookingId='ST-'+Date.now().toString().slice(-6);
   _pendingBookingData.bookingId=bookingId;
@@ -1217,6 +1837,273 @@ function showToast(msg, type='success') {
 }
 
 document.getElementById('pickup-date').min = new Date().toISOString().split('T')[0];
+// Location powered by OpenStreetMap (free, no API key needed)
+</script>
+
+<!-- ── MAP PICKER MODAL ─────────────────────────────────────────────────── -->
+<div id="map-picker-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(13,26,54,0.85);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:20px;width:min(96vw,640px);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.4);">
+    <!-- Header -->
+    <div style="background:var(--navy);padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <div>
+        <div style="color:var(--gold-light);font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;">Pin Location on Map</div>
+        <div id="map-picker-title" style="color:#fff;font-size:1rem;font-weight:600;margin-top:2px;">Select Pickup</div>
+      </div>
+      <button onclick="closeMapPicker()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+    <!-- Search inside map -->
+    <div style="padding:0.75rem 1rem;border-bottom:1px solid #F0EDE8;flex-shrink:0;position:relative;">
+      <input id="map-search-input" type="text" placeholder="Search village, town, landmark…"
+        style="width:100%;border:1.5px solid #E2DDD6;border-radius:10px;padding:0.65rem 2.5rem 0.65rem 1rem;font-size:0.9rem;font-family:Outfit,sans-serif;outline:none;transition:border 0.2s;"
+        oninput="onMapSearchInput()" onfocus="this.style.borderColor='#C9933A'" onblur="this.style.borderColor='#E2DDD6'">
+      <span id="map-search-clear" onclick="clearMapSearch()" style="position:absolute;right:1.75rem;top:50%;transform:translateY(-50%);cursor:pointer;color:#bbb;font-size:1rem;display:none;">✕</span>
+      <div id="map-search-dropdown" style="position:absolute;left:1rem;right:1rem;top:calc(100% - 0.1rem);z-index:500;background:#fff;border:1.5px solid #E2DDD6;border-radius:10px;box-shadow:0 8px 24px rgba(26,39,68,0.15);display:none;max-height:200px;overflow-y:auto;font-family:Outfit,sans-serif;"></div>
+    </div>
+    <!-- Map container -->
+    <div style="position:relative;flex:1;min-height:300px;">
+      <div id="leaflet-map" style="width:100%;height:100%;min-height:300px;"></div>
+      <!-- Centre crosshair -->
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);pointer-events:none;z-index:1000;font-size:2rem;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));">📍</div>
+      <!-- Zoom tip -->
+      <div style="position:absolute;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(26,39,68,0.82);color:#fff;font-size:0.72rem;padding:0.35rem 0.8rem;border-radius:20px;pointer-events:none;white-space:nowrap;z-index:900;">Drag map to move pin · Zoom in for street level</div>
+    </div>
+    <!-- Current address display -->
+    <div style="padding:0.75rem 1rem;border-top:1px solid #F0EDE8;background:#FAFAF8;flex-shrink:0;">
+      <div style="font-size:0.72rem;color:#999;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">Pinned Location</div>
+      <div id="map-picked-addr" style="font-size:0.88rem;color:#1A2744;font-weight:500;min-height:1.2em;">Move the map to set location…</div>
+    </div>
+    <!-- Confirm button -->
+    <div style="padding:0.75rem 1rem;flex-shrink:0;border-top:1px solid #F0EDE8;">
+      <button id="map-confirm-btn" onclick="confirmMapLocation()" style="width:100%;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:0.9rem;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;transition:all 0.25s;" onmouseover="this.style.background='#C9933A'" onmouseout="this.style.background='var(--navy)'">
+        ✅ Confirm This Location
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── MAP PICKER (Leaflet + OpenStreetMap) ──────────────────────────────────────
+var _mapPicker = {
+  field: null,       // 'pickup' or 'drop'
+  map: null,
+  lat: 10.3797,
+  lng: 79.8511,
+  searchTimer: null,
+  geocoding: false
+};
+
+function openMapPicker(fieldId) {
+  _mapPicker.field = fieldId;
+  document.getElementById('map-picker-title').textContent = fieldId === 'pickup' ? 'Set Pickup Location' : 'Set Drop Location';
+  var modal = document.getElementById('map-picker-modal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  // Pre-center on existing coords if set
+  var inp = document.getElementById(fieldId);
+  var startLat = parseFloat(inp.dataset.lat) || 10.3797;
+  var startLng = parseFloat(inp.dataset.lng) || 79.8511;
+
+  // Clear search box
+  document.getElementById('map-search-input').value = '';
+  document.getElementById('map-search-dropdown').style.display = 'none';
+  document.getElementById('map-search-clear').style.display = 'none';
+
+  setTimeout(function() {
+    if (!_mapPicker.map) {
+      _mapPicker.map = L.map('leaflet-map', { zoomControl: true, attributionControl: true });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(_mapPicker.map);
+      // On map move — reverse geocode centre
+      _mapPicker.map.on('moveend', onMapMoved);
+    }
+    _mapPicker.map.setView([startLat, startLng], 15);
+    _mapPicker.map.invalidateSize();
+    updateMapAddress(startLat, startLng);
+  }, 120);
+}
+
+function closeMapPicker() {
+  document.getElementById('map-picker-modal').style.display = 'none';
+  document.body.style.overflow = '';
+  document.getElementById('map-search-dropdown').style.display = 'none';
+}
+
+function onMapMoved() {
+  var c = _mapPicker.map.getCenter();
+  _mapPicker.lat = c.lat;
+  _mapPicker.lng = c.lng;
+  document.getElementById('map-picked-addr').textContent = '⏳ Getting address…';
+  clearTimeout(_mapPicker.revTimer);
+  _mapPicker.revTimer = setTimeout(function() {
+    updateMapAddress(c.lat, c.lng);
+  }, 600);
+}
+
+function updateMapAddress(lat, lng) {
+  _mapPicker.lat = lat;
+  _mapPicker.lng = lng;
+  // Reverse geocode using Geoapify if key set, else Nominatim
+  var url;
+  if (typeof GEOAPIFY_KEY !== 'undefined' && GEOAPIFY_KEY && GEOAPIFY_KEY !== 'YOUR_GEOAPIFY_KEY') {
+    url = 'https://api.geoapify.com/v1/geocode/reverse?lat=' + lat + '&lon=' + lng + '&lang=en&apiKey=' + GEOAPIFY_KEY;
+  } else {
+    url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&addressdetails=1&accept-language=en&zoom=17';
+  }
+  fetch(url, { headers: { 'User-Agent': 'SowmiyaTravels/1.0' } })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var addr = '';
+      if (data.features && data.features[0]) {
+        var p = data.features[0].properties;
+        var parts = geoapifyLabel(p);
+        addr = parts.slice(0, 3).join(', ');
+      } else if (data && (data.address || data.display_name)) {
+        var a = data.address || {};
+        var name = a.amenity || a.hamlet || a.village || a.suburb || a.neighbourhood || a.town || a.city || '';
+        var city = a.city || a.town || a.county || a.state_district || '';
+        var state = a.state || '';
+        addr = [name, (city !== name ? city : ''), state].filter(Boolean).join(', ');
+        if (!addr) addr = (data.display_name||'').split(',').slice(0,3).join(',');
+      }
+      document.getElementById('map-picked-addr').textContent = addr || ('📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5));
+      _mapPicker.currentAddr = addr || (lat.toFixed(4) + ', ' + lng.toFixed(4));
+    })
+    .catch(function() {
+      var addr = lat.toFixed(5) + ', ' + lng.toFixed(5);
+      document.getElementById('map-picked-addr').textContent = '📍 ' + addr;
+      _mapPicker.currentAddr = addr;
+    });
+}
+
+function confirmMapLocation() {
+  if (!_mapPicker.field) return;
+  var inp = document.getElementById(_mapPicker.field);
+  var addr = _mapPicker.currentAddr || (_mapPicker.lat.toFixed(4) + ', ' + _mapPicker.lng.toFixed(4));
+  // Use short name for input display
+  var shortAddr = addr.split(',')[0].trim();
+  inp.value = shortAddr;
+  inp.dataset.lat = _mapPicker.lat;
+  inp.dataset.lng = _mapPicker.lng;
+  inp.dataset.addr = addr;
+  closeMapPicker();
+  showToast('📍 Location set: ' + shortAddr, 'success');
+  updateDistanceBadge();
+}
+
+// ── MAP SEARCH (inside modal) ─────────────────────────────────────────────────
+var _mapSearchCtrl = null;
+
+function onMapSearchInput() {
+  var q = document.getElementById('map-search-input').value.trim();
+  document.getElementById('map-search-clear').style.display = q ? 'block' : 'none';
+  clearTimeout(_mapPicker.searchTimer);
+  var dd = document.getElementById('map-search-dropdown');
+  if (q.length < 2) { dd.style.display = 'none'; return; }
+  dd.innerHTML = '<div style="padding:0.6rem 1rem;color:#bbb;font-size:0.82rem;">🔍 Searching…</div>';
+  dd.style.display = 'block';
+  if (_mapSearchCtrl) { try { _mapSearchCtrl.abort(); } catch(e){} }
+  _mapSearchCtrl = new AbortController();
+  var sig = _mapSearchCtrl.signal;
+
+  _mapPicker.searchTimer = setTimeout(function() {
+    var combined = [], done = 0;
+    var total = (typeof GEOAPIFY_KEY !== 'undefined' && GEOAPIFY_KEY && GEOAPIFY_KEY !== 'YOUR_GEOAPIFY_KEY') ? 3 : 2;
+
+    function finish() {
+      done++;
+      if (done < total) return;
+      var order = { geoapify: 0, photon: 1, nominatim: 2 };
+      combined.sort(function(a,b){ return (order[a.src]||9)-(order[b.src]||9); });
+      var seen = [], final = [];
+      combined.forEach(function(r) {
+        var dup = seen.some(function(s){ return Math.abs(s.lat-r.lat)<0.001 && Math.abs(s.lng-r.lng)<0.001; });
+        if (!dup && r.name) { seen.push(r); final.push(r); }
+      });
+      renderMapSearchDD(final.slice(0, 7));
+    }
+
+    // Geoapify
+    if (total === 3) {
+      fetch('https://api.geoapify.com/v1/geocode/autocomplete?text=' + encodeURIComponent(q)
+        + '&filter=countrycode:in&bias=proximity:' + _mapPicker.lng + ',' + _mapPicker.lat
+        + '&limit=6&lang=en&apiKey=' + GEOAPIFY_KEY, { signal: sig })
+        .then(function(r){return r.json();})
+        .then(function(data){
+          if (data.features) data.features.forEach(function(f){
+            var p = f.properties;
+            var parts = geoapifyLabel(p);
+            if (parts.length) combined.push({ lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], name: parts[0], sub: parts.slice(1,3).join(', '), src:'geoapify' });
+          });
+          finish();
+        }).catch(function(){finish();});
+    }
+
+    // Photon
+    fetch('https://photon.komoot.io/api/?q=' + encodeURIComponent(q) + '&limit=5&lang=en&lat=' + _mapPicker.lat + '&lon=' + _mapPicker.lng, { signal: sig })
+      .then(function(r){return r.json();})
+      .then(function(data){
+        if (data.features) data.features.forEach(function(f){
+          var p = f.properties;
+          if (p.country && p.country !== 'India') return;
+          var parts = photonLabel(f);
+          if (parts.length) combined.push({ lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], name: parts[0], sub: parts.slice(1,3).join(', '), src:'photon' });
+        });
+        finish();
+      }).catch(function(){finish();});
+
+    // Nominatim
+    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q + ' Tamil Nadu')
+      + '&countrycodes=in&limit=5&addressdetails=1&accept-language=en', { signal: sig, headers:{'User-Agent':'SowmiyaTravels/1.0'} })
+      .then(function(r){return r.json();})
+      .then(function(results){
+        results.forEach(function(place){
+          var parts = nominatimLabel(place);
+          if (parts.length) combined.push({ lat: parseFloat(place.lat), lng: parseFloat(place.lon), name: parts[0], sub: parts.slice(1,3).join(', '), src:'nominatim' });
+        });
+        finish();
+      }).catch(function(){finish();});
+  }, 380);
+}
+
+function clearMapSearch() {
+  document.getElementById('map-search-input').value = '';
+  document.getElementById('map-search-clear').style.display = 'none';
+  document.getElementById('map-search-dropdown').style.display = 'none';
+}
+
+function renderMapSearchDD(results) {
+  var dd = document.getElementById('map-search-dropdown');
+  if (!results.length) {
+    dd.innerHTML = '<div style="padding:0.75rem 1rem;color:#888;font-size:0.83rem;">No results. Try nearby landmark or zoom map manually.</div>';
+    dd.style.display = 'block';
+    return;
+  }
+  dd.innerHTML = '';
+  results.forEach(function(r) {
+    var item = document.createElement('div');
+    item.style.cssText = 'padding:0.55rem 1rem;cursor:pointer;border-bottom:1px solid #F5F2EE;';
+    item.innerHTML = '<div style="font-size:0.87rem;color:#1A2744;font-weight:500;">📍 ' + escH(r.name) + '</div>'
+      + (r.sub ? '<div style="font-size:0.73rem;color:#999;">' + escH(r.sub) + '</div>' : '');
+    item.addEventListener('mouseenter', function(){ this.style.background='#FFF3D9'; });
+    item.addEventListener('mouseleave', function(){ this.style.background=''; });
+    item.addEventListener('click', function() {
+      _mapPicker.map.setView([r.lat, r.lng], 16);
+      document.getElementById('map-search-input').value = r.name;
+      document.getElementById('map-search-dropdown').style.display = 'none';
+      updateMapAddress(r.lat, r.lng);
+    });
+    dd.appendChild(item);
+  });
+  dd.style.display = 'block';
+}
+
+// Close map modal on backdrop click
+document.getElementById('map-picker-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeMapPicker();
+});
 </script>
 </body>
 </html>
