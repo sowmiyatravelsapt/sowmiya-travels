@@ -1726,6 +1726,18 @@ function submitBooking() {
   const phone  = document.getElementById('cust-phone').value.trim();
   const notes  = document.getElementById('notes').value.trim();
   if (!pickup||!drop||!date||!time||!name||!phone) { showToast('⚠️ Please fill in all required fields','error'); return; }
+  const fareRuleSel = document.getElementById('fare-rule-select');
+  if (!fareRuleSel || !fareRuleSel.value) {
+    showToast('⚠️ Please select a Fare Type to continue','error');
+    const fareGroup = document.getElementById('fare-rule-group');
+    if (fareGroup) {
+      fareGroup.scrollIntoView({ behavior:'smooth', block:'center' });
+      fareGroup.style.border = '2px solid var(--danger)';
+      fareGroup.style.boxShadow = '0 0 0 3px rgba(192,57,43,0.15)';
+      setTimeout(() => { fareGroup.style.border = '1.5px solid var(--border)'; fareGroup.style.boxShadow = ''; }, 3000);
+    }
+    return;
+  }
   // Store pending data
   _pendingBookingData = {pickup,drop,date,time,name,phone,notes,
     fareRule: window._selectedFareRule||null,
