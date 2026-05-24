@@ -1680,7 +1680,9 @@ function selectCarByIndex(el, idx) {
   document.querySelectorAll('.car-type').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   const v = window._loadedVehicles && window._loadedVehicles[idx];
-  if(v) selectedCar = v.type || v.model;
+  // FIX: Always prefer model name (e.g. "Toyota Innova Crysta"), fallback to type
+  if(v) selectedCar = (v.model && v.model.trim()) ? v.model.trim() : (v.type || 'Vehicle');
+  window._selectedVehicleIdx = idx;
   window._lastFareEstimate = null;
   updateDistanceBadge();
 }
@@ -1793,16 +1795,26 @@ function choosePayment(method){
   // UPI-based methods: phonepe, gpay, paytm, upi
   document.getElementById('upi-section').style.display='block';
 
-  // Build UPI intent link (works for ALL UPI apps)
-  const upiLink='upi://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
+  // ── Universal UPI string (used in QR and intent) ──
+  const upiStr='upi://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
 
-  // App-specific deep links (these open the specific app if installed)
-  const phonePeLink='phonepe://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
-  const gpayLink='tez://upi/pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
-  const paytmLink='paytmmp://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
+  // ── Android Intent URL — works across ALL UPI apps, never blocked by WebView ──
+  // This is the correct format that Android resolves to the installed UPI app chooser
+  const intentUrl='intent://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote
+    +'#Intent;scheme=upi;package=com.phonepe.app;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.phonepe.app;end';
+
+  const intentGpay='intent://upi/pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote
+    +'#Intent;scheme=tez;package=com.google.android.apps.nbu.paisa.user;S.browser_fallback_url=https%3A%2F%2Fpay.google.com%2Fintl%2Fen_in%2Fabout%2F;end';
+
+  const intentPaytm='intent://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote
+    +'#Intent;scheme=paytmmp;package=net.one97.paytm;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dnet.one97.paytm;end';
+
+  // Generic UPI intent (opens system app chooser with all UPI apps)
+  const intentAny='intent://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote
+    +'#Intent;scheme=upi;S.browser_fallback_url=https%3A%2F%2Fpay.google.com%2Fintl%2Fen_in%2Fabout%2F;end';
 
   // QR code (works with any UPI scanner)
-  const qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(upiLink);
+  const qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(upiStr);
   document.getElementById('upi-qr-img').src=qrUrl;
   document.getElementById('upi-id-display').textContent='UPI ID: '+upiId+(amt?' | Amount: ₹'+amt:'');
 
@@ -1815,24 +1827,23 @@ function choosePayment(method){
 
   if(method==='phonepe'){
     document.getElementById('upi-section-title').textContent='Pay via PhonePe';
-    mainLink.href=phonePeLink; mainLink.textContent='📲 Open PhonePe →'; mainLink.style.background='#5f259f';
-    // Also show generic UPI fallback
+    mainLink.href=intentUrl; mainLink.textContent='📲 Open PhonePe →'; mainLink.style.background='#5f259f';
     var ppLink=document.getElementById('phonepe-deep-link');
-    ppLink.href=upiLink; ppLink.style.display='block'; ppLink.textContent='📱 Or open any UPI app →';
+    ppLink.href=intentAny; ppLink.style.display='block'; ppLink.textContent='📱 Or open any UPI app →';
   } else if(method==='gpay'){
     document.getElementById('upi-section-title').textContent='Pay via Google Pay';
-    mainLink.href=gpayLink; mainLink.textContent='🔵 Open Google Pay →'; mainLink.style.background='#1a73e8';
+    mainLink.href=intentGpay; mainLink.textContent='🔵 Open Google Pay →'; mainLink.style.background='#1a73e8';
     var gpLink=document.getElementById('gpay-deep-link');
-    gpLink.href=upiLink; gpLink.style.display='block'; gpLink.textContent='📱 Or open any UPI app →';
+    gpLink.href=intentAny; gpLink.style.display='block'; gpLink.textContent='📱 Or open any UPI app →';
   } else if(method==='paytm'){
     document.getElementById('upi-section-title').textContent='Pay via Paytm';
-    mainLink.href=paytmLink; mainLink.textContent='💙 Open Paytm →'; mainLink.style.background='#00b9f5';
+    mainLink.href=intentPaytm; mainLink.textContent='💙 Open Paytm →'; mainLink.style.background='#00b9f5';
     var ptLink=document.getElementById('paytm-deep-link');
-    ptLink.href=upiLink; ptLink.style.display='block'; ptLink.textContent='📱 Or open any UPI app →';
+    ptLink.href=intentAny; ptLink.style.display='block'; ptLink.textContent='📱 Or open any UPI app →';
   } else {
-    // Generic UPI / QR
+    // Generic UPI / QR — opens system UPI app chooser
     document.getElementById('upi-section-title').textContent='Pay via UPI / QR Code';
-    mainLink.href=upiLink; mainLink.textContent='📱 Open UPI App →'; mainLink.style.background='#C9933A';
+    mainLink.href=intentAny; mainLink.textContent='📱 Open UPI App →'; mainLink.style.background='#C9933A';
   }
 }
 
@@ -2034,15 +2045,20 @@ async function loadVehicles(){
       var seats=v.seats||'-';
       return '<div class="'+cls+'" data-vidx="'+i+'" onclick="selectCarByIndex(this,'+i+')"><span class="icon">'+icon+'</span><div class="name">'+nm+'</div><div class="seats">'+seats+' Seats</div></div>';
     }).join('');
-    // set selectedCar to first vehicle
-    selectedCar = vehicles[0].type || vehicles[0].model;
+    // FIX: always use model name (full vehicle name) so booking messages show correct vehicle
+    const fv = vehicles[0];
+    selectedCar = (fv.model && fv.model.trim()) ? fv.model.trim() : (fv.type || 'Vehicle');
+    window._selectedVehicleIdx = 0;
     window._loadedVehicles = vehicles;
   }
 }
 function selectVehicleCard(el,type){
   document.querySelectorAll('.vehicle-card').forEach(c=>c.style.borderColor='#E2DDD6');
   el.style.borderColor='#C9933A';
-  selectedCar=type;
+  // FIX: find the vehicle by type match and use its model name
+  const vList = window._loadedVehicles || [];
+  const matched = vList.find(v => (v.type===type || v.model===type));
+  selectedCar = matched ? ((matched.model && matched.model.trim()) ? matched.model.trim() : matched.type) : type;
   // also select in car-type chips
   document.querySelectorAll('.car-type').forEach(ct=>ct.classList.remove('selected'));
 }
