@@ -1041,15 +1041,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- BOOKING -->
 <section class="booking-section" id="booking">
   <span class="section-label">✦ Reserve Your Seat</span>
-  <h2 class="section-title">Book a Taxi</h2>
+  <h2 class="section-title">Book Your Ride</h2>
 
   <div class="booking-card" id="booking-card">
-    <div class="booking-tabs">
-      <div class="booking-tab active" onclick="switchTab('oneway',this)">One Way</div>
-      <div class="booking-tab" onclick="switchTab('roundtrip',this)">Round Trip</div>
-      <div class="booking-tab" onclick="switchTab('rental',this)">Rental</div>
-      <div class="booking-tab" onclick="switchTab('airport',this)">Airport</div>
-    </div>
     <div class="booking-body">
       <div style="margin-bottom:1.2rem;">
         <label style="font-size:0.72rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.07em;display:block;margin-bottom:0.6rem;">Select Vehicle</label>
@@ -1128,8 +1122,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <!-- FARE RULE SELECTOR -->
       <div class="form-group" id="fare-rule-group" style="margin-bottom:1rem;background:#F8F6F1;border-radius:12px;padding:1rem;border:1.5px solid var(--border);">
-        <label style="font-size:0.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.05em;">💰 Select Fare Type</label>
-        <select id="fare-rule-select" onchange="onFareRuleChange()" style="border:1.5px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;font-size:0.92rem;font-family:'Outfit',sans-serif;outline:none;width:100%;margin-top:0.5rem;background:white;color:var(--text);">
+        <label style="font-size:0.78rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.05em;">💰 Select Fare Type <span style="color:var(--danger);font-size:0.85rem;">*</span></label>
+        <select id="fare-rule-select" onchange="onFareRuleChange()" required style="border:1.5px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;font-size:0.92rem;font-family:'Outfit',sans-serif;outline:none;width:100%;margin-top:0.5rem;background:white;color:var(--text);">
           <option value="">Loading fare options…</option>
         </select>
         <div id="fare-rule-detail" style="margin-top:0.75rem;padding:0.75rem;background:white;border-radius:8px;border:1px solid var(--border);font-size:0.85rem;color:var(--text-muted);display:none;"></div>
