@@ -1257,25 +1257,78 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="payment-app-chooser">
       <p style="font-size:0.78rem;color:#888;margin-bottom:0.75rem;text-align:center;text-transform:uppercase;letter-spacing:0.08em;">Select Payment App</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
-        <button onclick="choosePayment('phonepe')" style="background:#5f259f;color:white;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-          <span style="font-size:1.8rem;">📲</span>PhonePe
+        <!-- PhonePe -->
+        <button onclick="choosePayment('phonepe')" style="background:#5f259f;color:white;border:none;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;box-shadow:0 3px 10px rgba(95,37,159,0.35);" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="#fff" fill-opacity="0.15"/>
+            <path d="M20 6C12.268 6 6 12.268 6 20C6 27.732 12.268 34 20 34C27.732 34 34 27.732 34 20C34 12.268 27.732 6 20 6Z" fill="white"/>
+            <path d="M22.5 13H17.5C16.12 13 15 14.12 15 15.5V24.5C15 25.88 16.12 27 17.5 27H22.5C23.88 27 25 25.88 25 24.5V15.5C25 14.12 23.88 13 22.5 13Z" fill="#5f259f"/>
+            <path d="M20 16C18.34 16 17 17.34 17 19C17 20.66 18.34 22 20 22C21.66 22 23 20.66 23 19C23 17.34 21.66 16 20 16Z" fill="white"/>
+            <circle cx="20" cy="19" r="2" fill="#5f259f"/>
+          </svg>
+          PhonePe
         </button>
-        <button onclick="choosePayment('gpay')" style="background:#1a73e8;color:white;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-          <span style="font-size:1.8rem;">🔵</span>Google Pay
+        <!-- Google Pay -->
+        <button onclick="choosePayment('gpay')" style="background:#fff;color:#1a73e8;border:1.5px solid #e0e0e0;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;box-shadow:0 3px 10px rgba(0,0,0,0.08);" onmouseover="this.style.boxShadow='0 4px 16px rgba(26,115,232,0.25)'" onmouseout="this.style.boxShadow='0 3px 10px rgba(0,0,0,0.08)'">
+          <svg width="36" height="36" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="#F8F9FA"/>
+            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="9" font-weight="800" font-family="Arial,sans-serif">
+              <tspan fill="#4285F4">G</tspan><tspan fill="#EA4335">o</tspan><tspan fill="#FBBC05">o</tspan><tspan fill="#4285F4">g</tspan><tspan fill="#34A853">l</tspan><tspan fill="#EA4335">e</tspan>
+            </text>
+            <text x="50%" y="76%" dominant-baseline="middle" text-anchor="middle" font-size="8.5" font-weight="700" font-family="Arial,sans-serif" fill="#1a73e8">Pay</text>
+          </svg>
+          Google Pay
         </button>
-        <button onclick="choosePayment('paytm')" style="background:#00b9f5;color:white;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-          <span style="font-size:1.8rem;">💙</span>Paytm
+        <!-- Paytm -->
+        <button onclick="choosePayment('paytm')" style="background:#00b9f5;color:white;border:none;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;box-shadow:0 3px 10px rgba(0,185,245,0.35);" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="36" height="36" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="#fff" fill-opacity="0.2"/>
+            <rect x="7" y="12" width="26" height="16" rx="4" fill="white"/>
+            <text x="50%" y="62%" dominant-baseline="middle" text-anchor="middle" font-size="8.5" font-weight="900" font-family="Arial,sans-serif" fill="#00b9f5">Paytm</text>
+          </svg>
+          Paytm
         </button>
-        <button onclick="choosePayment('upi')" style="background:#F8A500;color:#1A2744;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-          <span style="font-size:1.8rem;">📱</span>UPI / QR Code
+        <!-- UPI QR -->
+        <button onclick="choosePayment('upi')" style="background:linear-gradient(135deg,#F8A500,#e09000);color:white;border:none;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;box-shadow:0 3px 10px rgba(248,165,0,0.35);" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="36" height="36" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="#fff" fill-opacity="0.2"/>
+            <rect x="8" y="8" width="10" height="10" rx="2" fill="white"/>
+            <rect x="9" y="9" width="8" height="8" rx="1" fill="#F8A500"/>
+            <rect x="11" y="11" width="4" height="4" fill="white"/>
+            <rect x="22" y="8" width="10" height="10" rx="2" fill="white"/>
+            <rect x="23" y="9" width="8" height="8" rx="1" fill="#F8A500"/>
+            <rect x="25" y="11" width="4" height="4" fill="white"/>
+            <rect x="8" y="22" width="10" height="10" rx="2" fill="white"/>
+            <rect x="9" y="23" width="8" height="8" rx="1" fill="#F8A500"/>
+            <rect x="11" y="25" width="4" height="4" fill="white"/>
+            <rect x="22" y="22" width="4" height="4" rx="1" fill="white"/>
+            <rect x="28" y="22" width="4" height="4" rx="1" fill="white"/>
+            <rect x="22" y="28" width="4" height="4" rx="1" fill="white"/>
+            <rect x="28" y="28" width="4" height="4" rx="1" fill="white"/>
+            <rect x="25" y="25" width="4" height="4" rx="1" fill="white"/>
+          </svg>
+          UPI / QR Code
         </button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-        <button onclick="choosePayment('razorpay')" style="background:#2D6FE3;color:white;border:none;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-          <span style="font-size:1.8rem;">💳</span>Razorpay
+        <!-- Razorpay -->
+        <button onclick="choosePayment('razorpay')" style="background:#2D6FE3;color:white;border:none;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;box-shadow:0 3px 10px rgba(45,111,227,0.35);" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+          <svg width="36" height="36" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="#fff" fill-opacity="0.15"/>
+            <path d="M13 28L20 12L27 28H22L20 23L18 28H13Z" fill="white"/>
+            <path d="M20 12L24 20H16L20 12Z" fill="rgba(255,255,255,0.6)"/>
+          </svg>
+          Razorpay
         </button>
-        <button onclick="choosePayment('cash')" style="background:#F0EDE8;color:#1A2744;border:1.5px solid #E2DDD6;border-radius:12px;padding:1rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
-          <span style="font-size:1.8rem;">💵</span>Cash at Trip End
+        <!-- Cash -->
+        <button onclick="choosePayment('cash')" style="background:#F0EDE8;color:#1A2744;border:1.5px solid #E2DDD6;border-radius:12px;padding:0.9rem 0.75rem;font-size:0.88rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:all 0.2s;" onmouseover="this.style.background='#e8e4dc'" onmouseout="this.style.background='#F0EDE8'">
+          <svg width="36" height="36" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="#1A2744" fill-opacity="0.08"/>
+            <rect x="7" y="13" width="26" height="14" rx="3" fill="#1A2744" fill-opacity="0.15" stroke="#1A2744" stroke-width="1.5"/>
+            <circle cx="20" cy="20" r="4" fill="none" stroke="#1A2744" stroke-width="1.5"/>
+            <path d="M20 17v6M17 20h6" stroke="#1A2744" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Cash at Trip End
         </button>
       </div>
     </div>
@@ -1993,9 +2046,12 @@ async function confirmPayment(method){
   });
 
   if(btn){btn.disabled=true;btn.style.opacity='0.6';btn.innerHTML='⏳ Confirming…';}
-  // Show spinner in modal too
+  // Show spinner in modal — dedicated loading div so we don't destroy the success section content
   var confirmSec = document.getElementById('payment-confirmed-section');
-  if(confirmSec){ confirmSec.style.display='block'; confirmSec.innerHTML='<div style="text-align:center;padding:2rem"><div style="font-size:2rem;animation:spin 1s linear infinite;display:inline-block">⏳</div><p style="margin-top:1rem;color:#666;">Processing…</p></div>'; }
+  if(confirmSec){
+    confirmSec.style.display='block';
+    confirmSec.innerHTML='<div id="booking-processing-spinner" style="text-align:center;padding:2rem"><div style="font-size:2.5rem;animation:spin 1s linear infinite;display:inline-block">⏳</div><p style="margin-top:1rem;color:#666;font-size:0.95rem;">Processing your booking…</p><p style="color:#aaa;font-size:0.8rem;margin-top:0.4rem;">Please wait, do not close this window</p></div>';
+  }
   try {
 
   const payLabel={
@@ -2031,9 +2087,28 @@ async function confirmPayment(method){
 
   if(!_sbClient) initSupabase();
   if(_sbClient){
-    const{error:sbErr}=await _sbClient.from('bookings').insert([booking]);
-    if(sbErr){console.error('[SB] insert:',sbErr.message);}
-    else console.log('[SB] ✅ Booking saved');
+    try {
+      const{error:sbErr}=await _sbClient.from('bookings').insert([booking]);
+      if(sbErr){
+        console.error('[SB] insert error:',sbErr.message, sbErr.code);
+        // Retry with upsert in case of conflict
+        const{error:sbErr2}=await _sbClient.from('bookings').upsert([booking],{onConflict:'booking_id'});
+        if(sbErr2){
+          console.error('[SB] upsert also failed:',sbErr2.message);
+          showToast('⚠️ Booking saved locally. Sync to cloud failed: '+sbErr2.message,'error');
+        } else {
+          console.log('[SB] ✅ Booking saved via upsert');
+        }
+      } else {
+        console.log('[SB] ✅ Booking saved to Supabase');
+      }
+    } catch(sbEx) {
+      console.error('[SB] Exception:', sbEx.message);
+      showToast('⚠️ Supabase unreachable – booking saved locally only.','error');
+    }
+  } else {
+    console.warn('[SB] Client not ready – booking saved to localStorage only');
+    showToast('⚠️ Cloud sync unavailable – booking saved locally.','error');
   }
 
   await notifyTelegram(booking);
@@ -2064,14 +2139,21 @@ _Your Journey, Our Joy 🙏_`);
     _markBookingPlaced(d.bookingId,'cash');
   }
 
-  // Show success screen inside modal
+  // Show success screen inside modal — rebuild innerHTML since spinner replaced it
   var confirmSection=document.getElementById('payment-confirmed-section');
   if(confirmSection){
     confirmSection.style.display='block';
-    var confirmId=document.getElementById('payment-confirmed-id');
-    if(confirmId) confirmId.textContent='Booking ID: '+d.bookingId+' | '+payLabel;
+    confirmSection.innerHTML=`
+      <div style="font-size:3.5rem;margin-bottom:0.75rem;animation:heroLogoIn 0.5s ease forwards;">🎉</div>
+      <h3 style="color:#1D9E75;font-family:Cinzel,serif;margin-bottom:0.5rem;">Booking Confirmed!</h3>
+      <p style="font-size:0.92rem;color:#333;font-weight:600;margin-bottom:0.4rem;">${d.bookingId}</p>
+      <p style="font-size:0.85rem;color:#555;margin-bottom:0.3rem;">${payLabel}</p>
+      <p style="font-size:0.82rem;color:#888;margin-bottom:1rem;">${waResult.ok?'✅ WhatsApp confirmation sent':'⚠️ WhatsApp notification skipped'} · Our team will contact you shortly</p>
+      ${!waResult.ok&&d.estTotal>0?'<p style="font-size:0.78rem;color:#D4860A;background:#FFF3D9;border-radius:8px;padding:0.5rem 0.75rem;margin-bottom:0.75rem;">ℹ️ Booking saved locally. Admin notified via Telegram.</p>':''}
+      <button onclick="closePaymentModal()" style="background:#1A2744;color:white;border:none;border-radius:10px;padding:0.85rem 2rem;font-size:0.95rem;font-weight:600;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#C9933A'" onmouseout="this.style.background='#1A2744'">Close</button>
+    `;
   }
-  showToast('✅ Booking '+d.bookingId+' confirmed!'+(waResult.ok?' WhatsApp sent.':' (WA failed)'), 'success');
+  showToast('✅ Booking '+d.bookingId+' confirmed!'+(waResult.ok?' WhatsApp sent.':' (WA pending)'), 'success');
   _pendingBookingData=null;
 
   // Show My Bookings after short delay
@@ -2194,15 +2276,34 @@ function selectVehicleCard(el,type){
 }
 
 async function notifyTelegram(b) {
-  if (!CONFIG.TELEGRAM_BOT_TOKEN || CONFIG.TELEGRAM_BOT_TOKEN === 'PLACEHOLDER') return;
-  const msg = `🚖 *New Booking – Sowmiya Travels*
-
-🆔 ${b.booking_id}
-👤 ${b.customer_name} | 📱 ${b.customer_phone}
-📍 ${b.pickup_location} → ${b.drop_location}
-📅 ${b.pickup_date} ${b.pickup_time}
-🚗 ${b.vehicle_type} | ${b.trip_type}`;
-  try { await fetch(`https://api.telegram.org/bot${CONFIG.TELEGRAM_BOT_TOKEN}/sendMessage`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ chat_id:CONFIG.TELEGRAM_CHAT_ID, text:msg, parse_mode:'Markdown' }) }); } catch(e) {}
+  if (!CONFIG.TELEGRAM_BOT_TOKEN || CONFIG.TELEGRAM_BOT_TOKEN === 'PLACEHOLDER') {
+    console.warn('[TG] No bot token configured');
+    return;
+  }
+  // Escape special Markdown chars to avoid parse errors
+  const esc = s => String(s||'').replace(/[_*[\]()~`>#+=|{}.!-]/g,'\\$&');
+  const msg = `🚖 *New Booking – Sowmiya Travels*\n\n🆔 ${esc(b.booking_id)}\n👤 ${esc(b.customer_name)} \\| 📱 ${esc(b.customer_phone)}\n📍 ${esc(b.pickup_location)} → ${esc(b.drop_location)}\n📅 ${esc(b.pickup_date)} ${esc(b.pickup_time)}\n🚗 ${esc(b.vehicle_type)} \\| ${esc(b.trip_type)}\n💰 ${esc(b.payment_method)} \\| ₹${esc(b.estimated_fare)}\n📋 Status: *${esc(b.status)}*`;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${CONFIG.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: CONFIG.TELEGRAM_CHAT_ID, text: msg, parse_mode: 'MarkdownV2' })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      console.error('[TG] Error:', data.description);
+      // Fallback: retry without markdown
+      await fetch(`https://api.telegram.org/bot${CONFIG.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ chat_id: CONFIG.TELEGRAM_CHAT_ID, text: `🚖 New Booking: ${b.booking_id}\n👤 ${b.customer_name} | ${b.customer_phone}\n📍 ${b.pickup_location} → ${b.drop_location}\n📅 ${b.pickup_date} ${b.pickup_time}\n🚗 ${b.vehicle_type} | ₹${b.estimated_fare}` })
+      });
+    } else {
+      console.log('[TG] ✅ Telegram notified');
+    }
+  } catch(e) {
+    console.error('[TG] Exception:', e.message);
+  }
 }
 
 // sendWhatsApp – calls /api/send-whatsapp proxy, with direct Fonnte fallback
