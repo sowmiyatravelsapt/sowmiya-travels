@@ -1269,15 +1269,16 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="upi-section" style="display:none;text-align:center;">
       <button onclick="document.getElementById('upi-section').style.display='none';document.getElementById('payment-app-chooser').style.display='block';" style="background:none;border:none;color:#1A2744;cursor:pointer;font-size:0.85rem;text-decoration:underline;margin-bottom:0.75rem;">← Back</button>
       <p id="upi-section-title" style="font-size:0.95rem;font-weight:700;color:#1A2744;margin-bottom:0.5rem;"></p>
-      <p style="font-size:0.82rem;color:#666;margin-bottom:0.75rem;">Scan QR or tap the button to open your payment app</p>
+      <p style="font-size:0.82rem;color:#666;margin-bottom:0.75rem;">Tap the button below to open your app, or scan the QR code with any camera</p>
       <img id="upi-qr-img" src="" alt="UPI QR" style="width:200px;height:200px;border-radius:12px;border:1px solid #E2DDD6;margin-bottom:0.75rem;display:block;margin-left:auto;margin-right:auto;">
-      <div style="background:#F8F6F1;border-radius:10px;padding:0.75rem;font-size:0.85rem;color:#1A2744;font-weight:600;margin-bottom:0.75rem;" id="upi-id-display"></div>
-      <!-- Deep link buttons -->
+      <div style="background:#F8F6F1;border-radius:10px;padding:0.75rem;font-size:0.85rem;color:#1A2744;font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;" id="upi-id-display"></div>
+      <button onclick="var t=document.getElementById('upi-id-display').textContent;navigator.clipboard&&navigator.clipboard.writeText(t.replace('UPI ID: ','').split(' |')[0]).then(function(){showToast('✅ UPI ID copied!','success')}).catch(function(){showToast('Copy: '+t,'success')})" style="width:100%;background:#E8F5E9;color:#2E7D32;border:1px solid #C8E6C9;border-radius:8px;padding:0.5rem;font-size:0.8rem;font-weight:600;cursor:pointer;margin-bottom:0.75rem;font-family:'Outfit',sans-serif;">📋 Copy UPI ID (if app button doesn't open)</button>
+      <!-- Deep link buttons — use onclick+location.href so they work inside WebView -->
       <div style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:0.75rem;">
-        <a id="upi-deep-link" href="#" style="display:block;background:#C9933A;color:white;padding:0.75rem 1rem;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.95rem;">📲 Open Payment App →</a>
-        <a id="phonepe-deep-link" href="#" style="display:none;background:#5f259f;color:white;padding:0.6rem 1rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:0.88rem;">📲 Open PhonePe →</a>
-        <a id="gpay-deep-link" href="#" style="display:none;background:#1a73e8;color:white;padding:0.6rem 1rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:0.88rem;">🔵 Open Google Pay →</a>
-        <a id="paytm-deep-link" href="#" style="display:none;background:#00b9f5;color:white;padding:0.6rem 1rem;border-radius:10px;text-decoration:none;font-weight:600;font-size:0.88rem;">💙 Open Paytm →</a>
+        <button id="upi-deep-link" onclick="window._openUpiApp()" style="display:block;width:100%;background:#C9933A;color:white;padding:0.75rem 1rem;border-radius:10px;border:none;font-weight:700;font-size:0.95rem;cursor:pointer;font-family:'Outfit',sans-serif;">📲 Open Payment App →</button>
+        <button id="phonepe-deep-link" onclick="window._openUpiApp()" style="display:none;width:100%;background:#5f259f;color:white;padding:0.6rem 1rem;border-radius:10px;border:none;font-weight:600;font-size:0.88rem;cursor:pointer;font-family:'Outfit',sans-serif;">📱 Or open any UPI app →</button>
+        <button id="gpay-deep-link" onclick="window._openUpiApp()" style="display:none;width:100%;background:#1a73e8;color:white;padding:0.6rem 1rem;border-radius:10px;border:none;font-weight:600;font-size:0.88rem;cursor:pointer;font-family:'Outfit',sans-serif;">📱 Or open any UPI app →</button>
+        <button id="paytm-deep-link" onclick="window._openUpiApp()" style="display:none;width:100%;background:#00b9f5;color:white;padding:0.6rem 1rem;border-radius:10px;border:none;font-weight:600;font-size:0.88rem;cursor:pointer;font-family:'Outfit',sans-serif;">📱 Or open any UPI app →</button>
       </div>
       <p style="font-size:0.78rem;color:#999;margin-bottom:0.5rem;">After completing payment, click the button below</p>
       <button onclick="confirmPayment('upi')" style="width:100%;background:#1D9E75;color:white;border:none;border-radius:10px;padding:0.9rem;font-size:0.95rem;font-weight:700;cursor:pointer;">✅ I've Paid – Confirm Booking</button>
@@ -1680,9 +1681,7 @@ function selectCarByIndex(el, idx) {
   document.querySelectorAll('.car-type').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   const v = window._loadedVehicles && window._loadedVehicles[idx];
-  // FIX: Always prefer model name (e.g. "Toyota Innova Crysta"), fallback to type
-  if(v) selectedCar = (v.model && v.model.trim()) ? v.model.trim() : (v.type || 'Vehicle');
-  window._selectedVehicleIdx = idx;
+  if(v) selectedCar = v.type || v.model;
   window._lastFareEstimate = null;
   updateDistanceBadge();
 }
@@ -1792,60 +1791,72 @@ function choosePayment(method){
     return;
   }
 
-  // UPI-based methods: phonepe, gpay, paytm, upi
+  // ── UPI-based methods ────────────────────────────────────────────────────────
   document.getElementById('upi-section').style.display='block';
 
-  // ── Universal UPI string (used in QR and intent) ──
+  // UPI string for QR (standard upi:// — cameras can scan this)
   const upiStr='upi://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
 
-  // ── Android Intent URL — works across ALL UPI apps, never blocked by WebView ──
-  // This is the correct format that Android resolves to the installed UPI app chooser
-  const intentUrl='intent://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote
-    +'#Intent;scheme=upi;package=com.phonepe.app;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.phonepe.app;end';
-
-  const intentGpay='intent://upi/pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote
-    +'#Intent;scheme=tez;package=com.google.android.apps.nbu.paisa.user;S.browser_fallback_url=https%3A%2F%2Fpay.google.com%2Fintl%2Fen_in%2Fabout%2F;end';
-
-  const intentPaytm='intent://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote
-    +'#Intent;scheme=paytmmp;package=net.one97.paytm;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dnet.one97.paytm;end';
-
-  // Generic UPI intent (opens system app chooser with all UPI apps)
-  const intentAny='intent://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote
-    +'#Intent;scheme=upi;S.browser_fallback_url=https%3A%2F%2Fpay.google.com%2Fintl%2Fen_in%2Fabout%2F;end';
-
-  // QR code (works with any UPI scanner)
+  // QR code always works (user scans with camera)
   const qrUrl='https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(upiStr);
   document.getElementById('upi-qr-img').src=qrUrl;
   document.getElementById('upi-id-display').textContent='UPI ID: '+upiId+(amt?' | Amount: ₹'+amt:'');
 
-  // Hide all app-specific links first
+  // Hide secondary fallback buttons first
   ['phonepe-deep-link','gpay-deep-link','paytm-deep-link'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.style.display='none';
   });
 
-  var mainLink=document.getElementById('upi-deep-link');
+  var mainBtn=document.getElementById('upi-deep-link');
+
+  // ── KEY FIX: Use location.href assignment (NOT <a href>) to trigger UPI apps.
+  // location.href works inside WebView; <a href> and scheme:// links are silently blocked.
+  // We store the URL in window._upiTargetUrl and open it via _openUpiApp() on button click.
+  // Primary = specific app intent; fallback secondary button = generic UPI chooser.
+  const genericUpiUrl='upi://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
 
   if(method==='phonepe'){
     document.getElementById('upi-section-title').textContent='Pay via PhonePe';
-    mainLink.href=intentUrl; mainLink.textContent='📲 Open PhonePe →'; mainLink.style.background='#5f259f';
-    var ppLink=document.getElementById('phonepe-deep-link');
-    ppLink.href=intentAny; ppLink.style.display='block'; ppLink.textContent='📱 Or open any UPI app →';
+    mainBtn.textContent='📲 Open PhonePe →'; mainBtn.style.background='#5f259f';
+    window._upiTargetUrl='phonepe://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
+    var ppBtn=document.getElementById('phonepe-deep-link');
+    ppBtn.style.display='block'; ppBtn.textContent='📱 Or open any UPI app →';
+    window._upiAnyUrl=genericUpiUrl;
+    ppBtn.onclick=function(){ try{ location.href=window._upiAnyUrl; } catch(e){} };
   } else if(method==='gpay'){
     document.getElementById('upi-section-title').textContent='Pay via Google Pay';
-    mainLink.href=intentGpay; mainLink.textContent='🔵 Open Google Pay →'; mainLink.style.background='#1a73e8';
-    var gpLink=document.getElementById('gpay-deep-link');
-    gpLink.href=intentAny; gpLink.style.display='block'; gpLink.textContent='📱 Or open any UPI app →';
+    mainBtn.textContent='🔵 Open Google Pay →'; mainBtn.style.background='#1a73e8';
+    window._upiTargetUrl='tez://upi/pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
+    var gpBtn=document.getElementById('gpay-deep-link');
+    gpBtn.style.display='block'; gpBtn.textContent='📱 Or open any UPI app →';
+    gpBtn.onclick=function(){ try{ location.href=genericUpiUrl; } catch(e){} };
   } else if(method==='paytm'){
     document.getElementById('upi-section-title').textContent='Pay via Paytm';
-    mainLink.href=intentPaytm; mainLink.textContent='💙 Open Paytm →'; mainLink.style.background='#00b9f5';
-    var ptLink=document.getElementById('paytm-deep-link');
-    ptLink.href=intentAny; ptLink.style.display='block'; ptLink.textContent='📱 Or open any UPI app →';
+    mainBtn.textContent='💙 Open Paytm →'; mainBtn.style.background='#00b9f5';
+    window._upiTargetUrl='paytmmp://pay?pa='+upiId+'&pn=Sowmiya+Travels&am='+amt+'&cu=INR&tn='+bookingNote;
+    var ptBtn=document.getElementById('paytm-deep-link');
+    ptBtn.style.display='block'; ptBtn.textContent='📱 Or open any UPI app →';
+    ptBtn.onclick=function(){ try{ location.href=genericUpiUrl; } catch(e){} };
   } else {
-    // Generic UPI / QR — opens system UPI app chooser
+    // Generic UPI / QR — opens system UPI chooser
     document.getElementById('upi-section-title').textContent='Pay via UPI / QR Code';
-    mainLink.href=intentAny; mainLink.textContent='📱 Open UPI App →'; mainLink.style.background='#C9933A';
+    mainBtn.textContent='📱 Open UPI App →'; mainBtn.style.background='#C9933A';
+    window._upiTargetUrl=genericUpiUrl;
   }
 }
+
+// Called by all UPI "Open App" buttons — location.href is the ONLY method
+// that reliably launches UPI apps from inside WebView and mobile browsers.
+window._openUpiApp = function() {
+  var url = window._upiTargetUrl;
+  if(!url){ showToast('⚠️ UPI link not ready. Scan the QR code instead.','error'); return; }
+  try {
+    // location.href assignment triggers Android intent resolution
+    location.href = url;
+  } catch(e) {
+    showToast('⚠️ Could not open app. Please scan the QR code above.','error');
+  }
+};
 
 // ── RAZORPAY INTEGRATION ─────────────────────────────────────────────────────
 function openRazorpay(){
@@ -2045,20 +2056,15 @@ async function loadVehicles(){
       var seats=v.seats||'-';
       return '<div class="'+cls+'" data-vidx="'+i+'" onclick="selectCarByIndex(this,'+i+')"><span class="icon">'+icon+'</span><div class="name">'+nm+'</div><div class="seats">'+seats+' Seats</div></div>';
     }).join('');
-    // FIX: always use model name (full vehicle name) so booking messages show correct vehicle
-    const fv = vehicles[0];
-    selectedCar = (fv.model && fv.model.trim()) ? fv.model.trim() : (fv.type || 'Vehicle');
-    window._selectedVehicleIdx = 0;
+    // set selectedCar to first vehicle
+    selectedCar = vehicles[0].type || vehicles[0].model;
     window._loadedVehicles = vehicles;
   }
 }
 function selectVehicleCard(el,type){
   document.querySelectorAll('.vehicle-card').forEach(c=>c.style.borderColor='#E2DDD6');
   el.style.borderColor='#C9933A';
-  // FIX: find the vehicle by type match and use its model name
-  const vList = window._loadedVehicles || [];
-  const matched = vList.find(v => (v.type===type || v.model===type));
-  selectedCar = matched ? ((matched.model && matched.model.trim()) ? matched.model.trim() : matched.type) : type;
+  selectedCar=type;
   // also select in car-type chips
   document.querySelectorAll('.car-type').forEach(ct=>ct.classList.remove('selected'));
 }
