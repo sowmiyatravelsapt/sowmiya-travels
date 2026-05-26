@@ -1,8 +1,8 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" },
     { "source": "/api/sb/:path*", "destination": "https://lbvtibzcltkdqqofoqcx.supabase.co/:path*" },
+    { "source": "/admin", "destination": "/admin.html" },
     { "source": "/", "destination": "/index.html" }
   ]
 }
