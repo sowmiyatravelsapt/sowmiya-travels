@@ -79,6 +79,22 @@ tr:hover td{background:#FAFAF8;}
 /* Extra charge modal */
 .extra-row{display:grid;grid-template-columns:1fr auto;gap:0.5rem;align-items:center;margin-bottom:0.5rem;}
 </style>
+
+<script>
+// Proxy interceptor: routes supabase REST calls through /api/sb to avoid CORS
+(function() {
+  const _origFetch = window.fetch.bind(window);
+  const SB_URL = 'https://lbvtibzcltkdqqofoqcx.supabase.co';
+  window.fetch = function(input, init) {
+    if (typeof input === 'string' && input.startsWith(SB_URL)) {
+      input = input.replace(SB_URL, '/api/sb');
+    } else if (input instanceof Request && input.url.startsWith(SB_URL)) {
+      input = new Request(input.url.replace(SB_URL, '/api/sb'), input);
+    }
+    return _origFetch(input, init);
+  };
+})();
+</script>
 </head>
 <body>
 
@@ -416,9 +432,9 @@ tr:hover td{background:#FAFAF8;}
 
 <script>
 const DEFAULTS = {
-  sbUrl:'/api/sb',
-  sbKey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidnRpYnpjbHRrZHFxb2ZvcWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MjU0MzQsImV4cCI6MjA5NTIwMTQzNH0.ShOmMZrzmRMwWlviwNBlgIpLS1On3XTSUkmhG8pgJJw',
-  sbServiceKey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidnRpYnpjbHRrZHFxb2ZvcWN4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTYyNTQzNCwiZXhwIjoyMDk1MjAxNDM0fQ.DZ4badiZAnUogelQ8SoMkaO-jURP-dSHjkmcvuqz1Z0',
+  sbUrl:'https://lbvtibzcltkdqqofoqcx.supabase.co',
+  sbKey:'sb_publishable_6DDcu8zYSnlJoH22wX8_AA_-HYukioV',
+  sbServiceKey:'sb_secret_ahZgjPnJdci00vi59vjJww_JZYAWGTo',
   fonnteToken:'QP4Hop3z3fEdzTv1sQiK',
   tgToken:'8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA',
   tgChat:'8252090421',
