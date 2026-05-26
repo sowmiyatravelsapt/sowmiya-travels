@@ -962,6 +962,22 @@ document.addEventListener('DOMContentLoaded', function() {
   .dist-chip{background:rgba(201,147,58,0.2);border:1px solid rgba(201,147,58,0.4);color:var(--gold-light);border-radius:50px;padding:0.25rem 0.75rem;font-size:0.8rem;font-weight:600;white-space:nowrap;}
   .fare-chip{background:rgba(29,158,117,0.2);border:1px solid rgba(29,158,117,0.4);color:#5DCAA5;border-radius:50px;padding:0.25rem 0.75rem;font-size:0.8rem;font-weight:600;white-space:nowrap;}
 </style>
+
+<script>
+// Proxy interceptor: routes all Supabase REST calls through /api/sb to avoid CORS
+(function() {
+  const _origFetch = window.fetch.bind(window);
+  const SB_URL = 'https://lbvtibzcltkdqqofoqcx.supabase.co';
+  window.fetch = function(input, init) {
+    if (typeof input === 'string' && input.startsWith(SB_URL)) {
+      input = input.replace(SB_URL, '/api/sb');
+    } else if (input instanceof Request && input.url.startsWith(SB_URL)) {
+      input = new Request(input.url.replace(SB_URL, '/api/sb'), input);
+    }
+    return _origFetch(input, init);
+  };
+})();
+</script>
 </head>
 <body>
 
@@ -1633,9 +1649,9 @@ function detectMyLocation(fieldId) {
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const _savedCfg = (() => { try { return JSON.parse(localStorage.getItem('st_admin_config') || '{}'); } catch(e) { return {}; } })();
 const CONFIG = {
-  SUPABASE_URL:       _savedCfg.sbUrl        || '/api/sb',
-  SUPABASE_ANON_KEY:  _savedCfg.sbKey        || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidnRpYnpjbHRrZHFxb2ZvcWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MjU0MzQsImV4cCI6MjA5NTIwMTQzNH0.ShOmMZrzmRMwWlviwNBlgIpLS1On3XTSUkmhG8pgJJw',
-  SUPABASE_SERVICE_KEY: _savedCfg.sbServiceKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidnRpYnpjbHRrZHFxb2ZvcWN4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTYyNTQzNCwiZXhwIjoyMDk1MjAxNDM0fQ.DZ4badiZAnUogelQ8SoMkaO-jURP-dSHjkmcvuqz1Z0',
+  SUPABASE_URL:       _savedCfg.sbUrl        || 'https://lbvtibzcltkdqqofoqcx.supabase.co',
+  SUPABASE_ANON_KEY:  _savedCfg.sbKey        || 'sb_publishable_6DDcu8zYSnlJoH22wX8_AA_-HYukioV',
+  SUPABASE_SERVICE_KEY: _savedCfg.sbServiceKey || 'sb_secret_ahZgjPnJdci00vi59vjJww_JZYAWGTo',
   FONNTE_TOKEN:       _savedCfg.fonnteToken  || 'QP4Hop3z3fEdzTv1sQiK',
   TELEGRAM_BOT_TOKEN: _savedCfg.tgToken      || '8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA',
   TELEGRAM_CHAT_ID:   _savedCfg.tgChat       || '8252090421',
