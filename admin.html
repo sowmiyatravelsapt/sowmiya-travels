@@ -443,13 +443,9 @@ const DEFAULTS = {
 let CONFIG = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('st_admin_config')||'{}'));
 const ADMIN_CREDS = { user:'admin', pass: localStorage.getItem('st_admin_pass')||'sowmiya2024' };
 
-let DATA = {
-  bookings: JSON.parse(localStorage.getItem('st_bookings')||'[]'),
-  drivers:  JSON.parse(localStorage.getItem('st_drivers')||'[]'),
-  vehicles: JSON.parse(localStorage.getItem('st_vehicles')||'[]'),
-  owners:   JSON.parse(localStorage.getItem('st_owners')||'[]'),
-  fareRules:JSON.parse(localStorage.getItem('st_fare_rules')||'[]'),
-};
+// Clear stale localStorage data — Supabase is the source of truth
+['st_bookings','st_drivers','st_vehicles','st_owners','st_fare_rules'].forEach(k=>localStorage.removeItem(k));
+let DATA = { bookings:[], drivers:[], vehicles:[], owners:[], fareRules:[] };
 let _sbClient = null;
 let assigningBookingId = null, extraBookingId = null;
 
@@ -559,7 +555,7 @@ async function loadBookings(){
   if(_sbClient){
     const{data,error}=await _sbClient.from('bookings').select('*').order('created_at',{ascending:false});
     if(error){showToast('Bookings error: '+error.message,'error');}
-    else if(data) DATA.bookings=data;
+    else DATA.bookings = data || [];
   }
   renderBookings(DATA.bookings);
   updateDashboard();
@@ -726,9 +722,8 @@ async function loadVehiclesFromDB(){
   if(_sbClient){
     const{data,error}=await _sbClient.from('vehicles').select('*').order('created_at',{ascending:false});
     if(error) console.error('[SB] vehicles:',error);
-    else if(data) DATA.vehicles=data;
+    else DATA.vehicles = data || [];
   }
-  persist();
 }
 async function loadFleet(){
   await loadVehiclesFromDB();
@@ -979,7 +974,7 @@ async function loadDrivers(){
   if(_sbClient){
     const{data,error}=await _sbClient.from('drivers').select('*');
     if(error) showToast('Drivers error: '+error.message,'error');
-    else if(data) DATA.drivers=data;
+    else DATA.drivers = data || [];
   }
   const tb=document.getElementById('drivers-table');
   if(!tb) return;
