@@ -972,7 +972,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof input === 'string' && input.startsWith(SB_URL)) {
       input = input.replace(SB_URL, '/api/sb');
     } else if (input instanceof Request && input.url.startsWith(SB_URL)) {
-      input = new Request(input.url.replace(SB_URL, '/api/sb'), input);
+      const cloned = input.clone();
+      input = new Request(cloned.url.replace(SB_URL, '/api/sb'), cloned);
     }
     return _origFetch(input, init);
   };
@@ -1710,7 +1711,7 @@ function initSupabase() {
   } catch(e) { console.error('[SB] Init failed:', e.message); }
 }
 const sbScript = document.createElement('script');
-sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js';
+sbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.106.2/dist/umd/supabase.min.js';
 sbScript.onload = () => { initSupabase(); restoreSession(); setTimeout(loadVehicles, 300); };
 sbScript.onerror = () => console.error('[SB] CDN load failed');
 document.head.appendChild(sbScript);
