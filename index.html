@@ -1633,7 +1633,7 @@ function detectMyLocation(fieldId) {
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const _savedCfg = (() => { try { return JSON.parse(localStorage.getItem('st_admin_config') || '{}'); } catch(e) { return {}; } })();
 const CONFIG = {
-  SUPABASE_URL:       _savedCfg.sbUrl        || 'https://lbvtibzcltkdqqofoqcx.supabase.co',
+  SUPABASE_URL:       _savedCfg.sbUrl        || '/api/sb',
   SUPABASE_ANON_KEY:  _savedCfg.sbKey        || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidnRpYnpjbHRrZHFxb2ZvcWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MjU0MzQsImV4cCI6MjA5NTIwMTQzNH0.ShOmMZrzmRMwWlviwNBlgIpLS1On3XTSUkmhG8pgJJw',
   SUPABASE_SERVICE_KEY: _savedCfg.sbServiceKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidnRpYnpjbHRrZHFxb2ZvcWN4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTYyNTQzNCwiZXhwIjoyMDk1MjAxNDM0fQ.DZ4badiZAnUogelQ8SoMkaO-jURP-dSHjkmcvuqz1Z0',
   FONNTE_TOKEN:       _savedCfg.fonnteToken  || 'QP4Hop3z3fEdzTv1sQiK',
