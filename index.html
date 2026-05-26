@@ -978,6 +978,10 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 })();
 </script>
+<script>
+// Clear stale table data — Supabase is the source of truth
+['st_bookings','st_vehicles','st_fare_rules'].forEach(k => localStorage.removeItem(k));
+</script>
 </head>
 <body>
 
