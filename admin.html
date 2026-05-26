@@ -835,11 +835,11 @@ async function saveVehicle(){
     if(idx!==''){
       const existingId=DATA.vehicles[parseInt(idx)].id;
       const{error}=await _sbClient.from('vehicles').update(fields).eq('id',existingId);
-      if(error){showToast('Save failed: '+error.message,'error');return;}
+      if(error){showToast('Save failed: '+(error.message||error.code||JSON.stringify(error)),'error');console.error('[SB] vehicle update error:',error);return;}
       DATA.vehicles[parseInt(idx)]={...DATA.vehicles[parseInt(idx)],...fields};
     } else {
       const{data,error}=await _sbClient.from('vehicles').insert([fields]).select().single();
-      if(error){showToast('Save failed: '+error.message,'error');return;}
+      if(error){showToast('Save failed: '+(error.message||error.code||JSON.stringify(error)),'error');console.error('[SB] vehicle insert error:',error);return;}
       DATA.vehicles.push(data||fields);
     }
   } else {
@@ -1022,11 +1022,11 @@ async function saveDriver(){
     if(idx!==''){
       const eid=DATA.drivers[parseInt(idx)].id;
       const{error}=await _sbClient.from('drivers').update(fields).eq('id',eid);
-      if(error){showToast('Save failed: '+error.message,'error');return;}
+      if(error){showToast('Save failed: '+(error.message||error.code||JSON.stringify(error)),'error');console.error('[SB] driver update error:',error);return;}
       DATA.drivers[parseInt(idx)]={...DATA.drivers[parseInt(idx)],...fields};
     } else {
       const{data,error}=await _sbClient.from('drivers').insert([fields]).select().single();
-      if(error){showToast('Save failed: '+error.message,'error');return;}
+      if(error){showToast('Save failed: '+(error.message||error.code||JSON.stringify(error)),'error');console.error('[SB] driver insert error:',error);return;}
       DATA.drivers.push(data||fields);
     }
   } else {
@@ -1095,11 +1095,11 @@ async function saveOwner(){
     if(idx!==''){
       const eid=DATA.owners[parseInt(idx)].id;
       const{error}=await _sbClient.from('owners').update(fields).eq('id',eid);
-      if(error){showToast('Save failed: '+error.message,'error');return;}
+      if(error){showToast('Save failed: '+(error.message||error.code||JSON.stringify(error)),'error');console.error('[SB] owner update error:',error);return;}
       DATA.owners[parseInt(idx)]={...DATA.owners[parseInt(idx)],...fields};
     } else {
       const{data,error}=await _sbClient.from('owners').insert([fields]).select().single();
-      if(error){showToast('Save failed: '+error.message,'error');return;}
+      if(error){showToast('Save failed: '+(error.message||error.code||JSON.stringify(error)),'error');console.error('[SB] owner insert error:',error);return;}
       DATA.owners.push(data||fields);
     }
   } else {
