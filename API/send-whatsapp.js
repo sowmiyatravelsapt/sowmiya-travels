@@ -1,4 +1,4 @@
-// api/send-whatsapp.js – Sowmiya Travels WhatsApp Proxy via Fonnte
+// api/send-whatsapp.js – Sowmiya Travels WhatsApp Proxy via Fonnte.
 const https = require('https');
 const querystring = require('querystring');
 
