@@ -1,8 +1,7 @@
 {
-  "name": "sowmiya-travels",
-  "version": "1.0.0",
-  "description": "Sowmiya Travels booking site",
-  "engines": {
-    "node": ">=20"
-  }
+  "version": 2,
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/", "destination": "/index.html" }
+  ]
 }
