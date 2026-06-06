@@ -268,11 +268,15 @@ CREATE POLICY "profiles_insert_anon" ON profiles FOR INSERT TO anon WITH CHECK (
 CREATE POLICY "vehicles_select_all" ON vehicles FOR SELECT USING (true);
 CREATE POLICY "vehicles_admin_all" ON vehicles FOR ALL USING (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+) WITH CHECK (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
 -- Fare rules: public read
 CREATE POLICY "fare_rules_select_all" ON fare_rules FOR SELECT USING (true);
 CREATE POLICY "fare_rules_admin_all" ON fare_rules FOR ALL USING (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+) WITH CHECK (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
@@ -280,10 +284,14 @@ CREATE POLICY "fare_rules_admin_all" ON fare_rules FOR ALL USING (
 CREATE POLICY "drivers_select_all" ON drivers FOR SELECT USING (true);
 CREATE POLICY "drivers_admin_all" ON drivers FOR ALL USING (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+) WITH CHECK (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
 -- Car owners: admin only
 CREATE POLICY "car_owners_admin_all" ON car_owners FOR ALL USING (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+) WITH CHECK (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
@@ -294,6 +302,8 @@ CREATE POLICY "bookings_customer_select" ON bookings FOR SELECT USING (
 );
 CREATE POLICY "bookings_customer_insert" ON bookings FOR INSERT WITH CHECK (true);
 CREATE POLICY "bookings_admin_update" ON bookings FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+) WITH CHECK (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
@@ -306,10 +316,14 @@ CREATE POLICY "otp_logs_update" ON otp_logs FOR UPDATE USING (true);
 CREATE POLICY "settings_select_all" ON settings FOR SELECT USING (true);
 CREATE POLICY "settings_admin_all" ON settings FOR ALL USING (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+) WITH CHECK (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
 -- Notifications: admin only
 CREATE POLICY "notifications_admin_all" ON notifications FOR ALL USING (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+) WITH CHECK (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
