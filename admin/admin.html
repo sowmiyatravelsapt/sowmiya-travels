@@ -825,6 +825,18 @@ function getSupabase() {
   return _supabase;
 }
 
+// authSb() — always call before INSERT/UPDATE/DELETE
+// Ensures admin Supabase session is alive (survives refresh, tab switch, token expiry)
+let _authEnsured = false;
+async function authSb() {
+  const sb = getSupabase();
+  const { data: { session } } = await sb.auth.getSession();
+  if (session && session.user) return sb;
+  _authEnsured = false;
+  await ensureSupabaseAdminAuth();
+  return sb;
+}
+
 // ── GENERATE OTP ────────────────────────────────────────────
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -1411,7 +1423,7 @@ function updateFareLocal(id, field, value) {
 }
 
 async function saveAllRules() {
-  const sb = getSupabase();
+  const sb = await authSb();
   for (const [id, changes] of Object.entries(fareEdits)) {
     if (changes.amount) changes.amount = parseFloat(changes.amount);
     await sb.from('fare_rules').update(changes).eq('id', id);
@@ -1422,7 +1434,7 @@ async function saveAllRules() {
 
 // ── SAVE FUNCTIONS ─────────────────────────────────────
 async function saveBooking() {
-  const sb = getSupabase();
+  const sb = await authSb();
   const data = {
     customer_name: document.getElementById('bm-name').value.trim(),
     customer_phone: document.getElementById('bm-phone').value.trim(),
@@ -1462,7 +1474,7 @@ async function saveBooking() {
 }
 
 async function quickUpdateBookingStatus(id, status) {
-  const sb = getSupabase();
+  const sb = await authSb();
   await sb.from('bookings').update({ booking_status: status }).eq('id', id);
   const booking = A.bookings.find(b => b.id === id);
   if (booking) await notifyBookingStatus(booking, status);
@@ -1471,7 +1483,7 @@ async function quickUpdateBookingStatus(id, status) {
 }
 
 async function saveVehicle() {
-  const sb = getSupabase();
+  const sb = await authSb();
   const vmTypeSel = document.getElementById('vm-type').value;
   const vmTypeManual = document.getElementById('vm-type-manual').value.trim();
   const vehicleType = vmTypeSel === '__manual__' ? vmTypeManual : vmTypeSel;
@@ -1512,7 +1524,7 @@ async function saveVehicle() {
 }
 
 async function saveDriver() {
-  const sb = getSupabase();
+  const sb = await authSb();
   const data = {
     name: document.getElementById('dm-name').value.trim(),
     phone: document.getElementById('dm-phone').value.trim(),
@@ -1549,7 +1561,7 @@ async function saveDriver() {
 }
 
 async function saveOwner() {
-  const sb = getSupabase();
+  const sb = await authSb();
   const data = {
     name: document.getElementById('om-name').value.trim(),
     phone: document.getElementById('om-phone').value.trim(),
@@ -1580,7 +1592,7 @@ async function saveOwner() {
 }
 
 async function saveFareRule() {
-  const sb = getSupabase();
+  const sb = await authSb();
   const fmVTypeSel = document.getElementById('fm-vehicle-type').value;
   const fmVTypeManual = document.getElementById('fm-vehicle-type-manual').value.trim();
   const vehicleType = fmVTypeSel === '__manual__' ? fmVTypeManual : fmVTypeSel;
@@ -1610,7 +1622,7 @@ async function saveFareRule() {
 
 async function deleteFareRule(id) {
   if (!confirm('Delete this fare rule?')) return;
-  const sb = getSupabase();
+  const sb = await authSb();
   await sb.from('fare_rules').delete().eq('id', id);
   showToast('Rule deleted', 'info');
   await loadFareRules();
@@ -1700,7 +1712,7 @@ function editOwner(id) {
 // ── DELETE / TOGGLE ────────────────────────────────────
 async function deleteBooking(id) {
   if (!confirm('Delete this booking?')) return;
-  const sb = getSupabase();
+  const sb = await authSb();
   await sb.from('bookings').delete().eq('id', id);
   showToast('Booking deleted', 'info');
   await loadBookings();
@@ -1708,7 +1720,7 @@ async function deleteBooking(id) {
 
 async function deleteDriver(id) {
   if (!confirm('Delete this driver?')) return;
-  const sb = getSupabase();
+  const sb = await authSb();
   await sb.from('drivers').delete().eq('id', id);
   showToast('Driver deleted', 'info');
   await loadDrivers();
@@ -1716,14 +1728,14 @@ async function deleteDriver(id) {
 
 async function deleteOwner(id) {
   if (!confirm('Delete this owner?')) return;
-  const sb = getSupabase();
+  const sb = await authSb();
   await sb.from('car_owners').delete().eq('id', id);
   showToast('Owner deleted', 'info');
   await loadOwners();
 }
 
 async function toggleVehicle(id, currentState) {
-  const sb = getSupabase();
+  const sb = await authSb();
   await sb.from('vehicles').update({ is_active: !currentState }).eq('id', id);
   showToast(`Vehicle ${currentState ? 'deactivated' : 'activated'}`, 'info');
   await loadVehicles();
@@ -1778,7 +1790,7 @@ function updateBookingAmount() {
 
 // ── SETTINGS SAVE ──────────────────────────────────────
 async function saveSettings() {
-  const sb = getSupabase();
+  const sb = await authSb();
   const keys = ['company_name','company_phone','company_email','company_address',
     'upi_primary','upi_fallback','telegram_chat_id','whatsapp_token','geoapify_key','min_booking_notice_hours'];
   for (const key of keys) {
@@ -1789,7 +1801,7 @@ async function saveSettings() {
 }
 
 async function saveTerms() {
-  const sb = getSupabase();
+  const sb = await authSb();
   const content = document.getElementById('terms-content').value;
   await sb.from('settings').upsert({ key: 'terms_content', value: content });
   showToast('Terms saved!', 'success');
@@ -1859,7 +1871,7 @@ function showPage(page, navEl) {
 }
 
 async function adminSignOut() {
-  const sb = getSupabase();
+  const sb = await authSb();
   await sb.auth.signOut();
   A.user = null;
   clearAdminSession();
