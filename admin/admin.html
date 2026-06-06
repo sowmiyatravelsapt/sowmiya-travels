@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel – Sowmiya Travels</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1b3e;--navy2:#162347;--gold:#d4a017;--gold2:#f0c040;
+  --teal:#1a8fa0;--teal2:#22b8cc;--sidebar:#0a1428;--white:#fff;
+  --off:#f0f2f8;--text:#1a1a2e;--muted:#6b7280;--success:#22c55e;
+  --danger:#ef4444;--warning:#f59e0b;--info:#3b82f6;
+  --radius:14px;--shadow:0 4px 20px rgba(13,27,62,.12);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--off);color:var(--text);min-height:100vh;display:flex}
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+#sidebar{width:240px;background:var(--sidebar);min-height:100vh;display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100;transition:transform .3s ease}
+.sidebar-brand{padding:24px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-logo{display:flex;align-items:center;gap:12px}
+.logo-circle{width:46px;height:46px;border-radius:50%;overflow:hidden;border:2px solid var(--gold);flex-shrink:0}
+.logo-circle img{width:100%;height:100%;object-fit:cover}
+.brand-text{display:flex;flex-direction:column}
+.brand-name{color:var(--white);font-family:'Playfair Display',serif;font-size:1rem;font-weight:700}
+.brand-role{background:var(--gold);color:var(--navy);font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:1px;margin-top:4px;width:fit-content}
+.sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;color:rgba(255,255,255,.55);cursor:pointer;margin-bottom:4px;transition:all .2s;border:none;background:none;width:100%;text-align:left;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9)}
+.nav-item.active{background:rgba(212,160,23,.15);color:var(--gold)}
+.nav-item .icon{font-size:1.1rem;width:20px;text-align:center}
+.sidebar-footer{padding:16px 12px;border-top:1px solid rgba(255,255,255,.08)}
+.btn-logout-sidebar{width:100%;padding:10px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:10px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.btn-logout-sidebar:hover{background:rgba(239,68,68,.2)}
+
+/* ── MAIN ────────────────────────────────────────────── */
+#main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.top-bar{background:var(--white);padding:0 28px;height:64px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e8eaf0;position:sticky;top:0;z-index:50}
+.top-title{font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--navy)}
+.top-actions{display:flex;align-items:center;gap:12px}
+.content{padding:28px;flex:1}
+
+/* ── CARDS ───────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px;margin-bottom:28px}
+.stat-card{background:var(--white);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden;animation:fadeUp .5s ease both}
+.stat-card::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:.08}
+.stat-card.gold::before{background:var(--gold)}
+.stat-card.teal::before{background:var(--teal)}
+.stat-card.success::before{background:var(--success)}
+.stat-card.danger::before{background:var(--danger)}
+.stat-icon{font-size:1.8rem;margin-bottom:10px}
+.stat-value{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--navy)}
+.stat-label{color:var(--muted);font-size:.82rem;margin-top:4px}
+.stat-change{font-size:.78rem;margin-top:8px;font-weight:600}
+.stat-change.up{color:var(--success)}
+.stat-change.down{color:var(--danger)}
+
+/* ── PANEL / TABLE ───────────────────────────────────── */
+.panel{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:24px;overflow:hidden}
+.panel-header{padding:20px 24px;border-bottom:1px solid #f0f2f8;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.panel-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--navy)}
+.panel-body{padding:20px 24px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 14px;background:#f8f9fc;font-size:.78rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid #eee}
+td{padding:12px 14px;border-bottom:1px solid #f5f5f5;font-size:.88rem;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbff}
+.status-pill{padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase;white-space:nowrap}
+.pill-pending{background:#fef3c7;color:#d97706}
+.pill-confirmed{background:#d1fae5;color:#059669}
+.pill-assigned{background:#dbeafe;color:#2563eb}
+.pill-started{background:#e0e7ff;color:#4f46e5}
+.pill-completed{background:#f0fdf4;color:#16a34a}
+.pill-cancelled{background:#fee2e2;color:#dc2626}
+.pill-active{background:#d1fae5;color:#059669}
+.pill-inactive{background:#fee2e2;color:#dc2626}
+
+/* ── BUTTONS ─────────────────────────────────────────── */
+.btn{padding:9px 18px;border-radius:10px;font-size:.85rem;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--navy);color:var(--white)}
+.btn-primary:hover{background:var(--navy2);transform:translateY(-1px)}
+.btn-gold{background:var(--gold);color:var(--navy)}
+.btn-gold:hover{background:var(--gold2);transform:translateY(-1px)}
+.btn-teal{background:var(--teal);color:var(--white)}
+.btn-teal:hover{background:var(--teal2)}
+.btn-danger{background:rgba(239,68,68,.1);color:var(--danger);border:1px solid rgba(239,68,68,.2)}
+.btn-danger:hover{background:var(--danger);color:#fff}
+.btn-sm{padding:6px 12px;font-size:.78rem}
+.btn-success{background:rgba(34,197,94,.1);color:var(--success);border:1px solid rgba(34,197,94,.2)}
+.btn-success:hover{background:var(--success);color:#fff}
+
+/* ── FORM ────────────────────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+.form-group{margin-bottom:0}
+.form-group.full{grid-column:1/-1}
+label.field-label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.field-input,.field-select,.field-textarea{width:100%;padding:11px 14px;border:1.5px solid #e8eaf0;border-radius:10px;font-size:.9rem;font-family:'DM Sans',sans-serif;background:var(--white);color:var(--text);transition:border-color .2s;outline:none}
+.field-input:focus,.field-select:focus,.field-textarea:focus{border-color:var(--gold)}
+.field-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.field-textarea{resize:vertical;min-height:80px}
+
+/* ── MODAL ───────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,20,40,.7);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-box{background:var(--white);border-radius:20px;padding:32px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;transform:scale(.96);transition:transform .3s}
+.modal-overlay.open .modal-box{transform:scale(1)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.modal-title{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--navy)}
+.modal-close{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted);line-height:1}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid #f0f2f8}
+
+/* ── SEARCH ──────────────────────────────────────────── */
+.search-bar{display:flex;gap:10px;flex-wrap:wrap}
+.search-input{padding:9px 14px;border:1.5px solid #e8eaf0;border-radius:10px;font-size:.88rem;font-family:'DM Sans',sans-serif;min-width:220px;outline:none}
+.search-input:focus{border-color:var(--gold)}
+.filter-select{padding:9px 14px;border:1.5px solid #e8eaf0;border-radius:10px;font-size:.88rem;font-family:'DM Sans',sans-serif;outline:none}
+
+/* ── TABS ────────────────────────────────────────────── */
+.page-tabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:2px solid #e8eaf0}
+.page-tab{padding:12px 20px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s}
+.page-tab.active{color:var(--navy);border-bottom-color:var(--gold)}
+
+/* ── BADGES ──────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;font-size:.7rem;font-weight:700;background:var(--danger);color:#fff;margin-left:4px}
+
+/* ── ANIMATIONS ──────────────────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+
+/* ── RESPONSIVE ──────────────────────────────────────── */
+@media(max-width:768px){
+  #sidebar{transform:translateX(-100%)}
+  #sidebar.open{transform:translateX(0)}
+  #main{margin-left:0}
+  .form-grid,.form-grid.cols3{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr 1fr}
+}
+
+/* ── LOGIN OVERLAY ───────────────────────────────────── */
+#login-overlay{position:fixed;inset:0;background:var(--sidebar);z-index:9999;display:flex;align-items:center;justify-content:center}
+.login-card{background:rgba(255,255,255,.06);border:1px solid rgba(212,160,23,.2);border-radius:24px;padding:48px;width:100%;max-width:400px;text-align:center}
+.login-logo{width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid var(--gold);margin:0 auto 20px;box-shadow:0 0 0 6px rgba(212,160,23,.15),0 0 0 12px rgba(212,160,23,.07);animation:logoPulse 3s ease infinite}
+@keyframes logoPulse{0%,100%{box-shadow:0 0 0 6px rgba(212,160,23,.15),0 0 0 12px rgba(212,160,23,.07)}50%{box-shadow:0 0 0 8px rgba(212,160,23,.25),0 0 0 16px rgba(212,160,23,.12)}}
+.login-logo img{width:100%;height:100%;object-fit:cover}
+.login-title{font-family:'Playfair Display',serif;color:var(--white);font-size:1.8rem;margin-bottom:6px}
+.login-sub{color:rgba(255,255,255,.45);font-size:.9rem;margin-bottom:32px}
+.login-input{width:100%;padding:14px 18px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.07);color:var(--white);font-size:.95rem;font-family:'DM Sans',sans-serif;margin-bottom:14px;outline:none}
+.login-input:focus{border-color:var(--gold)}
+.login-input::placeholder{color:rgba(255,255,255,.3)}
+.login-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(212,160,23,.4)}
+
+.empty-state{text-align:center;padding:48px;color:var(--muted)}
+.empty-state .icon{font-size:3rem;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="data:image/jpeg;base64,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" alt="Sowmiya Travels Logo">
+    </div>
+    <h1 class="login-title">Admin Panel</h1>
+    <p class="login-sub">Sowmiya Travels Management</p>
+    <div id="login-error" style="color:#ef4444;font-size:.82rem;margin-bottom:10px;min-height:20px;background:rgba(239,68,68,.12);padding:8px 12px;border-radius:8px;display:none"></div>
+    <input type="text" id="admin-username" class="login-input" placeholder="👤 Username" autocomplete="username">
+    <input type="password" id="admin-password" class="login-input" placeholder="🔒 Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="login-btn" id="admin-login-btn" onclick="adminLogin()">🚀 Login to Admin</button>
+    <p style="color:rgba(255,255,255,.25);font-size:.76rem;margin-top:14px">🔒 Authorised access only</p>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">
+      <div class="logo-circle">
+        <img src="data:image/jpeg;base64,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"
+             alt="Sowmiya Travels Logo">
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">Sowmiya Travels</span>
+        <span class="brand-role">ADMIN</span>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <button class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">📊</span>Dashboard</button>
+    <button class="nav-item" onclick="showPage('bookings',this)"><span class="icon">📋</span>Bookings<span class="badge" id="badge-bookings">0</span></button>
+    <button class="nav-item" onclick="showPage('fleet',this)"><span class="icon">🚗</span>Fleet / Vehicles</button>
+    <button class="nav-item" onclick="showPage('fare-rules',this)"><span class="icon">💰</span>Fare Rules</button>
+    <button class="nav-item" onclick="showPage('drivers',this)"><span class="icon">👨‍✈️</span>Drivers</button>
+    <button class="nav-item" onclick="showPage('owners',this)"><span class="icon">🏢</span>Car Owners</button>
+    <button class="nav-item" onclick="showPage('customers',this)"><span class="icon">👥</span>Customers</button>
+    <button class="nav-item" onclick="showPage('terms',this)"><span class="icon">📄</span>Terms & Conditions</button>
+    <button class="nav-item" onclick="showPage('settings',this)"><span class="icon">⚙️</span>Settings</button>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="color:rgba(255,255,255,.35);font-size:.78rem;margin-bottom:10px;text-align:center" id="admin-user-info">—</div>
+    <button class="btn-logout-sidebar" onclick="adminSignOut()">🚪 Logout</button>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<div id="main">
+  <header class="top-bar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button style="background:none;border:none;font-size:1.3rem;cursor:pointer;display:none" id="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+      <h1 class="top-title" id="page-title">Dashboard</h1>
+    </div>
+    <div class="top-actions">
+      <span style="color:var(--muted);font-size:.85rem" id="top-datetime"></span>
+      <button class="btn btn-gold btn-sm" onclick="showPage('bookings',null)">+ New Booking</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- DASHBOARD -->
+    <div id="page-dashboard">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:20px">
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">📋 Recent Bookings</span>
+            <button class="btn btn-primary btn-sm" onclick="showPage('bookings',null)">View All</button>
+          </div>
+          <div class="panel-body" id="recent-bookings-list" style="padding:0"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">📊 Quick Stats</span></div>
+          <div class="panel-body" id="quick-stats-panel"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOOKINGS PAGE -->
+    <div id="page-bookings" style="display:none">
+      <div class="panel-header" style="background:var(--white);border-radius:var(--radius);padding:20px;margin-bottom:16px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div class="search-bar">
+          <input type="text" class="search-input" id="booking-search" placeholder="Search bookings…" oninput="filterBookings()">
+          <select class="filter-select" id="booking-status-filter" onchange="filterBookings()">
+            <option value="">All Status</option>
+            <option>pending</option><option>confirmed</option><option>assigned</option>
+            <option>started</option><option>completed</option><option>cancelled</option>
+          </select>
+        </div>
+        <button class="btn btn-gold" onclick="openAddBookingModal()">+ Add Booking</button>
+      </div>
+      <div class="panel">
+        <div style="overflow-x:auto">
+          <table id="bookings-table">
+            <thead><tr>
+              <th>Booking #</th><th>Customer</th><th>Phone</th><th>Trip</th>
+              <th>Pickup</th><th>Date</th><th>Vehicle</th><th>Driver</th>
+              <th>Amount</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="bookings-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLEET PAGE -->
+    <div id="page-fleet" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+        <button class="btn btn-gold" onclick="openVehicleModal()">+ Add Vehicle</button>
+      </div>
+      <div class="panel">
+        <div style="overflow-x:auto">
+          <table id="fleet-table">
+            <thead><tr>
+              <th>Vehicle</th><th>Type</th><th>Reg. No</th><th>Seats</th>
+              <th>Owner</th><th>Driver</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="fleet-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FARE RULES PAGE -->
+    <div id="page-fare-rules" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <p style="color:var(--muted);font-size:.9rem">Set fare rules per vehicle type. These auto-calculate booking costs on the customer page.</p>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-gold" onclick="openFareModal()">+ Add Rule</button>
+          <button class="btn btn-primary" onclick="saveAllRules()">💾 Save All Rules</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div id="fare-rules-list" style="padding:20px"></div>
+        <div class="panel-body" style="background:#f8f9fc;border-radius:0 0 var(--radius) var(--radius)">
+          <p style="font-size:.82rem;font-weight:600;color:var(--muted);margin-bottom:12px">FARE RULE TYPES AVAILABLE</p>
+          <div style="display:flex;flex-wrap:wrap;gap:12px">
+            <span style="font-size:.82rem;color:var(--text)">📏 <strong>Per KM</strong> – Rate per kilometre</span>
+            <span style="font-size:.82rem;color:var(--text)">🚗 <strong>Per Trip</strong> – Fixed fare for trip</span>
+            <span style="font-size:.82rem;color:var(--text)">⏰ <strong>Per Hour</strong> – Hourly rental rate</span>
+            <span style="font-size:.82rem;color:var(--text)">📅 <strong>Per Day</strong> – Daily rental rate</span>
+            <span style="font-size:.82rem;color:var(--text)">⏳ <strong>Waiting Charge</strong> – Per hour waiting</span>
+            <span style="font-size:.82rem;color:var(--text)">🌙 <strong>Night Surcharge</strong> – Extra after 10pm</span>
+            <span style="font-size:.82rem;color:var(--text)">✈️ <strong>Airport Pickup</strong> – Fixed airport fee</span>
+            <span style="font-size:.82rem;color:var(--text)">➕ <strong>Extra KM</strong> – Beyond package km</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DRIVERS PAGE -->
+    <div id="page-drivers" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+        <button class="btn btn-gold" onclick="openDriverModal()">+ Add Driver</button>
+      </div>
+      <div class="panel">
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Name</th><th>Phone</th><th>License</th><th>Expiry</th>
+              <th>Vehicle</th><th>Rating</th><th>Trips</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="drivers-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAR OWNERS PAGE -->
+    <div id="page-owners" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+        <button class="btn btn-gold" onclick="openOwnerModal()">+ Add Owner</button>
+      </div>
+      <div class="panel">
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Name</th><th>Phone</th><th>Email</th><th>Commission %</th><th>Vehicles</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="owners-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS PAGE -->
+    <div id="page-customers" style="display:none">
+      <div class="panel">
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Name</th><th>Phone</th><th>Email</th><th>Total Bookings</th><th>Joined</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="customers-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERMS PAGE -->
+    <div id="page-terms" style="display:none">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">📄 Terms & Conditions</span>
+          <button class="btn btn-gold" onclick="saveTerms()">💾 Save Terms</button>
+        </div>
+        <div class="panel-body">
+          <textarea id="terms-content" class="field-textarea" style="min-height:400px;font-size:.9rem;line-height:1.7" placeholder="Enter terms and conditions…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div id="page-settings" style="display:none">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">⚙️ Settings</span>
+          <button class="btn btn-gold" onclick="saveSettings()">💾 Save Settings</button>
+        </div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="field-label">Company Name</label>
+              <input type="text" id="setting-company_name" class="field-input">
+            </div>
+            <div class="form-group">
+              <label class="field-label">Company Phone</label>
+              <input type="text" id="setting-company_phone" class="field-input">
+            </div>
+            <div class="form-group">
+              <label class="field-label">Company Email</label>
+              <input type="email" id="setting-company_email" class="field-input">
+            </div>
+            <div class="form-group">
+              <label class="field-label">Company Address</label>
+              <input type="text" id="setting-company_address" class="field-input">
+            </div>
+            <div class="form-group">
+              <label class="field-label">Primary UPI ID</label>
+              <input type="text" id="setting-upi_primary" class="field-input">
+            </div>
+            <div class="form-group">
+              <label class="field-label">Fallback UPI ID</label>
+              <input type="text" id="setting-upi_fallback" class="field-input">
+            </div>
+            <div class="form-group">
+              <label class="field-label">Telegram Chat ID</label>
+              <input type="text" id="setting-telegram_chat_id" class="field-input">
+            </div>
+            <div class="form-group">
+              <label class="field-label">WhatsApp Token (Fonnte)</label>
+              <input type="text" id="setting-whatsapp_token" class="field-input">
+            </div>
+            <div class="form-group">
+              <label class="field-label">Geoapify API Key</label>
+              <input type="text" id="setting-geoapify_key" class="field-input">
+            </div>
+            <div class="form-group">
+              <label class="field-label">Min Booking Notice (hrs)</label>
+              <input type="number" id="setting-min_booking_notice_hours" class="field-input">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- BOOKING MODAL -->
+<div class="modal-overlay" id="booking-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title" id="booking-modal-title">Add Booking</h2>
+      <button class="modal-close" onclick="closeModal('booking-modal')">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="field-label">Customer Name *</label>
+        <input type="text" id="bm-name" class="field-input" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label class="field-label">WhatsApp Number *</label>
+        <input type="tel" id="bm-phone" class="field-input" placeholder="10-digit number">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Trip Type *</label>
+        <select id="bm-trip" class="field-select">
+          <option value="one_way">One Way</option>
+          <option value="round_trip">Round Trip</option>
+          <option value="rental">Rental</option>
+          <option value="airport">Airport</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">Vehicle</label>
+        <select id="bm-vehicle" class="field-select"><option value="">Select vehicle…</option></select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">Assign Driver</label>
+        <select id="bm-driver" class="field-select"><option value="">Select driver…</option></select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">Fare Rule</label>
+        <select id="bm-fare" class="field-select" onchange="updateBookingAmount()"><option value="">Select fare…</option></select>
+      </div>
+      <div class="form-group full">
+        <label class="field-label">Pickup Location *</label>
+        <input type="text" id="bm-pickup" class="field-input" placeholder="Pickup address">
+      </div>
+      <div class="form-group full">
+        <label class="field-label">Drop Location</label>
+        <input type="text" id="bm-drop" class="field-input" placeholder="Drop address">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Pickup Date *</label>
+        <input type="date" id="bm-date" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Pickup Time *</label>
+        <input type="time" id="bm-time" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Estimated KM</label>
+        <input type="number" id="bm-km" class="field-input" placeholder="e.g. 120" oninput="updateBookingAmount()">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Total Amount (₹)</label>
+        <input type="number" id="bm-amount" class="field-input" placeholder="Auto or manual">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Payment Method</label>
+        <select id="bm-payment" class="field-select">
+          <option value="cash">Cash</option>
+          <option value="upi">UPI</option>
+          <option value="online">Online</option>
+          <option value="pending">Pending</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">Booking Status</label>
+        <select id="bm-status" class="field-select">
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="assigned">Assigned</option>
+          <option value="started">Started</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label class="field-label">Special Requests / Notes</label>
+        <textarea id="bm-notes" class="field-textarea" placeholder="Any special requirements…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('booking-modal')">Cancel</button>
+      <button class="btn btn-gold" onclick="saveBooking()">💾 Save Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- VEHICLE MODAL -->
+<div class="modal-overlay" id="vehicle-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title">Add / Edit Vehicle</h2>
+      <button class="modal-close" onclick="closeModal('vehicle-modal')">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="field-label">Vehicle Type *</label>
+        <select id="vm-type" class="field-select">
+          <option>Sedan</option><option>SUV</option><option>Hatchback</option>
+          <option>Innova</option><option>Innova Crysta</option>
+          <option>Tempo Traveller</option><option>Mini Bus</option><option>Luxury Sedan</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">Brand *</label>
+        <input type="text" id="vm-brand" class="field-input" placeholder="e.g. Toyota">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Model *</label>
+        <input type="text" id="vm-model" class="field-input" placeholder="e.g. Innova Crysta">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Registration Number *</label>
+        <input type="text" id="vm-reg" class="field-input" placeholder="TN XX XX XXXX">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Year</label>
+        <input type="number" id="vm-year" class="field-input" placeholder="2022">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Color</label>
+        <input type="text" id="vm-color" class="field-input" placeholder="White">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Seating Capacity</label>
+        <input type="number" id="vm-seats" class="field-input" value="4">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Fuel Type</label>
+        <select id="vm-fuel" class="field-select">
+          <option>Petrol</option><option>Diesel</option><option>CNG</option>
+          <option>Electric</option><option>Hybrid</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">AC Available</label>
+        <select id="vm-ac" class="field-select">
+          <option value="true">Yes</option><option value="false">No</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">Owner</label>
+        <select id="vm-owner" class="field-select"><option value="">Select owner…</option></select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">Insurance Expiry</label>
+        <input type="date" id="vm-insurance" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Permit Expiry</label>
+        <input type="date" id="vm-permit" class="field-input">
+      </div>
+      <div class="form-group full">
+        <label class="field-label">Image URL</label>
+        <input type="url" id="vm-image" class="field-input" placeholder="https://…">
+      </div>
+      <div class="form-group full">
+        <label class="field-label">Notes</label>
+        <textarea id="vm-notes" class="field-textarea" placeholder="Any notes about the vehicle…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('vehicle-modal')">Cancel</button>
+      <button class="btn btn-gold" onclick="saveVehicle()">💾 Save Vehicle</button>
+    </div>
+  </div>
+</div>
+
+<!-- DRIVER MODAL -->
+<div class="modal-overlay" id="driver-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title">Add / Edit Driver</h2>
+      <button class="modal-close" onclick="closeModal('driver-modal')">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="field-label">Full Name *</label>
+        <input type="text" id="dm-name" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Phone *</label>
+        <input type="tel" id="dm-phone" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Email</label>
+        <input type="email" id="dm-email" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">License Number *</label>
+        <input type="text" id="dm-license" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">License Expiry</label>
+        <input type="date" id="dm-license-expiry" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Date of Birth</label>
+        <input type="date" id="dm-dob" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Experience (years)</label>
+        <input type="number" id="dm-exp" class="field-input" value="0">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Assigned Vehicle</label>
+        <select id="dm-vehicle" class="field-select"><option value="">None</option></select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">ID Proof Type</label>
+        <select id="dm-id-type" class="field-select">
+          <option>Aadhaar</option><option>PAN</option><option>Passport</option><option>Voter ID</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">ID Proof Number</label>
+        <input type="text" id="dm-id-number" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Emergency Contact</label>
+        <input type="text" id="dm-emergency" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Emergency Phone</label>
+        <input type="tel" id="dm-emergency-phone" class="field-input">
+      </div>
+      <div class="form-group full">
+        <label class="field-label">Address</label>
+        <textarea id="dm-address" class="field-textarea" style="min-height:60px"></textarea>
+      </div>
+      <div class="form-group full">
+        <label class="field-label">Notes</label>
+        <textarea id="dm-notes" class="field-textarea" style="min-height:60px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('driver-modal')">Cancel</button>
+      <button class="btn btn-gold" onclick="saveDriver()">💾 Save Driver</button>
+    </div>
+  </div>
+</div>
+
+<!-- OWNER MODAL -->
+<div class="modal-overlay" id="owner-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title">Add / Edit Car Owner</h2>
+      <button class="modal-close" onclick="closeModal('owner-modal')">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="field-label">Full Name *</label>
+        <input type="text" id="om-name" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Phone *</label>
+        <input type="tel" id="om-phone" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Email</label>
+        <input type="email" id="om-email" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Commission %</label>
+        <input type="number" id="om-commission" class="field-input" value="10" step="0.5">
+      </div>
+      <div class="form-group">
+        <label class="field-label">Bank Account</label>
+        <input type="text" id="om-bank" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">IFSC Code</label>
+        <input type="text" id="om-ifsc" class="field-input">
+      </div>
+      <div class="form-group">
+        <label class="field-label">ID Proof Type</label>
+        <select id="om-id-type" class="field-select">
+          <option>Aadhaar</option><option>PAN</option><option>Passport</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">ID Proof Number</label>
+        <input type="text" id="om-id-number" class="field-input">
+      </div>
+      <div class="form-group full">
+        <label class="field-label">Address</label>
+        <textarea id="om-address" class="field-textarea" style="min-height:60px"></textarea>
+      </div>
+      <div class="form-group full">
+        <label class="field-label">Notes</label>
+        <textarea id="om-notes" class="field-textarea" style="min-height:60px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('owner-modal')">Cancel</button>
+      <button class="btn btn-gold" onclick="saveOwner()">💾 Save Owner</button>
+    </div>
+  </div>
+</div>
+
+<!-- FARE MODAL -->
+<div class="modal-overlay" id="fare-modal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h2 class="modal-title">Add Fare Rule</h2>
+      <button class="modal-close" onclick="closeModal('fare-modal')">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="field-label">Vehicle Type</label>
+        <select id="fm-vehicle-type" class="field-select">
+          <option value="All">All Vehicles</option>
+          <option>Sedan</option><option>SUV</option><option>Hatchback</option>
+          <option>Innova</option><option>Innova Crysta</option>
+          <option>Tempo Traveller</option><option>Mini Bus</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">Rule Type</label>
+        <select id="fm-rule-type" class="field-select">
+          <option value="per_km">Per KM (₹/km)</option>
+          <option value="per_trip">Per Trip (Fixed)</option>
+          <option value="per_hour">Per Hour</option>
+          <option value="per_day">Per Day</option>
+          <option value="waiting_charge">Waiting Charge</option>
+          <option value="night_surcharge">Night Surcharge</option>
+          <option value="airport_pickup">Airport Pickup</option>
+          <option value="extra_km">Extra KM</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="field-label">Amount (₹) *</label>
+        <input type="number" id="fm-amount" class="field-input" placeholder="e.g. 12">
+      </div>
+      <div class="form-group full">
+        <label class="field-label">Description / Note</label>
+        <input type="text" id="fm-desc" class="field-input" placeholder="e.g. Base rate per km">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('fare-modal')">Cancel</button>
+      <button class="btn btn-gold" onclick="saveFareRule()">💾 Save Rule</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG (inlined) ──────────────────────────────────────
+// ============================================================
+// SOWMIYA TRAVELS - SHARED CONFIG
+// ============================================================
+
+const SUPABASE_URL = 'https://lbvtibzcltkdqqofoqcx.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_6DDcu8zYSnlJoH22wX8_AA_-HYukioV';
+const GEOAPIFY_KEY = 'abf81e0fb280456a88ecbf1c26f546ff';
+const FONNTE_TOKEN = 'QP4Hop3z3fEdzTv1sQiK';
+const TELEGRAM_BOT_TOKEN = '8892085445:AAHmolb4EbkpAay_rOuNCxgKK5QUKM4SmjA';
+const TELEGRAM_CHAT_ID = '8252090421';
+const UPI_PRIMARY = 'kaviapt02@okaxis';
+const UPI_FALLBACK = '6382986186@ybl';
+
+// ── OTP COOLDOWN: prevent double-send (3 min block) ────────
+const _otpCooldowns = {}; // phone -> timestamp
+
+function isOTPCoolingDown(phone) {
+  const last = _otpCooldowns[phone];
+  if (!last) return false;
+  return (Date.now() - last) < 3 * 60 * 1000; // 3 minutes
+}
+function markOTPSent(phone) {
+  _otpCooldowns[phone] = Date.now();
+}
+function getOTPCooldownRemaining(phone) {
+  const last = _otpCooldowns[phone];
+  if (!last) return 0;
+  const remaining = Math.ceil((3 * 60 * 1000 - (Date.now() - last)) / 1000);
+  return Math.max(0, remaining);
+}
+
+// ── SUPABASE CLIENT ─────────────────────────────────────────
+let _supabase = null;
+function getSupabase() {
+  if (_supabase) return _supabase;
+  _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return _supabase;
+}
+
+// ── GENERATE OTP ────────────────────────────────────────────
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// ── SEND OTP VIA FONNTE (fast, non-blocking) ────────────────
+async function sendOTP(phone, otp) {
+  // Block if in cooldown
+  if (isOTPCoolingDown(phone)) {
+    const rem = getOTPCooldownRemaining(phone);
+    throw new Error(`Please wait ${rem}s before requesting a new OTP`);
+  }
+
+  const sb = getSupabase();
+  const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+  // Mark cooldown immediately (before async ops to prevent double click)
+  markOTPSent(phone);
+
+  // Store OTP in DB (fire and forget - don't await to keep it fast)
+  sb.from('otp_logs').insert({
+    phone,
+    otp_code: otp,
+    purpose: 'login',
+    expires_at: expires.toISOString()
+  }).then(() => {}).catch(console.error);
+
+  // Send via Fonnte with timeout
+  const message = `🚗 *Sowmiya Travels*\n\nYour OTP: *${otp}*\n\nValid 10 minutes. Do not share.\n_Your Journey, Our Joy_ 🌟`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
+  try {
+    const res = await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: { 'Authorization': FONNTE_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ target: phone, message, countryCode: '91' }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    const data = await res.json();
+    console.log('Fonnte response:', data);
+    return { success: true };
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      console.warn('Fonnte timed out - OTP may still be sent');
+      return { success: true, timedOut: true }; // still show success to user
+    }
+    console.error('Fonnte error:', err);
+    return { success: false, error: err };
+  }
+}
+
+// ── VERIFY OTP ──────────────────────────────────────────────
+async function verifyOTP(phone, inputOtp) {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from('otp_logs')
+    .select('*')
+    .eq('phone', phone)
+    .eq('otp_code', inputOtp)
+    .eq('is_used', false)
+    .gte('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error || !data || data.length === 0) return false;
+  await sb.from('otp_logs').update({ is_used: true }).eq('id', data[0].id);
+  return true;
+}
+
+// ── TELEGRAM NOTIFICATIONS ──────────────────────────────────
+async function sendTelegram(message) {
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' })
+    });
+  } catch (err) { console.error('Telegram error:', err); }
+}
+
+async function notifyNewBooking(booking) {
+  const msg = `🚗 <b>NEW BOOKING</b> — Sowmiya Travels
+
+📋 <b>#${booking.booking_number}</b>
+👤 ${booking.customer_name} | 📞 ${booking.customer_phone}
+🛣 ${(booking.trip_type||'').replace('_',' ').toUpperCase()}
+📍 From: ${booking.pickup_location}
+📍 To: ${booking.drop_location || 'N/A'}
+📅 ${booking.pickup_date} at ${booking.pickup_time}
+💰 ₹${booking.total_amount || 'TBD'}
+📝 ${booking.special_requests || 'None'}
+⏰ ${new Date().toLocaleString('en-IN')}`;
+  return sendTelegram(msg);
+}
+
+async function notifyBookingStatus(booking, newStatus) {
+  const emoji = { confirmed:'✅', assigned:'🚗', started:'▶️', completed:'🏁', cancelled:'❌' };
+  return sendTelegram(`${emoji[newStatus]||'📢'} <b>UPDATE:</b> #${booking.booking_number} → ${newStatus.toUpperCase()}\n👤 ${booking.customer_name} | ${booking.customer_phone}`);
+}
+
+async function sendWhatsAppConfirmation(booking) {
+  const msg = `🚗 *Sowmiya Travels – Booking Confirmed!*
+
+📋 Booking No: *${booking.booking_number}*
+👤 ${booking.customer_name}
+📅 ${booking.pickup_date} at ${booking.pickup_time}
+📍 From: ${booking.pickup_location}
+📍 To: ${booking.drop_location || 'N/A'}
+💰 ₹${booking.total_amount || 'TBD'}
+
+📞 Queries: 9786033425
+_Your Journey, Our Joy!_ 🌟`;
+  try {
+    await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: { 'Authorization': FONNTE_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ target: booking.customer_phone, message: msg, countryCode: '91' })
+    });
+  } catch (err) { console.error('WhatsApp confirm error:', err); }
+}
+
+// ── GEOAPIFY AUTOCOMPLETE ───────────────────────────────────
+async function geocodeSearch(query, callback) {
+  if (!query || query.length < 2) return callback([]);
+  try {
+    const res = await fetch(
+      `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&filter=countrycode:in&limit=6&lang=en&apiKey=${GEOAPIFY_KEY}`
+    );
+    const data = await res.json();
+    callback(data.features || []);
+  } catch { callback([]); }
+}
+
+// ── UPI PAYMENT ─────────────────────────────────────────────
+function generateQRUrl(amount) {
+  const upiStr = `upi://pay?pa=${UPI_PRIMARY}&pn=Sowmiya+Travels&am=${amount}&cu=INR`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiStr)}`;
+}
+function generatePhonePeLink(amount) { return `phonepe://pay?pa=${UPI_PRIMARY}&pn=Sowmiya+Travels&am=${amount}&cu=INR`; }
+function generateGPayLink(amount) { return `tez://upi/pay?pa=${UPI_PRIMARY}&pn=Sowmiya+Travels&am=${amount}&cu=INR`; }
+
+// ── TOAST ───────────────────────────────────────────────────
+function showToast(msg, type = 'info') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none';
+    document.body.appendChild(container);
+  }
+  const colors = { success:'#22c55e', error:'#ef4444', info:'#3b82f6', warning:'#f59e0b' };
+  const icons = { success:'✅', error:'❌', info:'ℹ️', warning:'⚠️' };
+  const toast = document.createElement('div');
+  toast.style.cssText = `background:${colors[type]||colors.info};color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.3);animation:slideIn .3s ease;max-width:320px;pointer-events:all;display:flex;align-items:center;gap:8px`;
+  toast.innerHTML = `<span>${icons[type]||''}</span><span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.animation = 'slideIn .3s ease reverse'; setTimeout(() => toast.remove(), 300); }, 4000);
+}
+
+// ── HELPERS ─────────────────────────────────────────────────
+function formatDate(d) { return d ? new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : ''; }
+function formatCurrency(a) { return '₹' + Number(a||0).toLocaleString('en-IN'); }
+
+// ── ADMIN APP CODE ────────────────────────────────────────
+// ── STATE ──────────────────────────────────────────────
+const A = {
+  user: null, bookings: [], vehicles: [], drivers: [],
+  owners: [], customers: [], fareRules: [], settings: {},
+  editId: null, currentPage: 'dashboard'
+};
+
+// ── CLOCK ──────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('top-datetime').textContent =
+    new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' });
+}, 1000);
+
+// ── ADMIN LOGIN (username + password) ─────────────────
+// Default credentials — change after first login via Settings
+const ADMIN_CREDENTIALS = [
+  { username: 'admin', password: 'sowmiya@2024' },
+  { username: 'sowmiya', password: 'travels@2024' }
+];
+
+async function adminLogin() {
+  const username = (document.getElementById('admin-username').value || '').trim().toLowerCase();
+  const password = (document.getElementById('admin-password').value || '').trim();
+  const btn = document.getElementById('admin-login-btn');
+  const errEl = document.getElementById('login-error');
+
+  if (!username || !password) {
+    errEl.style.display = 'block';
+    errEl.textContent = '⚠️ Enter username and password';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Verifying…';
+  errEl.style.display = 'none';
+
+  // Check credentials
+  const valid = ADMIN_CREDENTIALS.find(c => c.username === username && c.password === password);
+
+  if (!valid) {
+    btn.disabled = false;
+    btn.textContent = '🚀 Login to Admin';
+    errEl.style.display = 'block';
+    errEl.textContent = '❌ Invalid username or password';
+    document.getElementById('admin-password').value = '';
+    document.getElementById('admin-password').focus();
+    return;
+  }
+
+  // Sign in to Supabase with admin email/password
+  const sb = getSupabase();
+  const adminEmail = 'admin@sowmiyatravels.local';
+  const adminPass = 'SowmiyaAdmin@2024!';
+
+  let userId;
+  const { data: d1, error: e1 } = await sb.auth.signInWithPassword({ email: adminEmail, password: adminPass });
+  if (d1?.user) {
+    userId = d1.user.id;
+  } else {
+    // First time — create admin Supabase account
+    const { data: d2, error: e2 } = await sb.auth.signUp({ email: adminEmail, password: adminPass });
+    if (e2) {
+      btn.disabled = false;
+      btn.textContent = '🚀 Login to Admin';
+      errEl.style.display = 'block';
+      errEl.textContent = '❌ Setup error: ' + e2.message;
+      return;
+    }
+    userId = d2?.user?.id;
+  }
+
+  if (userId) {
+    // Upsert admin profile
+    await sb.from('profiles').upsert({
+      id: userId,
+      full_name: 'Admin',
+      phone: '9786033425',
+      role: 'admin',
+      is_verified: true
+    });
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', userId).single();
+    A.user = profile || { id: userId, full_name: 'Admin', role: 'admin' };
+  }
+
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('admin-user-info').textContent = '👤 ' + (A.user?.full_name || 'Admin');
+  btn.disabled = false;
+  btn.textContent = '🚀 Login to Admin';
+
+  await loadAllData();
+  showPage('dashboard', document.querySelector('.nav-item.active'));
+}
+
+// ── LOAD ALL DATA ──────────────────────────────────────
+async function loadAllData() {
+  await Promise.all([
+    loadBookings(), loadVehicles(), loadDrivers(),
+    loadOwners(), loadCustomers(), loadFareRules(), loadSettings()
+  ]);
+}
+
+async function loadBookings() {
+  const sb = getSupabase();
+  const { data } = await sb.from('bookings').select('*, vehicles(brand,model,registration_number), drivers(name,phone)').order('created_at', { ascending: false });
+  A.bookings = data || [];
+  renderBookings();
+  updateDashboard();
+  const pending = A.bookings.filter(b => b.booking_status === 'pending').length;
+  document.getElementById('badge-bookings').textContent = pending;
+}
+
+async function loadVehicles() {
+  const sb = getSupabase();
+  const { data } = await sb.from('vehicles').select('*, car_owners(name), drivers(name,phone)').order('created_at', { ascending: false });
+  A.vehicles = data || [];
+  renderVehicles();
+  populateVehicleDropdowns();
+}
+
+async function loadDrivers() {
+  const sb = getSupabase();
+  const { data } = await sb.from('drivers').select('*, vehicles(brand,model,registration_number)').order('name');
+  A.drivers = data || [];
+  renderDrivers();
+  populateDriverDropdowns();
+}
+
+async function loadOwners() {
+  const sb = getSupabase();
+  const { data } = await sb.from('car_owners').select('*').order('name');
+  A.owners = data || [];
+  renderOwners();
+  populateOwnerDropdowns();
+}
+
+async function loadCustomers() {
+  const sb = getSupabase();
+  const { data } = await sb.from('profiles').select('*').eq('role', 'customer').order('created_at', { ascending: false });
+  A.customers = data || [];
+  renderCustomers();
+}
+
+async function loadFareRules() {
+  const sb = getSupabase();
+  const { data } = await sb.from('fare_rules').select('*').order('vehicle_type');
+  A.fareRules = data || [];
+  renderFareRules();
+  populateFareDropdowns();
+}
+
+async function loadSettings() {
+  const sb = getSupabase();
+  const { data } = await sb.from('settings').select('*');
+  if (data) {
+    data.forEach(s => {
+      A.settings[s.key] = s.value;
+      const el = document.getElementById('setting-' + s.key);
+      if (el) el.value = s.value;
+    });
+  }
+}
+
+// ── DASHBOARD ──────────────────────────────────────────
+function updateDashboard() {
+  const today = new Date().toISOString().split('T')[0];
+  const todayBookings = A.bookings.filter(b => b.pickup_date === today);
+  const monthRevenue = A.bookings
+    .filter(b => b.booking_status === 'completed' && b.total_amount)
+    .reduce((s, b) => s + Number(b.total_amount), 0);
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card gold" style="animation-delay:.05s">
+      <div class="stat-icon">📋</div>
+      <div class="stat-value">${A.bookings.length}</div>
+      <div class="stat-label">Total Bookings</div>
+    </div>
+    <div class="stat-card teal" style="animation-delay:.1s">
+      <div class="stat-icon">📅</div>
+      <div class="stat-value">${todayBookings.length}</div>
+      <div class="stat-label">Today's Bookings</div>
+    </div>
+    <div class="stat-card success" style="animation-delay:.15s">
+      <div class="stat-icon">💰</div>
+      <div class="stat-value">₹${(monthRevenue/1000).toFixed(1)}K</div>
+      <div class="stat-label">Total Revenue</div>
+    </div>
+    <div class="stat-card" style="animation-delay:.2s">
+      <div class="stat-icon">🚗</div>
+      <div class="stat-value">${A.vehicles.filter(v=>v.is_active).length}</div>
+      <div class="stat-label">Active Vehicles</div>
+    </div>
+    <div class="stat-card" style="animation-delay:.25s">
+      <div class="stat-icon">👨‍✈️</div>
+      <div class="stat-value">${A.drivers.filter(d=>d.is_active).length}</div>
+      <div class="stat-label">Active Drivers</div>
+    </div>
+    <div class="stat-card danger" style="animation-delay:.3s">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-value">${A.bookings.filter(b=>b.booking_status==='pending').length}</div>
+      <div class="stat-label">Pending Bookings</div>
+    </div>
+  `;
+
+  // Recent bookings
+  const recent = A.bookings.slice(0, 8);
+  document.getElementById('recent-bookings-list').innerHTML = `
+    <table>
+      <thead><tr><th>#</th><th>Customer</th><th>Date</th><th>Status</th><th>Amount</th></tr></thead>
+      <tbody>${recent.map(b => `
+        <tr>
+          <td><strong>${b.booking_number}</strong></td>
+          <td>${b.customer_name}<br><small style="color:var(--muted)">${b.customer_phone}</small></td>
+          <td>${b.pickup_date}</td>
+          <td><span class="status-pill pill-${b.booking_status}">${b.booking_status}</span></td>
+          <td>${b.total_amount ? '₹'+Number(b.total_amount).toLocaleString('en-IN') : '—'}</td>
+        </tr>
+      `).join('')}</tbody>
+    </table>`;
+}
+
+// ── RENDER TABLES ──────────────────────────────────────
+function renderBookings(list) {
+  const rows = list || A.bookings;
+  document.getElementById('bookings-tbody').innerHTML = rows.length
+    ? rows.map(b => `
+      <tr>
+        <td><strong>${b.booking_number}</strong></td>
+        <td>${b.customer_name}</td>
+        <td>${b.customer_phone}</td>
+        <td>${b.trip_type?.replace('_',' ')}</td>
+        <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.pickup_location?.substring(0,40) || '—'}</td>
+        <td>${b.pickup_date}</td>
+        <td>${b.vehicles ? b.vehicles.brand+' '+b.vehicles.model : '—'}</td>
+        <td>${b.drivers?.name || '—'}</td>
+        <td>${b.total_amount ? '₹'+Number(b.total_amount).toLocaleString('en-IN') : '—'}</td>
+        <td>
+          <select class="filter-select" style="font-size:.75rem;padding:4px 8px" onchange="quickUpdateBookingStatus('${b.id}',this.value)">
+            ${['pending','confirmed','assigned','started','completed','cancelled'].map(s =>
+              `<option value="${s}" ${b.booking_status===s?'selected':''}>${s}</option>`
+            ).join('')}
+          </select>
+        </td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-sm btn-primary" onclick="editBooking('${b.id}')">✏️</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteBooking('${b.id}')">🗑</button>
+          </div>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="11" class="empty-state">No bookings found</td></tr>';
+}
+
+function filterBookings() {
+  const search = document.getElementById('booking-search').value.toLowerCase();
+  const status = document.getElementById('booking-status-filter').value;
+  const filtered = A.bookings.filter(b => {
+    const matchSearch = !search ||
+      b.booking_number?.toLowerCase().includes(search) ||
+      b.customer_name?.toLowerCase().includes(search) ||
+      b.customer_phone?.includes(search) ||
+      b.pickup_location?.toLowerCase().includes(search);
+    const matchStatus = !status || b.booking_status === status;
+    return matchSearch && matchStatus;
+  });
+  renderBookings(filtered);
+}
+
+function renderVehicles() {
+  document.getElementById('fleet-tbody').innerHTML = A.vehicles.length
+    ? A.vehicles.map(v => `
+      <tr>
+        <td><strong>${v.brand} ${v.model}</strong><br><small style="color:var(--muted)">${v.color || ''} ${v.year || ''}</small></td>
+        <td>${v.vehicle_type}</td>
+        <td>${v.registration_number}</td>
+        <td>👥 ${v.seating_capacity} ${v.ac_available ? '❄️' : ''}</td>
+        <td>${v.car_owners?.name || '—'}</td>
+        <td>${v.drivers?.name || '—'}</td>
+        <td>
+          <span class="status-pill ${v.is_available ? 'pill-active' : 'pill-inactive'}">${v.is_available ? 'Available' : 'On Trip'}</span>
+        </td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-sm btn-primary" onclick="editVehicle('${v.id}')">✏️</button>
+            <button class="btn btn-sm ${v.is_active?'btn-danger':'btn-success'}" onclick="toggleVehicle('${v.id}',${v.is_active})">${v.is_active?'🔴':'🟢'}</button>
+          </div>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="8"><div class="empty-state"><div class="icon">🚗</div><p>No vehicles added yet</p></div></td></tr>';
+}
+
+function renderDrivers() {
+  document.getElementById('drivers-tbody').innerHTML = A.drivers.length
+    ? A.drivers.map(d => `
+      <tr>
+        <td><strong>${d.name}</strong></td>
+        <td>${d.phone}</td>
+        <td>${d.license_number}</td>
+        <td>${d.license_expiry || '—'}</td>
+        <td>${d.vehicles ? d.vehicles.brand+' '+d.vehicles.model : '—'}</td>
+        <td>⭐ ${d.rating}</td>
+        <td>${d.total_trips}</td>
+        <td><span class="status-pill ${d.is_active?'pill-active':'pill-inactive'}">${d.is_active?'Active':'Inactive'}</span></td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-sm btn-primary" onclick="editDriver('${d.id}')">✏️</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteDriver('${d.id}')">🗑</button>
+          </div>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="9"><div class="empty-state"><div class="icon">👨‍✈️</div><p>No drivers added yet</p></div></td></tr>';
+}
+
+function renderOwners() {
+  document.getElementById('owners-tbody').innerHTML = A.owners.length
+    ? A.owners.map(o => `
+      <tr>
+        <td><strong>${o.name}</strong></td>
+        <td>${o.phone}</td>
+        <td>${o.email || '—'}</td>
+        <td>${o.commission_percent}%</td>
+        <td>${A.vehicles.filter(v=>v.owner_id===o.id).length}</td>
+        <td><span class="status-pill ${o.is_active?'pill-active':'pill-inactive'}">${o.is_active?'Active':'Inactive'}</span></td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-sm btn-primary" onclick="editOwner('${o.id}')">✏️</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteOwner('${o.id}')">🗑</button>
+          </div>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="7"><div class="empty-state"><div class="icon">🏢</div><p>No owners added yet</p></div></td></tr>';
+}
+
+function renderCustomers() {
+  document.getElementById('customers-tbody').innerHTML = A.customers.length
+    ? A.customers.map(c => `
+      <tr>
+        <td><strong>${c.full_name}</strong></td>
+        <td>${c.phone}</td>
+        <td>${c.email || '—'}</td>
+        <td>${A.bookings.filter(b=>b.customer_id===c.id).length}</td>
+        <td>${new Date(c.created_at).toLocaleDateString('en-IN')}</td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="viewCustomerBookings('${c.id}')">View Bookings</button>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="6"><div class="empty-state"><div class="icon">👥</div><p>No customers yet</p></div></td></tr>';
+}
+
+function renderFareRules() {
+  if (!A.fareRules.length) {
+    document.getElementById('fare-rules-list').innerHTML =
+      '<div class="empty-state"><div class="icon">💰</div><p>No fare rules added yet</p></div>';
+    return;
+  }
+  const ruleNames = {
+    per_km:'Per KM (₹/km)', per_trip:'Per Trip', per_hour:'Per Hour',
+    per_day:'Per Day', waiting_charge:'Waiting Charge', night_surcharge:'Night Surcharge',
+    airport_pickup:'Airport Pickup', extra_km:'Extra KM'
+  };
+  document.getElementById('fare-rules-list').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${A.fareRules.map(r => `
+        <div style="display:grid;grid-template-columns:180px 1fr 100px 1fr 80px;gap:12px;align-items:center;padding:14px 16px;border:1.5px solid #e8eaf0;border-radius:10px">
+          <select class="field-select" style="font-size:.85rem" onchange="updateFareLocal('${r.id}','vehicle_type',this.value)">
+            ${['All','Sedan','SUV','Hatchback','Innova','Innova Crysta','Tempo Traveller','Mini Bus'].map(t =>
+              `<option ${r.vehicle_type===t?'selected':''}>${t}</option>`
+            ).join('')}
+          </select>
+          <select class="field-select" style="font-size:.85rem" onchange="updateFareLocal('${r.id}','rule_type',this.value)">
+            ${Object.entries(ruleNames).map(([k,v]) => `<option value="${k}" ${r.rule_type===k?'selected':''}>${v}</option>`).join('')}
+          </select>
+          <input type="number" class="field-input" style="font-size:.85rem" value="${r.amount}" onchange="updateFareLocal('${r.id}','amount',this.value)">
+          <input type="text" class="field-input" style="font-size:.85rem" placeholder="Description" value="${r.description||''}" oninput="updateFareLocal('${r.id}','description',this.value)">
+          <button class="btn btn-sm btn-danger" onclick="deleteFareRule('${r.id}')">✕</button>
+        </div>`).join('')}
+    </div>`;
+}
+
+// Local state edit for fare rules before save
+const fareEdits = {};
+function updateFareLocal(id, field, value) {
+  if (!fareEdits[id]) fareEdits[id] = {};
+  fareEdits[id][field] = value;
+}
+
+async function saveAllRules() {
+  const sb = getSupabase();
+  for (const [id, changes] of Object.entries(fareEdits)) {
+    if (changes.amount) changes.amount = parseFloat(changes.amount);
+    await sb.from('fare_rules').update(changes).eq('id', id);
+  }
+  showToast('Fare rules saved!', 'success');
+  Object.keys(fareEdits).forEach(k => delete fareEdits[k]);
+}
+
+// ── SAVE FUNCTIONS ─────────────────────────────────────
+async function saveBooking() {
+  const sb = getSupabase();
+  const data = {
+    customer_name: document.getElementById('bm-name').value.trim(),
+    customer_phone: document.getElementById('bm-phone').value.trim(),
+    trip_type: document.getElementById('bm-trip').value,
+    vehicle_id: document.getElementById('bm-vehicle').value || null,
+    driver_id: document.getElementById('bm-driver').value || null,
+    fare_rule_id: document.getElementById('bm-fare').value || null,
+    pickup_location: document.getElementById('bm-pickup').value.trim(),
+    drop_location: document.getElementById('bm-drop').value.trim() || null,
+    pickup_date: document.getElementById('bm-date').value,
+    pickup_time: document.getElementById('bm-time').value,
+    estimated_km: document.getElementById('bm-km').value ? parseFloat(document.getElementById('bm-km').value) : null,
+    total_amount: document.getElementById('bm-amount').value ? parseFloat(document.getElementById('bm-amount').value) : null,
+    base_amount: document.getElementById('bm-amount').value ? parseFloat(document.getElementById('bm-amount').value) : null,
+    payment_method: document.getElementById('bm-payment').value,
+    booking_status: document.getElementById('bm-status').value,
+    admin_notes: document.getElementById('bm-notes').value.trim()
+  };
+
+  if (!data.customer_name || !data.customer_phone || !data.pickup_location || !data.pickup_date) {
+    showToast('Fill required fields', 'error'); return;
+  }
+
+  let error;
+  if (A.editId) {
+    ({ error } = await sb.from('bookings').update(data).eq('id', A.editId));
+  } else {
+    ({ error } = await sb.from('bookings').insert(data));
+  }
+
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+
+  closeModal('booking-modal');
+  showToast('Booking saved!', 'success');
+  A.editId = null;
+  await loadBookings();
+}
+
+async function quickUpdateBookingStatus(id, status) {
+  const sb = getSupabase();
+  await sb.from('bookings').update({ booking_status: status }).eq('id', id);
+  const booking = A.bookings.find(b => b.id === id);
+  if (booking) await notifyBookingStatus(booking, status);
+  showToast('Status updated', 'success');
+  await loadBookings();
+}
+
+async function saveVehicle() {
+  const sb = getSupabase();
+  const data = {
+    vehicle_type: document.getElementById('vm-type').value,
+    brand: document.getElementById('vm-brand').value.trim(),
+    model: document.getElementById('vm-model').value.trim(),
+    registration_number: document.getElementById('vm-reg').value.trim(),
+    year: document.getElementById('vm-year').value ? parseInt(document.getElementById('vm-year').value) : null,
+    color: document.getElementById('vm-color').value.trim(),
+    seating_capacity: parseInt(document.getElementById('vm-seats').value) || 4,
+    fuel_type: document.getElementById('vm-fuel').value,
+    ac_available: document.getElementById('vm-ac').value === 'true',
+    owner_id: document.getElementById('vm-owner').value || null,
+    insurance_expiry: document.getElementById('vm-insurance').value || null,
+    permit_expiry: document.getElementById('vm-permit').value || null,
+    image_url: document.getElementById('vm-image').value.trim() || null,
+    notes: document.getElementById('vm-notes').value.trim()
+  };
+
+  if (!data.brand || !data.model || !data.registration_number) {
+    showToast('Fill required fields', 'error'); return;
+  }
+
+  let error;
+  if (A.editId) {
+    ({ error } = await sb.from('vehicles').update(data).eq('id', A.editId));
+  } else {
+    ({ error } = await sb.from('vehicles').insert(data));
+  }
+
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  closeModal('vehicle-modal');
+  showToast('Vehicle saved!', 'success');
+  A.editId = null;
+  await loadVehicles();
+}
+
+async function saveDriver() {
+  const sb = getSupabase();
+  const data = {
+    name: document.getElementById('dm-name').value.trim(),
+    phone: document.getElementById('dm-phone').value.trim(),
+    email: document.getElementById('dm-email').value.trim() || null,
+    license_number: document.getElementById('dm-license').value.trim(),
+    license_expiry: document.getElementById('dm-license-expiry').value || null,
+    date_of_birth: document.getElementById('dm-dob').value || null,
+    experience_years: parseInt(document.getElementById('dm-exp').value) || 0,
+    assigned_vehicle_id: document.getElementById('dm-vehicle').value || null,
+    id_proof_type: document.getElementById('dm-id-type').value,
+    id_proof_number: document.getElementById('dm-id-number').value.trim(),
+    emergency_contact: document.getElementById('dm-emergency').value.trim(),
+    emergency_phone: document.getElementById('dm-emergency-phone').value.trim(),
+    address: document.getElementById('dm-address').value.trim(),
+    notes: document.getElementById('dm-notes').value.trim()
+  };
+
+  if (!data.name || !data.phone || !data.license_number) {
+    showToast('Fill required fields', 'error'); return;
+  }
+
+  let error;
+  if (A.editId) {
+    ({ error } = await sb.from('drivers').update(data).eq('id', A.editId));
+  } else {
+    ({ error } = await sb.from('drivers').insert(data));
+  }
+
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  closeModal('driver-modal');
+  showToast('Driver saved!', 'success');
+  A.editId = null;
+  await loadDrivers();
+}
+
+async function saveOwner() {
+  const sb = getSupabase();
+  const data = {
+    name: document.getElementById('om-name').value.trim(),
+    phone: document.getElementById('om-phone').value.trim(),
+    email: document.getElementById('om-email').value.trim() || null,
+    commission_percent: parseFloat(document.getElementById('om-commission').value) || 10,
+    bank_account: document.getElementById('om-bank').value.trim(),
+    ifsc_code: document.getElementById('om-ifsc').value.trim(),
+    id_proof_type: document.getElementById('om-id-type').value,
+    id_proof_number: document.getElementById('om-id-number').value.trim(),
+    address: document.getElementById('om-address').value.trim(),
+    notes: document.getElementById('om-notes').value.trim()
+  };
+
+  if (!data.name || !data.phone) { showToast('Fill required fields', 'error'); return; }
+
+  let error;
+  if (A.editId) {
+    ({ error } = await sb.from('car_owners').update(data).eq('id', A.editId));
+  } else {
+    ({ error } = await sb.from('car_owners').insert(data));
+  }
+
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  closeModal('owner-modal');
+  showToast('Owner saved!', 'success');
+  A.editId = null;
+  await loadOwners();
+}
+
+async function saveFareRule() {
+  const sb = getSupabase();
+  const data = {
+    vehicle_type: document.getElementById('fm-vehicle-type').value,
+    rule_type: document.getElementById('fm-rule-type').value,
+    amount: parseFloat(document.getElementById('fm-amount').value),
+    description: document.getElementById('fm-desc').value.trim()
+  };
+
+  if (!data.amount) { showToast('Enter amount', 'error'); return; }
+  const { error } = await sb.from('fare_rules').insert(data);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+
+  closeModal('fare-modal');
+  showToast('Fare rule added!', 'success');
+  await loadFareRules();
+}
+
+async function deleteFareRule(id) {
+  if (!confirm('Delete this fare rule?')) return;
+  const sb = getSupabase();
+  await sb.from('fare_rules').delete().eq('id', id);
+  showToast('Rule deleted', 'info');
+  await loadFareRules();
+}
+
+// ── EDIT HELPERS ───────────────────────────────────────
+function editBooking(id) {
+  const b = A.bookings.find(x => x.id === id);
+  if (!b) return;
+  A.editId = id;
+  document.getElementById('bm-name').value = b.customer_name;
+  document.getElementById('bm-phone').value = b.customer_phone;
+  document.getElementById('bm-trip').value = b.trip_type;
+  document.getElementById('bm-pickup').value = b.pickup_location;
+  document.getElementById('bm-drop').value = b.drop_location || '';
+  document.getElementById('bm-date').value = b.pickup_date;
+  document.getElementById('bm-time').value = b.pickup_time;
+  document.getElementById('bm-km').value = b.estimated_km || '';
+  document.getElementById('bm-amount').value = b.total_amount || '';
+  document.getElementById('bm-payment').value = b.payment_method;
+  document.getElementById('bm-status').value = b.booking_status;
+  document.getElementById('bm-notes').value = b.admin_notes || '';
+  if (b.vehicle_id) document.getElementById('bm-vehicle').value = b.vehicle_id;
+  if (b.driver_id) document.getElementById('bm-driver').value = b.driver_id;
+  openModal('booking-modal');
+}
+
+function editVehicle(id) {
+  const v = A.vehicles.find(x => x.id === id);
+  if (!v) return;
+  A.editId = id;
+  document.getElementById('vm-type').value = v.vehicle_type;
+  document.getElementById('vm-brand').value = v.brand;
+  document.getElementById('vm-model').value = v.model;
+  document.getElementById('vm-reg').value = v.registration_number;
+  document.getElementById('vm-year').value = v.year || '';
+  document.getElementById('vm-color').value = v.color || '';
+  document.getElementById('vm-seats').value = v.seating_capacity;
+  document.getElementById('vm-fuel').value = v.fuel_type;
+  document.getElementById('vm-ac').value = v.ac_available ? 'true' : 'false';
+  document.getElementById('vm-insurance').value = v.insurance_expiry || '';
+  document.getElementById('vm-permit').value = v.permit_expiry || '';
+  document.getElementById('vm-image').value = v.image_url || '';
+  document.getElementById('vm-notes').value = v.notes || '';
+  if (v.owner_id) document.getElementById('vm-owner').value = v.owner_id;
+  openModal('vehicle-modal');
+}
+
+function editDriver(id) {
+  const d = A.drivers.find(x => x.id === id);
+  if (!d) return;
+  A.editId = id;
+  document.getElementById('dm-name').value = d.name;
+  document.getElementById('dm-phone').value = d.phone;
+  document.getElementById('dm-email').value = d.email || '';
+  document.getElementById('dm-license').value = d.license_number;
+  document.getElementById('dm-license-expiry').value = d.license_expiry || '';
+  document.getElementById('dm-dob').value = d.date_of_birth || '';
+  document.getElementById('dm-exp').value = d.experience_years;
+  document.getElementById('dm-id-type').value = d.id_proof_type || 'Aadhaar';
+  document.getElementById('dm-id-number').value = d.id_proof_number || '';
+  document.getElementById('dm-emergency').value = d.emergency_contact || '';
+  document.getElementById('dm-emergency-phone').value = d.emergency_phone || '';
+  document.getElementById('dm-address').value = d.address || '';
+  document.getElementById('dm-notes').value = d.notes || '';
+  if (d.assigned_vehicle_id) document.getElementById('dm-vehicle').value = d.assigned_vehicle_id;
+  openModal('driver-modal');
+}
+
+function editOwner(id) {
+  const o = A.owners.find(x => x.id === id);
+  if (!o) return;
+  A.editId = id;
+  document.getElementById('om-name').value = o.name;
+  document.getElementById('om-phone').value = o.phone;
+  document.getElementById('om-email').value = o.email || '';
+  document.getElementById('om-commission').value = o.commission_percent;
+  document.getElementById('om-bank').value = o.bank_account || '';
+  document.getElementById('om-ifsc').value = o.ifsc_code || '';
+  document.getElementById('om-id-type').value = o.id_proof_type || 'Aadhaar';
+  document.getElementById('om-id-number').value = o.id_proof_number || '';
+  document.getElementById('om-address').value = o.address || '';
+  document.getElementById('om-notes').value = o.notes || '';
+  openModal('owner-modal');
+}
+
+// ── DELETE / TOGGLE ────────────────────────────────────
+async function deleteBooking(id) {
+  if (!confirm('Delete this booking?')) return;
+  const sb = getSupabase();
+  await sb.from('bookings').delete().eq('id', id);
+  showToast('Booking deleted', 'info');
+  await loadBookings();
+}
+
+async function deleteDriver(id) {
+  if (!confirm('Delete this driver?')) return;
+  const sb = getSupabase();
+  await sb.from('drivers').delete().eq('id', id);
+  showToast('Driver deleted', 'info');
+  await loadDrivers();
+}
+
+async function deleteOwner(id) {
+  if (!confirm('Delete this owner?')) return;
+  const sb = getSupabase();
+  await sb.from('car_owners').delete().eq('id', id);
+  showToast('Owner deleted', 'info');
+  await loadOwners();
+}
+
+async function toggleVehicle(id, currentState) {
+  const sb = getSupabase();
+  await sb.from('vehicles').update({ is_active: !currentState }).eq('id', id);
+  showToast(`Vehicle ${currentState ? 'deactivated' : 'activated'}`, 'info');
+  await loadVehicles();
+}
+
+// ── DROPDOWN POPULATORS ────────────────────────────────
+function populateVehicleDropdowns() {
+  const opts = '<option value="">Select vehicle…</option>' + A.vehicles.map(v =>
+    `<option value="${v.id}">${v.brand} ${v.model} (${v.registration_number})</option>`
+  ).join('');
+  document.getElementById('bm-vehicle').innerHTML = opts;
+  document.getElementById('dm-vehicle').innerHTML = '<option value="">None</option>' + A.vehicles.map(v =>
+    `<option value="${v.id}">${v.brand} ${v.model}</option>`
+  ).join('');
+}
+
+function populateDriverDropdowns() {
+  const opts = '<option value="">Select driver…</option>' + A.drivers.map(d =>
+    `<option value="${d.id}">${d.name} — ${d.phone}</option>`
+  ).join('');
+  document.getElementById('bm-driver').innerHTML = opts;
+}
+
+function populateOwnerDropdowns() {
+  const opts = '<option value="">Select owner…</option>' + A.owners.map(o =>
+    `<option value="${o.id}">${o.name} — ${o.phone}</option>`
+  ).join('');
+  document.getElementById('vm-owner').innerHTML = opts;
+}
+
+function populateFareDropdowns() {
+  const ruleNames = {
+    per_km:'Per KM', per_trip:'Per Trip', per_hour:'Per Hour', per_day:'Per Day',
+    waiting_charge:'Waiting Charge', night_surcharge:'Night Surcharge',
+    airport_pickup:'Airport Pickup', extra_km:'Extra KM'
+  };
+  const opts = '<option value="">Select fare…</option>' + A.fareRules.map(r =>
+    `<option value="${r.id}">${ruleNames[r.rule_type]||r.rule_type} — ${r.vehicle_type} — ₹${r.amount}</option>`
+  ).join('');
+  document.getElementById('bm-fare').innerHTML = opts;
+}
+
+function updateBookingAmount() {
+  const ruleId = document.getElementById('bm-fare').value;
+  const km = parseFloat(document.getElementById('bm-km').value) || 0;
+  const rule = A.fareRules.find(r => r.id === ruleId);
+  if (!rule) return;
+  let amount = rule.amount;
+  if (rule.rule_type === 'per_km' && km > 0) amount = rule.amount * km;
+  document.getElementById('bm-amount').value = amount;
+}
+
+// ── SETTINGS SAVE ──────────────────────────────────────
+async function saveSettings() {
+  const sb = getSupabase();
+  const keys = ['company_name','company_phone','company_email','company_address',
+    'upi_primary','upi_fallback','telegram_chat_id','whatsapp_token','geoapify_key','min_booking_notice_hours'];
+  for (const key of keys) {
+    const el = document.getElementById('setting-' + key);
+    if (el) await sb.from('settings').upsert({ key, value: el.value });
+  }
+  showToast('Settings saved!', 'success');
+}
+
+async function saveTerms() {
+  const sb = getSupabase();
+  const content = document.getElementById('terms-content').value;
+  await sb.from('settings').upsert({ key: 'terms_content', value: content });
+  showToast('Terms saved!', 'success');
+}
+
+// ── MODAL HELPERS ──────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); A.editId = null; }
+function openAddBookingModal() { A.editId = null; openModal('booking-modal'); }
+function openVehicleModal() { A.editId = null; openModal('vehicle-modal'); }
+function openDriverModal() { A.editId = null; openModal('driver-modal'); }
+function openOwnerModal() { A.editId = null; openModal('owner-modal'); }
+function openFareModal() { openModal('fare-modal'); }
+
+function viewCustomerBookings(customerId) {
+  document.getElementById('booking-search').value = '';
+  showPage('bookings', document.querySelectorAll('.nav-item')[1]);
+  setTimeout(() => {
+    const filtered = A.bookings.filter(b => b.customer_id === customerId);
+    renderBookings(filtered);
+  }, 200);
+}
+
+// ── PAGE NAVIGATION ────────────────────────────────────
+function showPage(page, navEl) {
+  // Hide all pages
+  document.querySelectorAll('[id^="page-"]').forEach(p => p.style.display = 'none');
+  document.getElementById('page-' + page).style.display = 'block';
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (navEl) navEl.classList.add('active');
+
+  const titles = {
+    dashboard: 'Dashboard', bookings: 'Bookings', fleet: 'Fleet / Vehicles',
+    'fare-rules': 'Fare Rules', drivers: 'Drivers', owners: 'Car Owners',
+    customers: 'Customers', terms: 'Terms & Conditions', settings: 'Settings'
+  };
+  document.getElementById('page-title').textContent = titles[page] || page;
+  A.currentPage = page;
+}
+
+async function adminSignOut() {
+  const sb = getSupabase();
+  await sb.auth.signOut();
+  A.user = null;
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('admin-username').value = '';
+  document.getElementById('admin-password').value = '';
+  document.getElementById('login-error').style.display = 'none';
+}
+</script>
+</body>
+</html>
