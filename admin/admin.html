@@ -529,11 +529,13 @@ label.field-label{display:block;font-size:.78rem;font-weight:600;color:var(--mut
     <div class="form-grid">
       <div class="form-group">
         <label class="field-label">Vehicle Type *</label>
-        <select id="vm-type" class="field-select">
+        <select id="vm-type" class="field-select" onchange="handleVmTypeChange(this)">
           <option>Sedan</option><option>SUV</option><option>Hatchback</option>
           <option>Innova</option><option>Innova Crysta</option>
           <option>Tempo Traveller</option><option>Mini Bus</option><option>Luxury Sedan</option>
+          <option value="__manual__">➕ Add Custom Type…</option>
         </select>
+        <input type="text" id="vm-type-manual" class="field-input" placeholder="Enter custom vehicle type…" style="display:none;margin-top:8px" oninput="syncVmTypeManual(this)">
       </div>
       <div class="form-group">
         <label class="field-label">Brand *</label>
@@ -742,16 +744,18 @@ label.field-label{display:block;font-size:.78rem;font-weight:600;color:var(--mut
     <div class="form-grid">
       <div class="form-group">
         <label class="field-label">Vehicle Type</label>
-        <select id="fm-vehicle-type" class="field-select">
+        <select id="fm-vehicle-type" class="field-select" onchange="handleFmVehicleTypeChange(this)">
           <option value="All">All Vehicles</option>
           <option>Sedan</option><option>SUV</option><option>Hatchback</option>
           <option>Innova</option><option>Innova Crysta</option>
           <option>Tempo Traveller</option><option>Mini Bus</option>
+          <option value="__manual__">➕ Add Custom Type…</option>
         </select>
+        <input type="text" id="fm-vehicle-type-manual" class="field-input" placeholder="Enter custom vehicle type…" style="display:none;margin-top:8px" oninput="syncFmVehicleTypeManual(this)">
       </div>
       <div class="form-group">
         <label class="field-label">Rule Type</label>
-        <select id="fm-rule-type" class="field-select">
+        <select id="fm-rule-type" class="field-select" onchange="handleFmRuleTypeChange(this)">
           <option value="per_km">Per KM (₹/km)</option>
           <option value="per_trip">Per Trip (Fixed)</option>
           <option value="per_hour">Per Hour</option>
@@ -760,7 +764,9 @@ label.field-label{display:block;font-size:.78rem;font-weight:600;color:var(--mut
           <option value="night_surcharge">Night Surcharge</option>
           <option value="airport_pickup">Airport Pickup</option>
           <option value="extra_km">Extra KM</option>
+          <option value="__manual__">➕ Add Custom Rule Type…</option>
         </select>
+        <input type="text" id="fm-rule-type-manual" class="field-input" placeholder="Enter custom rule type (e.g. toll_charge)…" style="display:none;margin-top:8px" oninput="syncFmRuleTypeManual(this)">
       </div>
       <div class="form-group">
         <label class="field-label">Amount (₹) *</label>
@@ -994,6 +1000,65 @@ const A = {
   editId: null, currentPage: 'dashboard'
 };
 
+// ── SESSION PERSISTENCE ─────────────────────────────────
+const SESSION_KEY = 'sowmiya_admin_session';
+
+function saveAdminSession(username) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ username, ts: Date.now() }));
+}
+function clearAdminSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+function getAdminSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if (!s) return null;
+    // Expire after 8 hours
+    if (Date.now() - s.ts > 8 * 60 * 60 * 1000) { clearAdminSession(); return null; }
+    return s;
+  } catch { return null; }
+}
+
+// ── SUPABASE ADMIN AUTH (blocking — needed for RLS) ────
+const ADMIN_EMAIL = 'admin@sowmiyatravels.local';
+const ADMIN_PASS  = 'SowmiyaAdmin@2024!';
+
+async function ensureSupabaseAdminAuth() {
+  const sb = getSupabase();
+  // Check if already signed in
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) return true;
+  // Try sign in
+  const { data: d1, error: e1 } = await sb.auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASS });
+  if (d1?.user) return true;
+  // First time — sign up then sign in
+  try {
+    const { data: d2 } = await sb.auth.signUp({ email: ADMIN_EMAIL, password: ADMIN_PASS });
+    if (d2?.user) {
+      await sb.from('profiles').upsert({ id: d2.user.id, full_name: 'Admin', phone: '9786033425', role: 'admin', is_verified: true });
+      // Sign in after signup
+      const { data: d3 } = await sb.auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASS });
+      if (d3?.user) return true;
+    }
+  } catch(e) { console.warn('Supabase admin signup:', e); }
+  return false;
+}
+
+// ── PAGE INIT — restore session on refresh ─────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const session = getAdminSession();
+  if (session) {
+    // Restore UI immediately
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('admin-user-info').textContent = '👤 Admin (' + session.username + ')';
+    A.user = { full_name: 'Admin', role: 'admin', username: session.username };
+    // Re-establish Supabase auth (needed for RLS on writes)
+    await ensureSupabaseAdminAuth();
+    await loadAllData();
+    showPage('dashboard', document.querySelector('.nav-item.active'));
+  }
+});
+
 // ── CLOCK ──────────────────────────────────────────────
 setInterval(() => {
   document.getElementById('top-datetime').textContent =
@@ -1035,24 +1100,14 @@ async function adminLogin() {
     return;
   }
 
-  // ✅ Credentials valid — set admin user directly (no Supabase auth needed)
+  // ✅ Credentials valid — sign into Supabase (blocking, needed for RLS)
   A.user = { full_name: 'Admin', role: 'admin', username: valid.username };
 
-  // Also try Supabase sign-in in background (for data access) — non-blocking
-  (async () => {
-    try {
-      const sb = getSupabase();
-      const adminEmail = 'admin@sowmiyatravels.local';
-      const adminPass = 'SowmiyaAdmin@2024!';
-      const { data: d1 } = await sb.auth.signInWithPassword({ email: adminEmail, password: adminPass });
-      if (!d1?.user) {
-        const { data: d2 } = await sb.auth.signUp({ email: adminEmail, password: adminPass });
-        if (d2?.user) {
-          await sb.from('profiles').upsert({ id: d2.user.id, full_name: 'Admin', phone: '9786033425', role: 'admin', is_verified: true });
-        }
-      }
-    } catch(e) { console.warn('Supabase admin auth (background):', e); }
-  })();
+  btn.innerHTML = '⏳ Connecting…';
+  await ensureSupabaseAdminAuth();
+
+  // Save session so refresh doesn't logout
+  saveAdminSession(valid.username);
 
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('admin-user-info').textContent = '👤 Admin (' + valid.username + ')';
@@ -1417,8 +1472,12 @@ async function quickUpdateBookingStatus(id, status) {
 
 async function saveVehicle() {
   const sb = getSupabase();
+  const vmTypeSel = document.getElementById('vm-type').value;
+  const vmTypeManual = document.getElementById('vm-type-manual').value.trim();
+  const vehicleType = vmTypeSel === '__manual__' ? vmTypeManual : vmTypeSel;
+  if (!vehicleType) { showToast('Please enter a vehicle type', 'error'); return; }
   const data = {
-    vehicle_type: document.getElementById('vm-type').value,
+    vehicle_type: vehicleType,
     brand: document.getElementById('vm-brand').value.trim(),
     model: document.getElementById('vm-model').value.trim(),
     registration_number: document.getElementById('vm-reg').value.trim(),
@@ -1522,9 +1581,20 @@ async function saveOwner() {
 
 async function saveFareRule() {
   const sb = getSupabase();
+  const fmVTypeSel = document.getElementById('fm-vehicle-type').value;
+  const fmVTypeManual = document.getElementById('fm-vehicle-type-manual').value.trim();
+  const vehicleType = fmVTypeSel === '__manual__' ? fmVTypeManual : fmVTypeSel;
+
+  const fmRTypeSel = document.getElementById('fm-rule-type').value;
+  const fmRTypeManual = document.getElementById('fm-rule-type-manual').value.trim();
+  const ruleType = fmRTypeSel === '__manual__' ? fmRTypeManual : fmRTypeSel;
+
+  if (!vehicleType) { showToast('Please enter a vehicle type', 'error'); return; }
+  if (!ruleType) { showToast('Please enter a rule type', 'error'); return; }
+
   const data = {
-    vehicle_type: document.getElementById('fm-vehicle-type').value,
-    rule_type: document.getElementById('fm-rule-type').value,
+    vehicle_type: vehicleType,
+    rule_type: ruleType,
     amount: parseFloat(document.getElementById('fm-amount').value),
     description: document.getElementById('fm-desc').value.trim()
   };
@@ -1729,10 +1799,38 @@ async function saveTerms() {
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); A.editId = null; }
 function openAddBookingModal() { A.editId = null; openModal('booking-modal'); }
-function openVehicleModal() { A.editId = null; openModal('vehicle-modal'); }
+function openVehicleModal() {
+  A.editId = null;
+  const manualEl = document.getElementById('vm-type-manual');
+  if (manualEl) { manualEl.style.display = 'none'; manualEl.value = ''; }
+  openModal('vehicle-modal');
+}
 function openDriverModal() { A.editId = null; openModal('driver-modal'); }
 function openOwnerModal() { A.editId = null; openModal('owner-modal'); }
-function openFareModal() { openModal('fare-modal'); }
+function openFareModal() {
+  const fmV = document.getElementById('fm-vehicle-type-manual');
+  const fmR = document.getElementById('fm-rule-type-manual');
+  if (fmV) { fmV.style.display = 'none'; fmV.value = ''; }
+  if (fmR) { fmR.style.display = 'none'; fmR.value = ''; }
+  openModal('fare-modal');
+}
+
+// ── MANUAL TYPE HELPERS ──────────────────────────────────────
+function handleVmTypeChange(sel) {
+  const manual = document.getElementById('vm-type-manual');
+  if (sel.value === '__manual__') { manual.style.display = 'block'; manual.focus(); }
+  else { manual.style.display = 'none'; manual.value = ''; }
+}
+function handleFmVehicleTypeChange(sel) {
+  const manual = document.getElementById('fm-vehicle-type-manual');
+  if (sel.value === '__manual__') { manual.style.display = 'block'; manual.focus(); }
+  else { manual.style.display = 'none'; manual.value = ''; }
+}
+function handleFmRuleTypeChange(sel) {
+  const manual = document.getElementById('fm-rule-type-manual');
+  if (sel.value === '__manual__') { manual.style.display = 'block'; manual.focus(); }
+  else { manual.style.display = 'none'; manual.value = ''; }
+}
 
 function viewCustomerBookings(customerId) {
   document.getElementById('booking-search').value = '';
@@ -1764,6 +1862,7 @@ async function adminSignOut() {
   const sb = getSupabase();
   await sb.auth.signOut();
   A.user = null;
+  clearAdminSession();
   document.getElementById('login-overlay').style.display = 'flex';
   document.getElementById('admin-username').value = '';
   document.getElementById('admin-password').value = '';
