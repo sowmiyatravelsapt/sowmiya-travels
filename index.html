@@ -625,6 +625,12 @@ function generateOTP() {
 
 // ── SEND OTP VIA FONNTE (fast, non-blocking) ────────────────
 async function sendOTP(phone, otp) {
+  // Normalise to 10-digit before anything
+  let cleanPhone = phone.replace(/\D/g, '');
+  if (cleanPhone.startsWith('91') && cleanPhone.length === 12) cleanPhone = cleanPhone.slice(2);
+  if (cleanPhone.startsWith('0') && cleanPhone.length === 11) cleanPhone = cleanPhone.slice(1);
+  phone = cleanPhone; // always use clean 10-digit from here
+
   // Block if in cooldown
   if (isOTPCoolingDown(phone)) {
     const rem = getOTPCooldownRemaining(phone);
@@ -912,8 +918,11 @@ function closeAuthModal() {
 async function sendLoginOTP() {
   const phone = document.getElementById('auth-phone').value.trim();
   const name = document.getElementById('auth-name').value.trim();
-  const cleaned = phone.replace(/\D/g, '');
-  if (!cleaned || cleaned.length < 10) { showToast('Enter valid phone number', 'error'); return; }
+  // Strip everything non-digit, then remove leading 91 or 0 to get pure 10-digit Indian number
+  let cleaned = phone.replace(/\D/g, '');
+  if (cleaned.startsWith('91') && cleaned.length === 12) cleaned = cleaned.slice(2);
+  if (cleaned.startsWith('0') && cleaned.length === 11) cleaned = cleaned.slice(1);
+  if (!cleaned || cleaned.length !== 10) { showToast('Enter valid 10-digit mobile number', 'error'); return; }
 
   // Check cooldown (3 min)
   if (isOTPCoolingDown(cleaned)) {
